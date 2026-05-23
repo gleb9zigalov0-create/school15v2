@@ -12,35 +12,35 @@
             box-sizing: border-box;
         }
 
+        /* Основной фон страницы — светло-голубой градиент (как на всём сайте) */
         body {
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
-            background-image: url('images/fon.jpg');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
+            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
             min-height: 100vh;
             padding: 1rem;
         }
 
+        /* Стеклянный контейнер чата */
         .chat-glass {
             max-width: 1600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(12px);
             border-radius: 48px;
             height: calc(100vh - 2rem);
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
+        /* Шапка — голубая, матовая */
         .chat-header {
             padding: 1rem 1.5rem;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.4);
             backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(255,255,255,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.4);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -48,19 +48,21 @@
         }
         .chat-header h1 { color: #0a3f6f; font-size: 1.5rem; }
         .online-count { background: #e94560; color: white; padding: 0.2rem 0.8rem; border-radius: 40px; font-size: 0.8rem; }
-        .back-btn { background: rgba(255,255,255,0.5); padding: 0.3rem 1rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; }
+        .back-btn { background: rgba(255,255,255,0.6); padding: 0.3rem 1rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; font-weight: bold; }
 
+        /* Основная область */
         .chat-main {
             display: flex;
             flex: 1;
             overflow: hidden;
         }
 
+        /* Левая панель — голубая, матовая */
         .members-panel {
             width: 280px;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(8px);
-            border-right: 1px solid rgba(255,255,255,0.3);
+            border-right: 1px solid rgba(255,255,255,0.4);
             overflow-y: auto;
             padding: 1rem;
             flex-shrink: 0;
@@ -72,6 +74,7 @@
             padding: 0.6rem;
             border-radius: 32px;
             margin-bottom: 0.3rem;
+            transition: 0.1s;
         }
         .member-avatar {
             width: 44px;
@@ -88,15 +91,20 @@
         .member-info { flex: 1; }
         .member-name { font-weight: bold; color: #0a2a44; }
         .member-status { font-size: 0.7rem; color: #2c5a7a; }
-        .online-dot { color: #22c55e; }
-        .offline-dot { color: #94a3b8; }
 
+        /* Область сообщений — с твоим фоном fon.jpg */
         .messages-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background-image: url('images/fon.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
+
+        /* Список сообщений (полупрозрачный, чтобы фон просвечивал) */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -104,7 +112,11 @@
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(2px);
         }
+
+        /* Пузырьки сообщений */
         .message {
             display: flex;
             gap: 0.6rem;
@@ -124,45 +136,48 @@
             flex-shrink: 0;
         }
         .message-bubble {
-            background: white;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 24px;
             padding: 0.5rem 1rem;
             box-shadow: 0 2px 6px rgba(0,0,0,0.05);
         }
-        .message.mine .message-bubble { background: #d9f0ff; }
+        .message.mine .message-bubble { background: rgba(217, 240, 255, 0.95); }
         .message-name { font-weight: bold; font-size: 0.75rem; color: #0a3f6f; margin-bottom: 0.2rem; }
         .message-text { font-size: 0.9rem; color: #1e2f3e; word-break: break-word; }
         .message-time { font-size: 0.6rem; color: #94a3b8; margin-top: 0.2rem; text-align: right; }
         .message-sticker { max-width: 150px; border-radius: 20px; }
 
+        /* Поле ввода — голубое, матовое */
         .input-area {
-            background: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(8px);
             padding: 0.8rem 1rem;
             display: flex;
             gap: 0.5rem;
             align-items: center;
-            border-top: 1px solid rgba(255,255,255,0.3);
+            border-top: 1px solid rgba(255,255,255,0.4);
         }
         .input-area input {
             flex: 1;
-            background: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.8);
             border: none;
             padding: 0.8rem 1.2rem;
             border-radius: 40px;
             font-size: 0.9rem;
         }
         .icon-btn {
-            background: rgba(255,255,255,0.6);
+            background: rgba(255,255,255,0.7);
             border: none;
             width: 44px;
             height: 44px;
             border-radius: 50%;
             font-size: 1.4rem;
             cursor: pointer;
+            transition: 0.1s;
         }
         .icon-btn:hover { background: #0a3f6f; color: white; }
 
+        /* Панель стикеров */
         .stickers-panel {
             position: fixed;
             bottom: 90px;
@@ -190,7 +205,8 @@
         .sticker-img:hover { transform: scale(1.05); }
 
         .hidden { display: none; }
-        .auth-box { text-align: center; padding: 2rem; }
+        .auth-box { text-align: center; padding: 2rem; background: rgba(255,255,255,0.4); border-radius: 48px; margin: 2rem; }
+        .auth-box input { margin: 0.5rem auto; display: block; width: 80%; max-width: 300px; padding: 0.6rem; border-radius: 40px; border: none; }
     </style>
 </head>
 <body>
@@ -208,8 +224,8 @@
         <h2>🔐 Вход в чат</h2>
         <button id="googleLoginBtn" style="background:#0a3f6f; color:white; border:none; padding:0.8rem 1.5rem; border-radius:40px; margin:1rem;">Войти через Google</button>
         <p style="margin:1rem">или</p>
-        <input type="email" id="loginEmail" placeholder="Email" style="display:block; width:100%; max-width:300px; margin:0.5rem auto; padding:0.6rem; border-radius:40px; border:none;">
-        <input type="password" id="loginPassword" placeholder="Пароль" style="display:block; width:100%; max-width:300px; margin:0.5rem auto; padding:0.6rem; border-radius:40px; border:none;">
+        <input type="email" id="loginEmail" placeholder="Email">
+        <input type="password" id="loginPassword" placeholder="Пароль">
         <button id="emailLoginBtn" style="background:#0a3f6f; color:white; border:none; padding:0.6rem 1.5rem; border-radius:40px;">Войти</button>
         <p style="margin-top:1rem">Нет аккаунта? <button id="showRegisterBtn" style="background:none; border:none; color:#0a3f6f; font-weight:bold;">Зарегистрироваться</button></p>
     </div>
@@ -245,7 +261,7 @@
 
     async function loadStickers() {
         const panel = document.getElementById('stickersPanel');
-        const stickerFiles = ['okay.gif']; // Твой стикер
+        const stickerFiles = ['okay.gif'];
         panel.innerHTML = '';
         for (let file of stickerFiles) {
             const img = document.createElement('img');
@@ -283,13 +299,16 @@
         } else {
             bubble.innerHTML += `<div class="message-text">${escapeHtml(data.text || '')}</div>`;
         }
-        bubble.innerHTML += `<div class="message-time">${new Date(data.createdAt?.toDate()).toLocaleTimeString()}</div>`;
+        bubble.innerHTML += `<div class="message-time">${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleTimeString() : ''}</div>`;
         div.appendChild(avatar);
         div.appendChild(bubble);
         return div;
     }
 
-    function escapeHtml(str) { return str.replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); }
+    function escapeHtml(str) { 
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); 
+    }
 
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
@@ -307,8 +326,8 @@
                 snap.forEach(doc => container.appendChild(renderMessage(doc)));
                 container.scrollTop = container.scrollHeight;
             });
-            // заглушка участников
-            document.getElementById('membersList').innerHTML = `<div class="member-item"><div class="member-avatar">${(user.displayName||'?')[0]}</div><div class="member-info"><div class="member-name">${user.displayName || user.email}</div><div class="member-status"><span class="online-dot">🟢</span> Онлайн</div></div></div>`;
+            // Заглушка участников
+            document.getElementById('membersList').innerHTML = `<div class="member-item"><div class="member-avatar">${(user.displayName||'?')[0]}</div><div class="member-info"><div class="member-name">${user.displayName || user.email}</div><div class="member-status"><span style="color:#22c55e">🟢 Онлайн</span></div></div></div>`;
         } else {
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('chatContainer').style.display = 'none';
@@ -333,7 +352,7 @@
         panel.classList.toggle('hidden');
         loadStickers();
     };
-    document.getElementById('attachBtn').onclick = () => alert('📎 Функция прикрепления файлов будет добавлена позже (требуется Firebase Storage)');
+    document.getElementById('attachBtn').onclick = () => alert('📎 Функция прикрепления файлов будет добавлена позже');
 </script>
 </body>
 </html>
