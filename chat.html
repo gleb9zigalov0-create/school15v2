@@ -6,6 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
+        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -174,6 +175,7 @@
             outline: none;
         }
 
+        /* ========== МОДАЛКИ (КОНТЕНТ УДАЛЯЕТСЯ ПРИ ЗАКРЫТИИ) ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -223,21 +225,30 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid {
+        .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
             justify-content: center;
         }
-        .sticker-img {
-            width: 85px;
+        .attach-item {
+            text-align: center;
+            flex: 1;
+            min-width: 70px;
             cursor: pointer;
-            background: white;
-            border-radius: 20px;
-            padding: 0.3rem;
+        }
+        .attach-icon {
+            font-size: 2.2rem;
+            filter: grayscale(100%);
+            opacity: 0.7;
             transition: 0.1s;
         }
-        .sticker-img:hover { transform: scale(1.05); }
+        .attach-icon:hover { opacity: 1; transform: scale(1.05); }
+        .attach-label {
+            font-size: 0.65rem;
+            color: #bbb;
+            margin-top: 0.3rem;
+        }
         .close-btn {
             background: #0a3f6f;
             color: white;
@@ -264,18 +275,16 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <button class="icon-button" id="stickerBtn">😊</button>
+            <button class="icon-button" id="attachBtn">📎</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <div class="modal-wrapper" id="stickerWrapper">
-            <div class="modal" id="stickerModal">
-                <div class="modal-handle" id="stickerHandle"></div>
-                <div class="modal-content-inner">
-                    <div class="modal-title">✨ Стикеры</div>
-                    <div id="stickerList" class="sticker-grid"></div>
-                    <button class="close-btn" id="closeStickerBtn">Закрыть</button>
+        <div class="modal-wrapper" id="attachWrapper">
+            <div class="modal" id="attachModal">
+                <div class="modal-handle" id="attachHandle"></div>
+                <div class="modal-content-inner" id="attachModalContent">
+                    <!-- СЮДА ДИНАМИЧЕСКИ ЗАГРУЖАЕТСЯ КОНТЕНТ -->
                 </div>
             </div>
         </div>
@@ -333,7 +342,7 @@
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -353,51 +362,74 @@
         });
     }
 
-    async function sendMessage(text, stickerUrl = null) {
-        if (!text.trim() && !stickerUrl) return;
+    async function sendMessage(text) {
+        if (!text.trim()) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
-            sticker: stickerUrl,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
 
-    function loadStickers() {
-        const stickers = ['stickers/okay.gif'];
-        const container = document.getElementById('stickerList');
-        if (container) {
-            container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-            document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-                img.onclick = (e) => {
-                    e.stopPropagation();
-                    const url = img.getAttribute('data-sticker-url');
-                    if (url) {
-                        sendMessage('', url);
-                        closeModal('stickerModal');
-                    }
-                };
-            });
+    // Функция создания контента модалки (свежий HTML, без старых кнопок)
+    function renderModalContent() {
+        const container = document.getElementById('attachModalContent');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="modal-title">📎 Отправить</div>
+            <div class="attach-grid">
+                <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
+                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+            </div>
+            <button class="close-btn" id="modalCloseBtn">Закрыть</button>
+        `;
+        
+        // Вешаем обработчики на новые кнопки
+        document.querySelectorAll('.attach-item').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                alert(`📎 Отправка ${el.dataset.type} — в разработке`);
+                closeModal();
+            };
+        });
+        
+        const closeBtn = document.getElementById('modalCloseBtn');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal();
+            };
         }
     }
 
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
+    function closeModal() {
+        const modal = document.getElementById('attachModal');
         if (!modal) return;
         modal.classList.remove('active');
+        // Очищаем содержимое ПОСЛЕ анимации закрытия
+        setTimeout(() => {
+            const container = document.getElementById('attachModalContent');
+            if (container) container.innerHTML = ''; // Удаляем всё нафиг
+        }, 300);
     }
 
-    function openModal(modalId) {
-        const modal = document.getElementById(modalId);
+    function openModal() {
+        renderModalContent(); // Создаём свежие кнопки
+        const modal = document.getElementById('attachModal');
         if (!modal) return;
         modal.classList.add('active');
     }
 
-    function initSwipeClose(modalId, handleId) {
-        const modal = document.getElementById(modalId);
-        const handle = document.getElementById(handleId);
+    function initSwipeClose() {
+        const modal = document.getElementById('attachModal');
+        const handle = document.getElementById('attachHandle');
         if (!modal || !handle) return;
         
         let startY = 0, startTransform = 0;
@@ -424,7 +456,7 @@
         const onTouchEnd = (e) => {
             if (!isDragging) return;
             const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) closeModal(modalId);
+            if (delta > 80) closeModal();
             modal.style.transform = '';
             modal.style.opacity = '';
             isDragging = false;
@@ -455,25 +487,16 @@
         window.addEventListener('mouseup', (e) => {
             if (!mouseDown) return;
             const delta = e.clientY - mouseStartY;
-            if (delta > 80) closeModal(modalId);
+            if (delta > 80) closeModal();
             modal.style.transform = '';
             modal.style.opacity = '';
             mouseDown = false;
         });
     }
 
-    document.getElementById('closeStickerBtn').onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeModal('stickerModal');
-    };
-    
-    initSwipeClose('stickerModal', 'stickerHandle');
+    initSwipeClose();
 
-    document.getElementById('stickerBtn').onclick = () => {
-        loadStickers();
-        openModal('stickerModal');
-    };
+    document.getElementById('attachBtn').onclick = () => openModal();
     
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
