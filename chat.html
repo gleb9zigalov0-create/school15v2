@@ -402,14 +402,17 @@
         });
     }
 
+    let stickerClickEnabled = true;
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         const container = document.getElementById('stickerList');
         if (container) {
+            stickerClickEnabled = true;
             container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
             document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
                 img.onclick = (e) => {
                     e.stopPropagation();
+                    if (!stickerClickEnabled) return;
                     const url = img.getAttribute('data-sticker-url');
                     if (url) {
                         sendMessage('', url);
@@ -423,12 +426,19 @@
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+        // Блокируем клики внутри модалки перед закрытием
+        modal.style.pointerEvents = 'none';
         modal.classList.remove('active');
+        // Возвращаем клики через полсекунды
+        setTimeout(() => {
+            if (modal) modal.style.pointerEvents = '';
+        }, 300);
     }
 
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+        modal.style.pointerEvents = 'auto';
         modal.classList.add('active');
     }
 
