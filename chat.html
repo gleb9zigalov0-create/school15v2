@@ -6,11 +6,7 @@
     <title>Мега-чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
@@ -88,20 +84,16 @@
         .member-name { font-weight: bold; color: #0a2a44; }
         .member-status { font-size: 0.7rem; color: #2c5a7a; }
 
-        /* Область сообщений — фоновая картинка только здесь */
+        /* Область сообщений — простой голубой фон, без картинки */
         .messages-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background-image: url('images/fon.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            position: relative;
+            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
         }
 
-        /* Список сообщений (полупрозрачный слой, чтобы текст читался) */
+        /* Список сообщений */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -109,10 +101,9 @@
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
-            background: rgba(255, 255, 255, 0.25);
         }
 
-        /* Пузырьки сообщений — плотные, чтобы текст был чётким */
+        /* Пузырьки сообщений */
         .message {
             display: flex;
             gap: 0.6rem;
