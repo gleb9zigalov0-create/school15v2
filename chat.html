@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -175,7 +174,7 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКИ (КОНТЕНТ УДАЛЯЕТСЯ ПРИ ЗАКРЫТИИ) ========== */
+        /* ========== МОДАЛКИ ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -218,13 +217,31 @@
             max-height: 55vh;
             overflow-y: auto;
         }
-        .modal-title {
-            text-align: center;
-            color: #e0e0e0;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-bottom: 1rem;
+        .close-btn {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            margin-top: 1rem;
+            cursor: pointer;
+            width: 100%;
         }
+        .sticker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .sticker-img {
+            width: 85px;
+            cursor: pointer;
+            background: white;
+            border-radius: 20px;
+            padding: 0.3rem;
+            transition: 0.1s;
+        }
+        .sticker-img:hover { transform: scale(1.05); }
         .attach-grid {
             display: flex;
             flex-wrap: wrap;
@@ -249,16 +266,6 @@
             color: #bbb;
             margin-top: 0.3rem;
         }
-        .close-btn {
-            background: #0a3f6f;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            margin-top: 1rem;
-            cursor: pointer;
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -275,17 +282,25 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <button class="icon-button" id="attachBtn">📎</button>
+            <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+            <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
+        <!-- МОДАЛКА СТИКЕРОВ -->
+        <div class="modal-wrapper" id="stickerWrapper">
+            <div class="modal" id="stickerModal">
+                <div class="modal-handle" id="stickerHandle"></div>
+                <div class="modal-content-inner" id="stickerModalContent"></div>
+            </div>
+        </div>
+
+        <!-- МОДАЛКА СКРЕПКИ -->
         <div class="modal-wrapper" id="attachWrapper">
             <div class="modal" id="attachModal">
                 <div class="modal-handle" id="attachHandle"></div>
-                <div class="modal-content-inner" id="attachModalContent">
-                    <!-- СЮДА ДИНАМИЧЕСКИ ЗАГРУЖАЕТСЯ КОНТЕНТ -->
-                </div>
+                <div class="modal-content-inner" id="attachModalContent"></div>
             </div>
         </div>
     </div>
@@ -342,7 +357,7 @@
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -362,19 +377,57 @@
         });
     }
 
-    async function sendMessage(text) {
-        if (!text.trim()) return;
+    async function sendMessage(text, stickerUrl = null) {
+        if (!text.trim() && !stickerUrl) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
+            sticker: stickerUrl,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
 
-    // Функция создания контента модалки (свежий HTML, без старых кнопок)
-    function renderModalContent() {
+    // ========== СТИКЕРЫ ==========
+    function renderStickerModal() {
+        const container = document.getElementById('stickerModalContent');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="modal-title">✨ Стикеры</div>
+            <div id="stickerList" class="sticker-grid"></div>
+            <button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>
+        `;
+        
+        // Загружаем стикеры
+        const stickers = ['stickers/okay.gif'];
+        const stickerContainer = document.getElementById('stickerList');
+        if (stickerContainer) {
+            stickerContainer.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+            document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    const url = img.getAttribute('data-sticker-url');
+                    if (url) {
+                        sendMessage('', url);
+                        closeModal('stickerModal', 'stickerModalContent');
+                    }
+                };
+            });
+        }
+        
+        const closeBtn = document.getElementById('stickerModalCloseBtn');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                closeModal('stickerModal', 'stickerModalContent');
+            };
+        }
+    }
+
+    // ========== СКРЕПКА ==========
+    function renderAttachModal() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
         container.innerHTML = `
@@ -387,49 +440,48 @@
                 <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
                 <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
             </div>
-            <button class="close-btn" id="modalCloseBtn">Закрыть</button>
+            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         
-        // Вешаем обработчики на новые кнопки
         document.querySelectorAll('.attach-item').forEach(el => {
             el.onclick = (e) => {
                 e.stopPropagation();
                 alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-                closeModal();
+                closeModal('attachModal', 'attachModalContent');
             };
         });
         
-        const closeBtn = document.getElementById('modalCloseBtn');
+        const closeBtn = document.getElementById('attachModalCloseBtn');
         if (closeBtn) {
             closeBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                closeModal();
+                closeModal('attachModal', 'attachModalContent');
             };
         }
     }
 
-    function closeModal() {
-        const modal = document.getElementById('attachModal');
+    // ========== ОБЩИЕ ФУНКЦИИ МОДАЛОК ==========
+    function closeModal(modalId, contentId) {
+        const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
-        // Очищаем содержимое ПОСЛЕ анимации закрытия
         setTimeout(() => {
-            const container = document.getElementById('attachModalContent');
-            if (container) container.innerHTML = ''; // Удаляем всё нафиг
+            const container = document.getElementById(contentId);
+            if (container) container.innerHTML = '';
         }, 300);
     }
 
-    function openModal() {
-        renderModalContent(); // Создаём свежие кнопки
-        const modal = document.getElementById('attachModal');
+    function openModal(modalId, renderFunction) {
+        renderFunction();
+        const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.add('active');
     }
 
-    function initSwipeClose() {
-        const modal = document.getElementById('attachModal');
-        const handle = document.getElementById('attachHandle');
+    function initSwipeClose(modalId, handleId, contentId) {
+        const modal = document.getElementById(modalId);
+        const handle = document.getElementById(handleId);
         if (!modal || !handle) return;
         
         let startY = 0, startTransform = 0;
@@ -456,7 +508,7 @@
         const onTouchEnd = (e) => {
             if (!isDragging) return;
             const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) closeModal();
+            if (delta > 80) closeModal(modalId, contentId);
             modal.style.transform = '';
             modal.style.opacity = '';
             isDragging = false;
@@ -487,16 +539,18 @@
         window.addEventListener('mouseup', (e) => {
             if (!mouseDown) return;
             const delta = e.clientY - mouseStartY;
-            if (delta > 80) closeModal();
+            if (delta > 80) closeModal(modalId, contentId);
             modal.style.transform = '';
             modal.style.opacity = '';
             mouseDown = false;
         });
     }
 
-    initSwipeClose();
+    initSwipeClose('stickerModal', 'stickerHandle', 'stickerModalContent');
+    initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
 
-    document.getElementById('attachBtn').onclick = () => openModal();
+    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
+    document.getElementById('attachBtn').onclick = () => openModal('attachModal', renderAttachModal);
     
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
