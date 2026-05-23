@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Настройки — Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: url('images/fon.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .glass-card {
+            max-width: 500px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px);
+            border-radius: 56px;
+            padding: 2rem 1.8rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            text-align: center;
+        }
+
+        h1 {
+            color: #0a3f6f;
+            margin-bottom: 0.5rem;
+            font-size: 1.8rem;
+        }
+
+        .avatar-section {
+            margin: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .avatar-preview {
+            width: 100px;
+            height: 100px;
+            background: #0a3f6f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0 auto;
+            object-fit: cover;
+        }
+
+        .avatar-btn {
+            background: rgba(255,255,255,0.6);
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0a3f6f;
+            margin-bottom: 0.3rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255,255,255,0.8);
+            font-size: 0.95rem;
+        }
+
+        .btn-save {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        .btn-save:hover {
+            background: #e94560;
+            transform: scale(1.01);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            color: #0a3f6f;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .error-msg {
+            color: #e94560;
+            background: rgba(255,255,255,0.8);
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="glass-card">
+    <h1>⚙️ Настройки</h1>
+    <p style="margin-bottom:1rem">Измени имя или аватар</p>
+
+    <div id="errorMsg" class="error-msg"></div>
+
+    <div class="avatar-section">
+        <div class="avatar-preview" id="avatarPreview">?</div>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none">
+        <button class="avatar-btn" id="changeAvatarBtn">📷 Загрузить аватар</button>
+    </div>
+
+    <div class="form-group">
+        <label>Твоё имя в чате</label>
+        <input type="text" id="userNameInput" placeholder="Саша 5А">
+    </div>
+
+    <button class="btn-save" id="saveBtn">💾 Сохранить изменения</button>
+
+    <a href="chat.html" class="back-link">← Вернуться в чат</a>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+<script>
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    let currentUser = null;
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        currentUser = user;
+        // Загружаем данные пользователя
+        const docSnap = await db.collection('users').doc(user.uid).get();
+        const data = docSnap.data() || {};
+        const userName = data.name || user.displayName || 'Ученик';
+        document.getElementById('userNameInput').value = userName;
+        document.getElementById('avatarPreview').textContent = userName.charAt(0).toUpperCase();
+
+        // Если есть аватар в Firestore
+        if (data.avatarUrl) {
+            const img = document.createElement('img');
+            img.src = data.avatarUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.borderRadius = '50%';
+            img.style.objectFit = 'cover';
+            const preview = document.getElementById('avatarPreview');
+            preview.innerHTML = '';
+            preview.appendChild(img);
+        }
+    });
+
+    function showError(msg) {
+        const errDiv = document.getElementById('errorMsg');
+        errDiv.textContent = msg;
+        errDiv.style.display = 'block';
+        setTimeout(() => errDiv.style.display = 'none', 4000);
+    }
+
+    // Загрузка аватара
+    document.getElementById('changeAvatarBtn').onclick = () => {
+        document.getElementById('avatarInput').click();
+    };
+
+    document.getElementById('avatarInput').onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        try {
+            const storageRef = storage.ref().child(`avatars/${currentUser.uid}.jpg`);
+            await storageRef.put(file);
+            const avatarUrl = await storageRef.getDownloadURL();
+            // Обновляем в Firestore
+            await db.collection('users').doc(currentUser.uid).set({ avatarUrl }, { merge: true });
+            // Обновляем превью
+            const preview = document.getElementById('avatarPreview');
+            preview.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = avatarUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.borderRadius = '50%';
+            img.style.objectFit = 'cover';
+            preview.appendChild(img);
+        } catch (err) {
+            showError('Ошибка загрузки аватара');
+        }
+    };
+
+    // Сохранение имени
+    document.getElementById('saveBtn').onclick = async () => {
+        const newName = document.getElementById('userNameInput').value.trim();
+        if (!newName) {
+            showError('Имя не может быть пустым');
+            return;
+        }
+        try {
+            // Обновляем в Firebase Auth (displayName)
+            await currentUser.updateProfile({ displayName: newName });
+            // Обновляем в Firestore
+            await db.collection('users').doc(currentUser.uid).set({ name: newName }, { merge: true });
+            // Обновляем статус в коллекции status (для отображения в левой панели)
+            await db.collection('status').doc(currentUser.uid).set({ name: newName }, { merge: true });
+            alert('✅ Имя успешно обновлено!');
+        } catch (err) {
+            showError('Ошибка сохранения имени');
+        }
+    };
+</script>
+</body>
+</html>
