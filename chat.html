@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -175,7 +174,6 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКИ ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -225,12 +223,21 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .attach-grid {
+        .sticker-grid, .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
             justify-content: center;
         }
+        .sticker-img {
+            width: 85px;
+            cursor: pointer;
+            background: white;
+            border-radius: 20px;
+            padding: 0.3rem;
+            transition: 0.1s;
+        }
+        .sticker-img:hover { transform: scale(1.05); }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -275,26 +282,23 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <!-- 😊 - стикеры (просто копия скрепки, но без контента) -->
             <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
-            <!-- 📎 - скрепка -->
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ (ПУСТАЯ, БЕЗ УВЕДОМЛЕНИЙ) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
                 <div class="modal-content-inner">
                     <div class="modal-title">✨ Стикеры</div>
+                    <div id="stickerList" class="sticker-grid"></div>
                     <button class="close-btn" id="closeStickerBtn">Закрыть</button>
                 </div>
             </div>
         </div>
 
-        <!-- МОДАЛКА СКРЕПКИ -->
         <div class="modal-wrapper" id="attachWrapper">
             <div class="modal" id="attachModal">
                 <div class="modal-handle" id="attachHandle"></div>
@@ -366,7 +370,7 @@
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -386,18 +390,36 @@
         });
     }
 
-    async function sendMessage(text) {
-        if (!text.trim()) return;
+    async function sendMessage(text, stickerUrl = null) {
+        if (!text.trim() && !stickerUrl) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
+            sticker: stickerUrl,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
 
-    // ОБЩИЕ ФУНКЦИИ ДЛЯ МОДАЛОК
+    function loadStickers() {
+        const stickers = ['stickers/okay.gif'];
+        const container = document.getElementById('stickerList');
+        if (container) {
+            container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+            document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    const url = img.getAttribute('data-sticker-url');
+                    if (url) {
+                        sendMessage('', url);
+                        closeModal('stickerModal');
+                    }
+                };
+            });
+        }
+    }
+
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -416,6 +438,7 @@
         if (!modal || !handle) return;
         
         let startY = 0, startTransform = 0;
+        let isDragging = false;
         
         const onTouchStart = (e) => {
             startY = e.touches[0].clientY;
@@ -423,9 +446,11 @@
             if (transform && transform.includes('translateY')) {
                 startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
             }
+            isDragging = true;
         };
         
         const onTouchMove = (e) => {
+            if (!isDragging) return;
             const delta = e.touches[0].clientY - startY;
             if (delta > 0) {
                 modal.style.transform = `translateY(${startTransform + delta}px)`;
@@ -434,58 +459,69 @@
         };
         
         const onTouchEnd = (e) => {
+            if (!isDragging) return;
             const delta = e.changedTouches[0].clientY - startY;
             if (delta > 80) closeModal(modalId);
             modal.style.transform = '';
             modal.style.opacity = '';
+            isDragging = false;
         };
         
         handle.addEventListener('touchstart', onTouchStart);
         handle.addEventListener('touchmove', onTouchMove);
         handle.addEventListener('touchend', onTouchEnd);
         
+        let mouseDown = false;
+        let mouseStartY = 0;
+        
         handle.addEventListener('mousedown', (e) => {
-            startY = e.clientY;
-            const onMouseMove = (moveEvent) => {
-                const delta = moveEvent.clientY - startY;
-                if (delta > 0) {
-                    modal.style.transform = `translateY(${delta}px)`;
-                    modal.style.opacity = '0.7';
-                }
-            };
-            const onMouseUp = (upEvent) => {
-                const delta = upEvent.clientY - startY;
-                if (delta > 80) closeModal(modalId);
-                modal.style.transform = '';
-                modal.style.opacity = '';
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-            };
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
+            mouseDown = true;
+            mouseStartY = e.clientY;
+            e.preventDefault();
+        });
+        
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            const delta = e.clientY - mouseStartY;
+            if (delta > 0) {
+                modal.style.transform = `translateY(${delta}px)`;
+                modal.style.opacity = '0.7';
+            }
+        });
+        
+        window.addEventListener('mouseup', (e) => {
+            if (!mouseDown) return;
+            const delta = e.clientY - mouseStartY;
+            if (delta > 80) closeModal(modalId);
+            modal.style.transform = '';
+            modal.style.opacity = '';
+            mouseDown = false;
         });
     }
 
-    // НАЗНАЧАЕМ ЗАКРЫТИЕ ДЛЯ ОБОИХ МОДАЛОК
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         closeModal('stickerModal');
     };
     document.getElementById('closeAttachBtn').onclick = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         closeModal('attachModal');
     };
     
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
-    // ОТКРЫТИЕ МОДАЛОК
-    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal');
+    document.getElementById('stickerBtn').onclick = () => {
+        loadStickers();
+        openModal('stickerModal');
+    };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
-    // ТОЛЬКО СКРЕПКА ПОКАЗЫВАЕТ УВЕДОМЛЕНИЕ
     document.querySelectorAll('.attach-item').forEach(el => {
-        el.onclick = () => {
+        el.onclick = (e) => {
+            e.stopPropagation();
             alert(`📎 Отправка ${el.dataset.type} — в разработке`);
             closeModal('attachModal');
         };
