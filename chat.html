@@ -510,18 +510,10 @@
                     sticker: `stickers/${f}`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                closeStickerPanel();
+                document.getElementById('stickerPanel').classList.add('hidden');
             };
             panel.appendChild(img);
         });
-    }
-
-    // Функция закрытия панели стикеров (как у скрепки)
-    function closeStickerPanel() {
-        const panel = document.getElementById('stickerPanel');
-        if (!panel.classList.contains('hidden')) {
-            panel.classList.add('hidden');
-        }
     }
 
     function renderMessage(doc) {
@@ -583,36 +575,39 @@
         input.value = '';
     };
     
-    // Обработчик кнопки стикеров: открывает панель и загружает стикеры, если она была скрыта
     document.getElementById('stickerBtn').onclick = () => {
         const panel = document.getElementById('stickerPanel');
-        const isHidden = panel.classList.contains('hidden');
-        if (isHidden) {
-            panel.classList.remove('hidden');
-            loadStickers();
-        } else {
-            closeStickerPanel();
-        }
+        panel.classList.toggle('hidden');
+        if (!panel.classList.contains('hidden')) loadStickers();
     };
 
-    // 1) Закрытие при клике ВНЕ панели стикеров (как у скрепки)
+    // ===== НОВАЯ СИСТЕМА ЗАКРЫТИЯ СТИКЕРОВ (как у скрепки) =====
+    // Функция закрытия панели
+    function closeStickerPanel() {
+        const panel = document.getElementById('stickerPanel');
+        if (!panel.classList.contains('hidden')) {
+            panel.classList.add('hidden');
+        }
+    }
+    
+    // 1) Закрытие при клике вне панели
     document.addEventListener('click', (event) => {
         const panel = document.getElementById('stickerPanel');
         const stickerBtn = document.getElementById('stickerBtn');
         if (panel && !panel.classList.contains('hidden')) {
-            // Если клик был НЕ по панели и НЕ по кнопке открытия стикеров
             if (!panel.contains(event.target) && event.target !== stickerBtn && !stickerBtn.contains(event.target)) {
                 closeStickerPanel();
             }
         }
     });
-
-    // 2) Закрытие при нажатии ESC (дополнительный комфорт)
+    
+    // 2) Закрытие по Escape
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
             closeStickerPanel();
         }
     });
+    // ============================================================
 
     document.getElementById('saveProfileBtn').onclick = async () => {
         const newName = document.getElementById('profileName').value;
