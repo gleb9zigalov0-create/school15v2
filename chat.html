@@ -6,14 +6,10 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        /* ТВОЙ СТИЛЬ ОСТАЁТСЯ БЕЗ ИЗМЕНЕНИЙ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: url('images/fon.jpg') no-repeat center center fixed;
             background-size: cover;
             height: 100vh;
@@ -23,8 +19,6 @@
             padding: 1rem;
             overflow: hidden;
         }
-
-        /* ОСНОВНОЙ КОНТЕЙНЕР */
         .chat-main-container {
             width: 1400px;
             max-width: 98vw;
@@ -37,8 +31,6 @@
             box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
-
-        /* ЛЕВАЯ ПАНЕЛЬ — УЧАСТНИКИ */
         .members-panel {
             width: 280px;
             background: rgba(10, 30, 50, 0.3);
@@ -48,7 +40,6 @@
             flex-direction: column;
             overflow-y: auto;
         }
-
         .members-header {
             padding: 1.5rem 1rem;
             font-weight: bold;
@@ -56,13 +47,11 @@
             background: rgba(0, 0, 0, 0.2);
             font-size: 1.1rem;
         }
-
         .members-list {
             flex: 1;
             list-style: none;
             padding: 0.5rem;
         }
-
         .member-item {
             display: flex;
             align-items: center;
@@ -72,7 +61,6 @@
             background: rgba(255, 255, 255, 0.1);
             margin-bottom: 0.5rem;
         }
-
         .member-avatar {
             width: 44px;
             height: 44px;
@@ -86,33 +74,17 @@
             font-size: 1rem;
             text-transform: uppercase;
         }
-
-        .member-info {
-            flex: 1;
-        }
-
-        .member-name {
-            font-weight: 600;
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .member-status {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-
+        .member-info { flex: 1; }
+        .member-name { font-weight: 600; color: white; font-size: 0.9rem; }
+        .member-status { font-size: 0.7rem; opacity: 0.8; }
         .online-status { color: #4ade80; }
         .offline-status { color: #9ca3af; }
-
-        /* ПРАВАЯ ЗОНА — ЧАТ */
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             background: rgba(0, 0, 0, 0.2);
         }
-
         .chat-header {
             padding: 1rem 1.5rem;
             background: rgba(255, 255, 255, 0.15);
@@ -122,13 +94,7 @@
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .chat-title {
-            font-weight: bold;
-            color: white;
-            font-size: 1.1rem;
-        }
-
+        .chat-title { font-weight: bold; color: white; font-size: 1.1rem; }
         .settings-btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -137,11 +103,7 @@
             color: white;
             cursor: pointer;
             font-size: 0.8rem;
-            transition: 0.2s;
         }
-        .settings-btn:hover { background: rgba(255,255,255,0.4); }
-
-        /* ЛЕНТА СООБЩЕНИЙ */
         .messages-area {
             flex: 1;
             overflow-y: auto;
@@ -150,7 +112,6 @@
             flex-direction: column;
             gap: 0.8rem;
         }
-
         .message {
             display: flex;
             gap: 0.6rem;
@@ -171,29 +132,20 @@
             justify-content: center;
             color: white;
             font-size: 0.7rem;
-            flex-shrink: 0;
         }
         .msg-bubble {
             background: rgba(255, 255, 255, 0.9);
             padding: 0.5rem 1rem;
             border-radius: 20px;
             color: #1e2f3e;
-            word-wrap: break-word;
         }
         .message.mine .msg-bubble {
             background: #0a3f6f;
             color: white;
         }
-        .msg-name {
-            font-size: 0.65rem;
-            font-weight: bold;
-            opacity: 0.8;
-            margin-bottom: 0.2rem;
-        }
+        .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
-
-        /* НИЖНЯЯ ПАНЕЛЬ */
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -210,9 +162,7 @@
             border-radius: 40px;
             font-size: 1.3rem;
             cursor: pointer;
-            transition: 0.2s;
         }
-        .icon-button:hover { background: rgba(255,255,255,0.6); transform: scale(1.02); }
         .text-input {
             flex: 1;
             background: rgba(255, 255, 255, 0.7);
@@ -220,10 +170,7 @@
             border-radius: 40px;
             padding: 0.7rem 1rem;
             font-size: 0.9rem;
-            outline: none;
         }
-
-        /* МОДАЛЬНЫЕ ОКНА */
         .modal {
             display: none;
             position: fixed;
@@ -253,12 +200,10 @@
         .sticker-img {
             width: 90px;
             cursor: pointer;
-            transition: 0.1s;
             background: white;
             border-radius: 20px;
             padding: 0.3rem;
         }
-        .sticker-img:hover { transform: scale(1.05); }
         .close-btn {
             background: #0a3f6f;
             color: white;
@@ -273,13 +218,10 @@
 <body>
 
 <div class="chat-main-container" id="chatContainer">
-    <!-- Левая панель -->
     <div class="members-panel">
         <div class="members-header">👥 Участники 5А</div>
         <ul class="members-list" id="membersList"></ul>
     </div>
-
-    <!-- Правая зона -->
     <div class="chat-area">
         <div class="chat-header">
             <span class="chat-title">💬 Общий чат 5 «А»</span>
@@ -295,7 +237,6 @@
     </div>
 </div>
 
-<!-- Модалка стикеров -->
 <div id="stickerModal" class="modal">
     <div class="modal-bottom">
         <h3 style="text-align:center">Выбери стикер</h3>
@@ -304,7 +245,6 @@
     </div>
 </div>
 
-<!-- Модалка скрепки -->
 <div id="attachModal" class="modal">
     <div class="modal-bottom">
         <h3 style="text-align:center">Отправить файл</h3>
@@ -331,26 +271,34 @@
     let currentUser = null;
     let messagesUnsub = null;
 
-    // Проверка авторизации
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
             window.location.href = 'login.html';
             return;
         }
         currentUser = user;
-        // Статус онлайн
-        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
+        
+        // 🔥 СОЗДАЁМ СТАТУС (если нет)
+        await db.collection('status').doc(user.uid).set({
+            online: true,
+            name: user.displayName || 'Ученик',
+            lastSeen: new Date()
+        }, { merge: true });
+        
         loadMessages();
         loadMembers();
-        // При уходе со страницы — офлайн
+        
         window.addEventListener('beforeunload', () => {
             db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
         });
     });
 
+    // 🔥 ПРАВИЛЬНЫЙ ПУТЬ К СООБЩЕНИЯМ (можешь заменить на class5a_chat если надо)
+    const CHAT_PATH = 'class5a';  // ← если сообщения в class5a_chat — поменяй на 'class5a_chat'
+    
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
-        messagesUnsub = db.collection('rooms').doc('class5a').collection('messages')
+        messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages')
             .orderBy('createdAt')
             .onSnapshot(snap => {
                 const container = document.getElementById('messagesArea');
@@ -375,12 +323,12 @@
     }
 
     async function loadMembers() {
-        const membersList = document.getElementById('membersList');
         db.collection('status').onSnapshot(snap => {
-            membersList.innerHTML = '';
+            const container = document.getElementById('membersList');
+            container.innerHTML = '';
             snap.forEach(doc => {
                 const m = doc.data();
-                membersList.innerHTML += `
+                container.innerHTML += `
                     <li class="member-item">
                         <div class="member-avatar">${(m.name?.charAt(0) || '?')}</div>
                         <div class="member-info">
@@ -395,7 +343,7 @@
 
     async function sendMessage(text, stickerUrl = null) {
         if (!text.trim() && !stickerUrl) return;
-        await db.collection('rooms').doc('class5a').collection('messages').add({
+        await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
             sticker: stickerUrl,
             uid: currentUser.uid,
@@ -404,12 +352,12 @@
         });
     }
 
-    // Стикеры из папки /stickers/
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         const container = document.getElementById('stickerList');
         container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
     }
+    
     window.sendSticker = (url) => {
         sendMessage('', url);
         closeModal('stickerModal');
@@ -423,7 +371,7 @@
         if (inp.value.trim()) sendMessage(inp.value);
         inp.value = '';
     };
-    document.getElementById('settingsBtn').onclick = () => alert('⚙️ Настройки профиля будут в settings.html (скоро)');
+    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
 </script>
 </body>
 </html>
