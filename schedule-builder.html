@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Правило для расписания
+    match /schedule/{document} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    // Твои старые правила для чата
+    match /rooms/{roomId}/messages/{message} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
