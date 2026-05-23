@@ -1,0 +1,73 @@
+/* Проекты — океан + соты */
+body.page-projects {
+    background: #082f49;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(14,165,233,0.4), transparent 45%),
+        linear-gradient(180deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%);
+}
+.page-projects .deco { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.page-projects .hex {
+    position: absolute; width: 48px; height: 55px;
+    background: rgba(186,230,253,0.15);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    border: 1px solid rgba(255,255,255,0.3);
+    animation: hex-up 10s ease-in-out infinite;
+}
+.page-projects .h1 { left: 8%; top: 12%; }
+.page-projects .h2 { right: 10%; top: 40%; animation-delay: -3s; }
+@keyframes hex-up { 50% { transform: translateY(-22px); opacity: 0.85; } }
+.page-projects .head { text-align: center; padding: 2.5rem 1rem 1.5rem; color: #e0f2fe; }
+.page-projects .head h1 {
+    font-size: clamp(2rem, 6vw, 2.8rem); font-weight: 900; color: #fff;
+    text-shadow: 0 0 30px rgba(56,189,248,0.6);
+}
+.page-projects .layout {
+    max-width: 1320px; margin: 0 auto; padding: 0 1rem 2rem;
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.page-projects .sidebar {
+    flex: 0 0 250px; background: rgba(15,23,42,0.5); backdrop-filter: blur(16px);
+    border: 2px solid rgba(125,211,252,0.4); border-radius: 28px; padding: 1.5rem;
+}
+.page-projects .sidebar h3 { color: #7dd3fc; margin-bottom: 1rem; }
+.page-projects .filter-select {
+    width: 100%; padding: 0.65rem; border-radius: 14px; border: 2px solid #38bdf8;
+    margin-bottom: 0.75rem; font-weight: 600;
+}
+.page-projects .btn {
+    width: 100%; margin-top: 0.5rem; padding: 0.75rem; border: none; border-radius: 14px;
+    font-weight: 800; cursor: pointer; color: #fff;
+    background: linear-gradient(135deg, #0284c7, #0ea5e9);
+    box-shadow: 0 0 20px rgba(14,165,233,0.5);
+}
+.page-projects .btn.red { background: linear-gradient(135deg, #be123c, #f43f5e); }
+.page-projects .grid {
+    flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1.25rem; min-width: 250px;
+}
+.page-projects .project-card {
+    border-radius: 24px; overflow: hidden; cursor: pointer;
+    border: 2px solid rgba(125,211,252,0.5);
+    transition: transform 0.25s, box-shadow 0.25s;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+.page-projects .project-card:hover {
+    transform: translateY(-8px); box-shadow: 0 0 35px rgba(56,189,248,0.55);
+}
+.page-projects .card-image { height: 150px; background-size: cover; background-position: center; background-color: #0c4a6e; }
+.page-projects .card-info { padding: 1rem; text-align: center; }
+.page-projects .card-info h3 { color: #0f172a; font-size: 1.2rem; }
+.page-projects .type-badge {
+    display: inline-block; margin-bottom: 0.4rem; padding: 0.2rem 0.7rem;
+    background: rgba(0,0,0,0.1); border-radius: 999px; font-size: 0.7rem; font-weight: 800;
+}
+.page-projects .folder-tag { margin-top: 0.5rem; font-size: 0.75rem; font-weight: 700; color: #0369a1; }
+.page-projects .empty {
+    grid-column: 1 / -1; text-align: center; padding: 3rem; color: #bae6fd;
+    border: 2px dashed rgba(125,211,252,0.4); border-radius: 24px;
+}
+.page-projects .empty a { color: #7dd3fc; }
+.page-projects .nav { max-width: 1320px; margin: 0 auto; padding: 0 1rem 1rem; }
+.page-projects .back-btn { background: rgba(255,255,255,0.15); color: #e0f2fe; border: 2px solid rgba(255,255,255,0.35); }
+.page-projects .back-btn:hover { background: #fff; color: #0369a1; }
+.page-projects .site-footer { background: rgba(8,47,73,0.95); color: #bae6fd; }

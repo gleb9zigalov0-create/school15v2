@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5А — Расписание | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-schedule.css">
+</head>
+<body class="page-schedule">
+
+<div class="deco" aria-hidden="true">
+    <div class="slot s1"></div>
+    <div class="slot s2"></div>
+    <div class="slot s3"></div>
+</div>
+
+<div class="page-wrap">
+    <div class="top-bar">
+        <h1>📖 Расписание 5 «А»</h1>
+        <span class="badge">Школа №15 · Тырган</span>
+    </div>
+
+    <div class="panel">
+        <div class="day-switch" id="daySwitch"></div>
+        <div id="scheduleContainer"></div>
+        <div class="bottom-row">
+            <a href="index.html" class="back-btn">← На главную</a>
+            <button type="button" class="admin-btn" id="editAllDayBtn">✏️ Редактировать день</button>
+        </div>
+        <p class="hint">Нажми на ДЗ, чтобы изменить (пароль: КИКИ99СССР)</p>
+    </div>
+
+    <footer class="site-footer">🏫 Школа №15 | Микрорайон Тырган, Прокопьевск</footer>
+</div>
+
+<script>
+let scheduleData = {
+    'ПН': [
+        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 145, стр. 78-79 (выучить правила)' },
+        { time: '9:50-10:30', subject: 'Математика', homework: '№ 567, 568 (а,б) стр. 112' },
+        { time: '10:50-11:30', subject: 'Литература', homework: 'Прочитать главы 3-5, ответить на вопросы' },
+        { time: '11:50-12:30', subject: 'Английский', homework: 'WB стр. 34-35, выучить слова (15 шт)' },
+        { time: '12:50-13:30', subject: 'История', homework: '§12 пересказ, термины выучить' }
+    ],
+    'ВТ': [
+        { time: '9:00-9:40', subject: 'Математика', homework: '№ 572, 574, стр. 115' },
+        { time: '9:50-10:30', subject: 'Русский язык', homework: 'Упр. 148, подготовиться к словарному диктанту' },
+        { time: '10:50-11:30', subject: 'Биология', homework: '§15, рисунок в тетради' },
+        { time: '11:50-12:30', subject: 'География', homework: 'Контурная карта стр. 8-9' },
+        { time: '12:50-13:30', subject: 'Физкультура', homework: 'форма, кросс 500 м' }
+    ],
+    'СР': [
+        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 152, разбор слов по составу' },
+        { time: '9:50-10:30', subject: 'Математика', homework: '№ 579, 581, стр. 118' },
+        { time: '10:50-11:30', subject: 'ИЗО', homework: 'Нарисовать осенний пейзаж (акварель)' },
+        { time: '11:50-12:30', subject: 'Английский', homework: 'SB стр. 42-43, упр. 5,7' },
+        { time: '12:50-13:30', subject: 'ОДНКНР', homework: 'Сообщение о традициях' }
+    ],
+    'ЧТ': [
+        { time: '9:00-9:40', subject: 'Математика', homework: '№ 584, 586 (в,г), стр. 120' },
+        { time: '9:50-10:30', subject: 'Литература', homework: 'Сочинение по прочитанному' },
+        { time: '10:50-11:30', subject: 'История', homework: '§13 таблица "События"' },
+        { time: '11:50-12:30', subject: 'Технология', homework: 'доделать разделочную доску' },
+        { time: '12:50-13:30', subject: 'ОБЗР', homework: '§4, вопросы 1-4 устно' }
+    ],
+    'ПТ': [
+        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 156, подготовиться к контрольной' },
+        { time: '9:50-10:30', subject: 'Математика', homework: 'Повторение № 590, 592' },
+        { time: '10:50-11:30', subject: 'Музыка', homework: 'слушать классику, заполнить дневник' },
+        { time: '11:50-12:30', subject: 'Физкультура', homework: 'форма, подтягивание' },
+        { time: '12:50-13:30', subject: 'Английский', homework: 'WB стр. 36-37' }
+    ],
+    'СБ': [
+        { time: '9:00-9:40', subject: 'Математика', homework: '№ 595, 598 (факультатив)' },
+        { time: '9:50-10:30', subject: 'Русский язык', homework: 'Тесты в РЭШ' },
+        { time: '10:50-11:30', subject: 'Классный час', homework: 'портфолио на понедельник' }
+    ]
+};
+
+let currentDay = 'ПН';
+
+function loadSchedule() {
+    const saved = localStorage.getItem('schedule5A');
+    if (saved) {
+        try { scheduleData = JSON.parse(saved); } catch (e) {}
+    }
+}
+
+function saveSchedule() {
+    localStorage.setItem('schedule5A', JSON.stringify(scheduleData));
+}
+
+function renderSchedule() {
+    const container = document.getElementById('scheduleContainer');
+    const lessons = scheduleData[currentDay];
+
+    if (!lessons || !lessons.length) {
+        container.innerHTML = '<div class="schedule-card" style="text-align:center;padding:2rem">Нет уроков</div>';
+        return;
+    }
+
+    let html = '<div class="schedule-card">';
+    lessons.forEach((lesson, idx) => {
+        html += `
+            <div class="lesson-item">
+                <div class="time-badge">${lesson.time}</div>
+                <div class="subject-name">${lesson.subject}</div>
+                <div class="hw-row">
+                    <div class="hw-text" data-day="${currentDay}" data-idx="${idx}">${lesson.homework || '—'}</div>
+                    <button type="button" class="hw-btn" data-day="${currentDay}" data-idx="${idx}">✏️</button>
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.hw-text, .hw-btn').forEach(el => {
+        el.addEventListener('click', () => {
+            editHomework(el.dataset.day, parseInt(el.dataset.idx, 10));
+        });
+    });
+}
+
+function editHomework(day, idx) {
+    if (prompt('Пароль для изменения ДЗ:') !== 'КИКИ99СССР') {
+        alert('Неверный пароль!');
+        return;
+    }
+    const neu = prompt('Новое домашнее задание:', scheduleData[day][idx].homework || '');
+    if (neu !== null) {
+        scheduleData[day][idx].homework = neu.trim();
+        saveSchedule();
+        renderSchedule();
+        alert('ДЗ обновлено!');
+    }
+}
+
+function editWholeDay() {
+    if (prompt('Пароль:') !== 'КИКИ99СССР') {
+        alert('Неверный пароль!');
+        return;
+    }
+    const text = prompt(
+        'Формат: время | предмет | ДЗ\nКаждый урок с новой строки.',
+        scheduleData[currentDay].map(l => l.time + ' | ' + l.subject + ' | ' + l.homework).join('\n')
+    );
+    if (!text) return;
+
+    const newLessons = [];
+    for (const line of text.split('\n')) {
+        if (!line.trim()) continue;
+        const parts = line.split('|');
+        if (parts.length < 2) {
+            alert('Ошибка в строке: ' + line);
+            return;
+        }
+        newLessons.push({
+            time: parts[0].trim(),
+            subject: parts[1].trim(),
+            homework: (parts[2] || '').trim()
+        });
+    }
+    if (newLessons.length) {
+        scheduleData[currentDay] = newLessons;
+        saveSchedule();
+        renderSchedule();
+        alert('День обновлён!');
+    }
+}
+
+function renderDayButtons() {
+    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+    document.getElementById('daySwitch').innerHTML = days.map(d =>
+        `<button type="button" class="day-btn${currentDay === d ? ' active' : ''}" data-day="${d}">${d}</button>`
+    ).join('');
+
+    document.querySelectorAll('.day-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentDay = btn.dataset.day;
+            renderDayButtons();
+            renderSchedule();
+        });
+    });
+}
+
+loadSchedule();
+renderDayButtons();
+renderSchedule();
+document.getElementById('editAllDayBtn').addEventListener('click', editWholeDay);
+</script>
+</body>
+</html>

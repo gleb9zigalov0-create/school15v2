@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Техподдержка | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-support.css">
+</head>
+<body class="page-support">
+
+<div class="waves" aria-hidden="true"></div>
+<div class="waves w2" aria-hidden="true"></div>
+<div class="deco" aria-hidden="true">
+    <div class="bubble b1"></div>
+    <div class="bubble b2"></div>
+</div>
+
+<div class="page-wrap">
+    <div class="head">
+        <h1>🛠 Техподдержка</h1>
+        <p style="opacity:0.9;margin-top:0.4rem">Сайт школы №15 — поможем разобраться</p>
+    </div>
+
+    <div class="panel">
+        <div class="info">
+            Опиши проблему: не открывается страница, ошибка в расписании, идея для сайта.
+            Сообщения сохраняются в браузере.
+        </div>
+
+        <label class="lbl" for="contact">Как связаться (ник, Telegram)</label>
+        <input type="text" id="contact" placeholder="@username или Иван 5А">
+
+        <label class="lbl" for="message">Вопрос или проблема</label>
+        <textarea id="message" placeholder="Что случилось?"></textarea>
+
+        <div class="row">
+            <a href="index.html" class="back-btn">← На главную</a>
+            <button type="button" class="send" id="sendBtn">Отправить →</button>
+        </div>
+
+        <div id="myTickets"></div>
+    </div>
+
+    <footer class="site-footer">🏫 Школа №15 | Микрорайон Тырган, Прокопьевск</footer>
+</div>
+
+<script>
+const STORAGE_KEY = 'school15_support';
+
+function loadTickets() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+    catch (e) { return []; }
+}
+
+function saveTickets(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+function renderTickets() {
+    const box = document.getElementById('myTickets');
+    const list = loadTickets().slice(-3).reverse();
+    if (!list.length) {
+        box.innerHTML = '';
+        return;
+    }
+    box.innerHTML = '<p class="lbl" style="margin-top:1.25rem">Последние обращения:</p>' +
+        list.map(t => `
+            <div class="ticket">
+                <small>${t.date}</small>
+                <p><strong>${escapeHtml(t.contact)}</strong></p>
+                <p>${escapeHtml(t.message)}</p>
+            </div>
+        `).join('');
+}
+
+document.getElementById('sendBtn').addEventListener('click', () => {
+    const message = document.getElementById('message').value.trim();
+    if (!message) {
+        alert('Напиши вопрос!');
+        return;
+    }
+    const tickets = loadTickets();
+    tickets.push({
+        id: Date.now(),
+        contact: document.getElementById('contact').value.trim() || 'Аноним',
+        message: message,
+        date: new Date().toLocaleString('ru-RU')
+    });
+    saveTickets(tickets);
+    document.getElementById('message').value = '';
+    alert('Спасибо! Сообщение сохранено.');
+    renderTickets();
+});
+
+document.querySelector('.head h1').addEventListener('dblclick', () => {
+    if (prompt('Пароль администратора:') !== 'КИКИ99СССР') return;
+    const all = loadTickets();
+    alert(all.length
+        ? all.map((t, i) => (i + 1) + '. [' + t.date + '] ' + t.contact + '\n' + t.message).join('\n\n---\n\n')
+        : 'Обращений нет');
+});
+
+renderTickets();
+</script>
+</body>
+</html>

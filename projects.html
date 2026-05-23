@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проекты | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-projects.css">
+</head>
+<body class="page-projects">
+
+<div class="deco" aria-hidden="true">
+    <div class="hex h1"></div>
+    <div class="hex h2"></div>
+</div>
+
+<div class="page-wrap">
+    <div class="head">
+        <h1>🚀 Проекты учеников</h1>
+        <p style="opacity:0.85;margin-top:0.4rem">Нажми на карточку — откроются файлы из папки</p>
+    </div>
+
+    <div class="layout">
+        <aside class="sidebar">
+            <h3>🔍 Фильтр</h3>
+            <select id="typeFilter" class="filter-select">
+                <option value="all">Все</option>
+                <option value="Наука">🔬 Наука</option>
+                <option value="IT">💻 IT</option>
+                <option value="Искусство">🎨 Искусство</option>
+                <option value="Спорт">⚽ Спорт</option>
+                <option value="Волонтёрство">🤝 Волонтёрство</option>
+            </select>
+            <button type="button" class="btn" id="uploadBtn">➕ Загрузить проект</button>
+            <button type="button" class="btn red" id="moderateBtn">👑 Модерация</button>
+        </aside>
+        <div class="grid" id="projectsGrid"></div>
+    </div>
+
+    <div class="nav"><a href="index.html" class="back-btn">← На главную</a></div>
+    <footer class="site-footer">🏫 Школа №15 | Микрорайон Тырган, Прокопьевск</footer>
+</div>
+
+<script src="js/project-storage.js"></script>
+<script>
+let projects = [];
+const thumbCache = {};
+
+function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+async function loadProjects() {
+    projects = ProjectStorage.getProjects();
+    if (!projects.length) {
+        projects = [
+            { id: 1, title: 'Робот-помощник', type: 'IT', color: '#7dd3fc', image: '', description: 'Модель робота для школы', status: 'approved', hasFolder: false },
+            { id: 2, title: 'Экология Тыргана', type: 'Наука', color: '#bae6fd', image: '', description: 'Исследование воздуха в микрорайоне', status: 'approved', hasFolder: false }
+        ];
+        ProjectStorage.saveProjects(projects);
+    }
+    await renderProjects();
+}
+
+async function getCardImage(proj) {
+    if (proj.image) return proj.image;
+    if (thumbCache[proj.id]) return thumbCache[proj.id];
+    const thumb = await ProjectStorage.getThumbDataUrl(proj.id);
+    if (thumb) thumbCache[proj.id] = thumb;
+    return thumb || '';
+}
+
+async function renderProjects() {
+    const filter = document.getElementById('typeFilter').value;
+    const filtered = projects.filter(p =>
+        p.status === 'approved' && (filter === 'all' || p.type === filter)
+    );
+    const grid = document.getElementById('projectsGrid');
+
+    if (!filtered.length) {
+        grid.innerHTML = '<div class="empty">📭 Пока пусто. <a href="upload.html">Загрузи первый проект!</a></div>';
+        return;
+    }
+
+    grid.innerHTML = '';
+    for (const proj of filtered) {
+        const img = await getCardImage(proj);
+        const bg = img
+            ? `url('${img.replace(/'/g, '%27')}')`
+            : `linear-gradient(135deg, ${proj.color || '#bae6fd'}, #0ea5e9)`;
+
+        const card = document.createElement('div');
+        card.className = 'project-card';
+        card.innerHTML = `
+            <div class="card-image" style="background-image:${bg};background-size:cover"></div>
+            <div class="card-info" style="background:${proj.color || '#bae6fd'}">
+                <div class="type-badge">${escapeHtml(proj.type)}</div>
+                <h3>${escapeHtml(proj.title)}</h3>
+                <p>${escapeHtml((proj.description || '').length > 70 ? proj.description.slice(0, 70) + '…' : proj.description)}</p>
+                ${proj.hasFolder ? `<div class="folder-tag">📁 ${proj.fileCount || 0} файлов · ${escapeHtml(proj.folderName || 'папка')}</div>` : ''}
+            </div>`;
+        card.addEventListener('click', () => viewProject(proj.id));
+        grid.appendChild(card);
+    }
+}
+
+function viewProject(id) {
+    const proj = projects.find(p => p.id === id);
+    if (!proj) return;
+
+    if (proj.hasFolder) {
+        location.href = 'project-files.html?id=' + id;
+        return;
+    }
+    if (proj.file) {
+        if (confirm('Открыть ссылку на файл?')) {
+            window.open(proj.file, '_blank', 'noopener');
+        }
+        return;
+    }
+    alert('📁 ' + proj.title + '\n\n' + proj.description + '\n\nЗагрузи проект с папкой на странице «Загрузить».');
+}
+
+function moderate() {
+    if (prompt('Пароль модератора (КИКИ99СССР):') !== 'КИКИ99СССР') {
+        alert('Доступ запрещён');
+        return;
+    }
+
+    const pending = projects.filter(p => p.status === 'pending');
+    if (!pending.length) {
+        alert('Нет проектов на модерации ✅');
+        return;
+    }
+
+    let msg = '📋 НА МОДЕРАЦИИ:\n\n';
+    pending.forEach(p => {
+        msg += 'ID ' + p.id + ': ' + p.title + ' (' + p.type + ')\n';
+        if (p.hasFolder) msg += '   📁 ' + p.folderName + ', ' + p.fileCount + ' файлов\n';
+        msg += '   ' + p.description + '\n\n';
+    });
+    msg += 'Введи ID для одобрения или "удалить ID":';
+
+    const answer = prompt(msg);
+    if (!answer) return;
+
+    if (answer.toLowerCase().startsWith('удалить')) {
+        const id = parseInt(answer.split(/\s+/)[1], 10);
+        if (confirm('Удалить проект и все файлы?')) {
+            ProjectStorage.deleteProjectFiles(id);
+            projects = projects.filter(p => p.id !== id);
+            ProjectStorage.saveProjects(projects);
+            renderProjects();
+            alert('Удалено');
+        }
+    } else {
+        const p = projects.find(x => x.id === parseInt(answer, 10) && x.status === 'pending');
+        if (p) {
+            p.status = 'approved';
+            ProjectStorage.saveProjects(projects);
+            renderProjects();
+            alert('Проект «' + p.title + '» одобрен!');
+        } else {
+            alert('Неверный ID');
+        }
+    }
+}
+
+document.getElementById('uploadBtn').addEventListener('click', () => location.href = 'upload.html');
+document.getElementById('moderateBtn').addEventListener('click', moderate);
+document.getElementById('typeFilter').addEventListener('change', renderProjects);
+loadProjects();
+</script>
+</body>
+</html>

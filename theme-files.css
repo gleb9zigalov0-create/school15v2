@@ -1,0 +1,23 @@
+body.page-files {
+    background: linear-gradient(160deg, #0c4a6e, #38bdf8 70%, #e0f2fe);
+}
+.page-files .head { text-align: center; padding: 2rem 1rem 1rem; color: #fff; }
+.page-files .panel {
+    max-width: 720px; margin: 0 auto 2rem; padding: 1.5rem;
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(16px);
+    border-radius: 28px; border: 2px solid rgba(255,255,255,0.4);
+}
+.page-files .file-list { list-style: none; }
+.page-files .file-list li {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 0.75rem; padding: 0.85rem 1rem; margin-bottom: 0.5rem;
+    background: rgba(255,255,255,0.9); border-radius: 14px;
+}
+.page-files .name { font-weight: 600; color: #0c4a6e; flex: 1; word-break: break-all; }
+.page-files .meta { font-size: 0.8rem; color: #64748b; }
+.page-files .dl {
+    padding: 0.45rem 1rem; border: none; border-radius: 10px;
+    background: #0284c7; color: #fff; font-weight: 700; cursor: pointer;
+}
+.page-files .back-btn { background: #fff; color: #0369a1; display: inline-flex; margin: 1rem auto; }
+.page-files .site-footer { background: rgba(12,74,122,0.9); color: #e0f2fe; }
