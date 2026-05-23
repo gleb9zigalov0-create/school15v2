@@ -223,7 +223,7 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid, .attach-grid {
+        .sticker-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -238,24 +238,6 @@
             transition: 0.1s;
         }
         .sticker-img:hover { transform: scale(1.05); }
-        .attach-item {
-            text-align: center;
-            flex: 1;
-            min-width: 70px;
-            cursor: pointer;
-        }
-        .attach-icon {
-            font-size: 2.2rem;
-            filter: grayscale(100%);
-            opacity: 0.7;
-            transition: 0.1s;
-        }
-        .attach-icon:hover { opacity: 1; transform: scale(1.05); }
-        .attach-label {
-            font-size: 0.65rem;
-            color: #bbb;
-            margin-top: 0.3rem;
-        }
         .close-btn {
             background: #0a3f6f;
             color: white;
@@ -284,7 +266,6 @@
         <div class="input-panel">
             <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
-            <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
@@ -295,24 +276,6 @@
                     <div class="modal-title">✨ Стикеры</div>
                     <div id="stickerList" class="sticker-grid"></div>
                     <button class="close-btn" id="closeStickerBtn">Закрыть</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-wrapper" id="attachWrapper">
-            <div class="modal" id="attachModal">
-                <div class="modal-handle" id="attachHandle"></div>
-                <div class="modal-content-inner">
-                    <div class="modal-title">📎 Отправить</div>
-                    <div class="attach-grid">
-                        <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
-                        <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                        <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                        <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                        <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                        <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
-                    </div>
-                    <button class="close-btn" id="closeAttachBtn">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -402,17 +365,14 @@
         });
     }
 
-    let stickerClickEnabled = true;
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         const container = document.getElementById('stickerList');
         if (container) {
-            stickerClickEnabled = true;
             container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
             document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
                 img.onclick = (e) => {
                     e.stopPropagation();
-                    if (!stickerClickEnabled) return;
                     const url = img.getAttribute('data-sticker-url');
                     if (url) {
                         sendMessage('', url);
@@ -426,19 +386,12 @@
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
-        // Блокируем клики внутри модалки перед закрытием
-        modal.style.pointerEvents = 'none';
         modal.classList.remove('active');
-        // Возвращаем клики через полсекунды
-        setTimeout(() => {
-            if (modal) modal.style.pointerEvents = '';
-        }, 300);
     }
 
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
-        modal.style.pointerEvents = 'auto';
         modal.classList.add('active');
     }
 
@@ -514,28 +467,13 @@
         e.stopPropagation();
         closeModal('stickerModal');
     };
-    document.getElementById('closeAttachBtn').onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeModal('attachModal');
-    };
     
     initSwipeClose('stickerModal', 'stickerHandle');
-    initSwipeClose('attachModal', 'attachHandle');
 
     document.getElementById('stickerBtn').onclick = () => {
         loadStickers();
         openModal('stickerModal');
     };
-    document.getElementById('attachBtn').onclick = () => openModal('attachModal');
-    
-    document.querySelectorAll('.attach-item').forEach(el => {
-        el.onclick = (e) => {
-            e.stopPropagation();
-            alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-            closeModal('attachModal');
-        };
-    });
     
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
