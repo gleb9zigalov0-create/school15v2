@@ -50,18 +50,26 @@
         }
 
         .avatar-preview {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             background: #0a3f6f;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-weight: bold;
             text-transform: uppercase;
             margin: 0 auto;
+            overflow: hidden;
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
 
@@ -71,6 +79,7 @@
             padding: 0.4rem 1rem;
             border-radius: 40px;
             cursor: pointer;
+            font-weight: 500;
         }
 
         .form-group {
@@ -132,6 +141,16 @@
             margin-bottom: 1rem;
             display: none;
         }
+        .success-msg {
+            color: #2e7d64;
+            background: rgba(255,255,255,0.8);
+            border-radius: 40px;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -141,11 +160,15 @@
     <p style="margin-bottom:1rem">Измени имя или аватар</p>
 
     <div id="errorMsg" class="error-msg"></div>
+    <div id="successMsg" class="success-msg"></div>
 
     <div class="avatar-section">
-        <div class="avatar-preview" id="avatarPreview">?</div>
-        <input type="file" id="avatarInput" accept="image/*" style="display:none">
-        <button class="avatar-btn" id="changeAvatarBtn">📷 Загрузить аватар</button>
+        <div class="avatar-preview" id="avatarPreview" onclick="document.getElementById('avatarInput').click()">
+            ?
+        </div>
+        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none">
+        <button class="avatar-btn" id="changeAvatarBtn">📷 Загрузить новый аватар</button>
+        <small style="color:white; opacity:0.7;">Нажми на картинку или кнопку</small>
     </div>
 
     <div class="form-group">
@@ -170,39 +193,49 @@
     const storage = firebase.storage();
     let currentUser = null;
 
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-            return;
-        }
-        currentUser = user;
-        // Загружаем данные пользователя
-        const docSnap = await db.collection('users').doc(user.uid).get();
-        const data = docSnap.data() || {};
-        const userName = data.name || user.displayName || 'Ученик';
-        document.getElementById('userNameInput').value = userName;
-        document.getElementById('avatarPreview').textContent = userName.charAt(0).toUpperCase();
-
-        // Если есть аватар в Firestore
-        if (data.avatarUrl) {
-            const img = document.createElement('img');
-            img.src = data.avatarUrl;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.borderRadius = '50%';
-            img.style.objectFit = 'cover';
-            const preview = document.getElementById('avatarPreview');
-            preview.innerHTML = '';
-            preview.appendChild(img);
-        }
-    });
-
     function showError(msg) {
         const errDiv = document.getElementById('errorMsg');
         errDiv.textContent = msg;
         errDiv.style.display = 'block';
         setTimeout(() => errDiv.style.display = 'none', 4000);
     }
+
+    function showSuccess(msg) {
+        const sucDiv = document.getElementById('successMsg');
+        sucDiv.textContent = msg;
+        sucDiv.style.display = 'block';
+        setTimeout(() => sucDiv.style.display = 'none', 3000);
+    }
+
+    async function loadUserData() {
+        if (!currentUser) return;
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        const data = userDoc.data() || {};
+        
+        // Имя
+        const displayName = data.name || currentUser.displayName || 'Ученик';
+        document.getElementById('userNameInput').value = displayName;
+        
+        // Аватар
+        const preview = document.getElementById('avatarPreview');
+        if (data.avatarUrl) {
+            preview.innerHTML = `<img src="${data.avatarUrl}?t=${Date.now()}" alt="avatar">`;
+        } else {
+            preview.innerHTML = displayName.charAt(0).toUpperCase();
+            preview.style.background = '#0a3f6f';
+            preview.style.color = 'white';
+            preview.style.fontSize = '3rem';
+        }
+    }
+
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        currentUser = user;
+        await loadUserData();
+    });
 
     // Загрузка аватара
     document.getElementById('changeAvatarBtn').onclick = () => {
@@ -212,24 +245,35 @@
     document.getElementById('avatarInput').onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // Проверка размера (максимум 2 МБ)
+        if (file.size > 2 * 1024 * 1024) {
+            showError('Аватар слишком большой (макс. 2 МБ)');
+            return;
+        }
+        
+        // Проверка типа
+        if (!file.type.startsWith('image/')) {
+            showError('Можно загружать только картинки (JPEG, PNG, GIF, WEBP)');
+            return;
+        }
+
         try {
+            showError('⏳ Загрузка...');
             const storageRef = storage.ref().child(`avatars/${currentUser.uid}.jpg`);
             await storageRef.put(file);
             const avatarUrl = await storageRef.getDownloadURL();
-            // Обновляем в Firestore
+            
+            // Сохраняем в Firestore
             await db.collection('users').doc(currentUser.uid).set({ avatarUrl }, { merge: true });
+            
             // Обновляем превью
             const preview = document.getElementById('avatarPreview');
-            preview.innerHTML = '';
-            const img = document.createElement('img');
-            img.src = avatarUrl;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.borderRadius = '50%';
-            img.style.objectFit = 'cover';
-            preview.appendChild(img);
+            preview.innerHTML = `<img src="${avatarUrl}?t=${Date.now()}" alt="avatar">`;
+            showSuccess('✅ Аватар загружен! Не забудь сохранить изменения.');
         } catch (err) {
-            showError('Ошибка загрузки аватара');
+            console.error(err);
+            showError('Ошибка загрузки аватара: ' + err.message);
         }
     };
 
@@ -240,16 +284,25 @@
             showError('Имя не может быть пустым');
             return;
         }
+        
         try {
-            // Обновляем в Firebase Auth (displayName)
+            // Обновляем в Auth (displayName)
             await currentUser.updateProfile({ displayName: newName });
-            // Обновляем в Firestore
+            // Обновляем в Firestore users
             await db.collection('users').doc(currentUser.uid).set({ name: newName }, { merge: true });
-            // Обновляем статус в коллекции status (для отображения в левой панели)
+            // Обновляем в status (для левой панели)
             await db.collection('status').doc(currentUser.uid).set({ name: newName }, { merge: true });
-            alert('✅ Имя успешно обновлено!');
+            
+            showSuccess('✅ Имя успешно обновлено!');
+            
+            // Обновляем превью аватара (если нет картинки, показываем первую букву)
+            const preview = document.getElementById('avatarPreview');
+            const userData = (await db.collection('users').doc(currentUser.uid).get()).data();
+            if (!userData?.avatarUrl) {
+                preview.innerHTML = newName.charAt(0).toUpperCase();
+            }
         } catch (err) {
-            showError('Ошибка сохранения имени');
+            showError('Ошибка сохранения имени: ' + err.message);
         }
     };
 </script>
