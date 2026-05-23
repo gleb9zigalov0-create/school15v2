@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
+        /* ========== ОСНОВНОЙ СТИЛЬ (твой, без изменений) ========== */
         * {
             margin: 0;
             padding: 0;
@@ -343,7 +343,7 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ -->
+        <!-- МОДАЛКА СТИКЕРОВ (КОПИЯ СКРЕПКИ) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -459,83 +459,117 @@
 
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
-        const container = document.getElementById('stickerList');
-        if (container) {
-            container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="window.sendSticker('${s}')">`).join('');
-        }
+        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
     }
-    
-    window.sendSticker = (url) => {
-        sendMessage('', url);
-        closeModal('stickerModal');
-    };
+    window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
 
+    // ========== ФУНКЦИИ МОДАЛОК (работают как у скрепки) ==========
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (modal) modal.classList.remove('active');
+        if (!modal) return;
+        modal.classList.remove('active');
     }
 
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
-        if (modal) modal.classList.add('active');
+        if (!modal) return;
+        modal.classList.add('active');
+    }
+
+    // Закрытие по серой полоске (свайп вниз)
+    function initSwipeClose(modalId, handleId) {
+        const modal = document.getElementById(modalId);
+        const handle = document.getElementById(handleId);
+        if (!modal || !handle) return;
+        
+        let startY = 0;
+        let startTransform = 0;
+        
+        const onTouchStart = (e) => {
+            startY = e.touches[0].clientY;
+            const transform = modal.style.transform;
+            if (transform && transform.includes('translateY')) {
+                startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
+            } else {
+                startTransform = 0;
+            }
+        };
+        
+        const onTouchMove = (e) => {
+            const delta = e.touches[0].clientY - startY;
+            if (delta > 0) {
+                modal.style.transform = `translateY(${startTransform + delta}px)`;
+                modal.style.opacity = '0.7';
+            }
+        };
+        
+        const onTouchEnd = (e) => {
+            const delta = e.changedTouches[0].clientY - startY;
+            if (delta > 80) {
+                closeModal(modalId);
+            }
+            modal.style.transform = '';
+            modal.style.opacity = '';
+        };
+        
+        handle.addEventListener('touchstart', onTouchStart);
+        handle.addEventListener('touchmove', onTouchMove);
+        handle.addEventListener('touchend', onTouchEnd);
+        
+        // Для мыши
+        handle.addEventListener('mousedown', (e) => {
+            startY = e.clientY;
+            const onMouseMove = (moveEvent) => {
+                const delta = moveEvent.clientY - startY;
+                if (delta > 0) {
+                    modal.style.transform = `translateY(${delta}px)`;
+                    modal.style.opacity = '0.7';
+                }
+            };
+            const onMouseUp = (upEvent) => {
+                const delta = upEvent.clientY - startY;
+                if (delta > 80) {
+                    closeModal(modalId);
+                }
+                modal.style.transform = '';
+                modal.style.opacity = '';
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
     }
 
     // Кнопки закрытия
-    const closeStickerBtn = document.getElementById('closeStickerBtn');
-    const closeAttachBtn = document.getElementById('closeAttachBtn');
+    document.getElementById('closeStickerBtn').onclick = (e) => {
+        e.preventDefault();
+        closeModal('stickerModal');
+    };
+    document.getElementById('closeAttachBtn').onclick = (e) => {
+        e.preventDefault();
+        closeModal('attachModal');
+    };
     
-    if (closeStickerBtn) {
-        closeStickerBtn.onclick = (e) => {
-            e.preventDefault();
-            closeModal('stickerModal');
-        };
-    }
-    
-    if (closeAttachBtn) {
-        closeAttachBtn.onclick = (e) => {
-            e.preventDefault();
-            closeModal('attachModal');
-        };
-    }
+    // Инициализация свайпа для обеих модалок
+    initSwipeClose('stickerModal', 'stickerHandle');
+    initSwipeClose('attachModal', 'attachHandle');
 
     // Открытие модалок
-    const stickerBtn = document.getElementById('stickerBtn');
-    const attachBtn = document.getElementById('attachBtn');
+    document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
+    document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
-    if (stickerBtn) {
-        stickerBtn.onclick = () => {
-            loadStickers();
-            openModal('stickerModal');
-        };
-    }
-    
-    if (attachBtn) {
-        attachBtn.onclick = () => openModal('attachModal');
-    }
-    
-    // Элементы скрепки
     document.querySelectorAll('.attach-item').forEach(el => {
-        el.onclick = () => {
-            alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-            closeModal('attachModal');
-        };
+        el.onclick = () => { alert(`📎 Отправка ${el.dataset.type} — в разработке`); closeModal('attachModal'); };
     });
     
-    // Отправка сообщения
-    const sendBtn = document.getElementById('sendBtn');
-    if (sendBtn) {
-        sendBtn.onclick = () => {
-            const inp = document.getElementById('messageInput');
-            if (inp.value.trim()) sendMessage(inp.value);
-            inp.value = '';
-        };
-    }
+    document.getElementById('sendBtn').onclick = () => {
+        const inp = document.getElementById('messageInput');
+        if (inp.value.trim()) sendMessage(inp.value);
+        inp.value = '';
+    };
     
-    // Настройки
-    const settingsButton = document.getElementById('settingsBtn');
-    if (settingsButton) {
-        settingsButton.onclick = () => window.location.href = 'settings.html';
-    }
+    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
 </script>
 </body>
 </html>
