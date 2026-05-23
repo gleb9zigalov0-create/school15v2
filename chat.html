@@ -166,15 +166,13 @@
             margin: 15px 0 10px;
             font-weight: bold;
         }
-        /* Область сообщений */
+        /* Область сообщений — без фоновой картинки */
         .messages-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background-image: url('images/fon.jpg');
-            background-size: cover;
-            background-position: center;
+            background: transparent;
         }
         .messages-list {
             flex: 1;
@@ -183,7 +181,6 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: rgba(255,255,255,0.2);
         }
         .message {
             display: flex;
@@ -398,7 +395,7 @@
         const div = document.createElement('div');
         div.className = `message ${isMine ? 'mine' : ''}`;
         div.innerHTML = `
-            <div class="msg-avatar">${data.avatar || '😎'}</div>
+            <div class="msg-avatar">${escapeHtml(data.avatar) || '😎'}</div>
             <div class="msg-bubble">
                 <div class="msg-name">${escapeHtml(data.displayName)}</div>
                 ${data.sticker ? `<img src="${data.sticker}" class="msg-sticker">` : `<div class="msg-text">${escapeHtml(data.text)}</div>`}
@@ -408,7 +405,10 @@
         return div;
     }
 
-    function escapeHtml(s) { return s?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]) || ''; }
+    function escapeHtml(s) { 
+        if (!s) return '';
+        return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); 
+    }
 
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
@@ -428,7 +428,7 @@
                 snap.forEach(doc => container.appendChild(renderMessage(doc)));
                 container.scrollTop = container.scrollHeight;
             });
-            document.getElementById('membersList').innerHTML = `<div class="member-item"><span class="msg-avatar" style="width:32px;height:32px;">${user.photoURL || '😎'}</span><span>${escapeHtml(user.displayName || user.email)}</span></div>`;
+            document.getElementById('membersList').innerHTML = `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><div class="msg-avatar" style="width:32px;height:32px;">${escapeHtml(user.photoURL) || '😎'}</div><div>${escapeHtml(user.displayName || user.email)}</div></div>`;
         } else {
             document.getElementById('modal').classList.remove('hidden');
             document.getElementById('chatScreen').classList.add('hidden');
