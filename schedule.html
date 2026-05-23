@@ -6,6 +6,7 @@
     <title>5А — Расписание | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="theme-schedule.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 <body class="page-schedule">
 
@@ -26,168 +27,208 @@
         <div id="scheduleContainer"></div>
         <div class="bottom-row">
             <a href="index.html" class="back-btn">← На главную</a>
-            <button type="button" class="admin-btn" id="editAllDayBtn">✏️ Редактировать день</button>
+            <button type="button" class="admin-btn" id="editAllDayBtn">🛠 Конструктор (перетаскивание/правка)</button>
         </div>
-        <p class="hint">Нажми на ДЗ, чтобы изменить (пароль: КИКИ99СССР)</p>
+        <p class="hint">🔐 Пароль: <strong>КИКИ99СССР</strong> | Перетаскивай уроки за ⋮⋮, меняй время и ДЗ</p>
     </div>
 
     <footer class="site-footer">🏫 Школа №15 | Микрорайон Тырган, Прокопьевск</footer>
 </div>
 
-<script>
-let scheduleData = {
-    'ПН': [
-        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 145, стр. 78-79 (выучить правила)' },
-        { time: '9:50-10:30', subject: 'Математика', homework: '№ 567, 568 (а,б) стр. 112' },
-        { time: '10:50-11:30', subject: 'Литература', homework: 'Прочитать главы 3-5, ответить на вопросы' },
-        { time: '11:50-12:30', subject: 'Английский', homework: 'WB стр. 34-35, выучить слова (15 шт)' },
-        { time: '12:50-13:30', subject: 'История', homework: '§12 пересказ, термины выучить' }
-    ],
-    'ВТ': [
-        { time: '9:00-9:40', subject: 'Математика', homework: '№ 572, 574, стр. 115' },
-        { time: '9:50-10:30', subject: 'Русский язык', homework: 'Упр. 148, подготовиться к словарному диктанту' },
-        { time: '10:50-11:30', subject: 'Биология', homework: '§15, рисунок в тетради' },
-        { time: '11:50-12:30', subject: 'География', homework: 'Контурная карта стр. 8-9' },
-        { time: '12:50-13:30', subject: 'Физкультура', homework: 'форма, кросс 500 м' }
-    ],
-    'СР': [
-        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 152, разбор слов по составу' },
-        { time: '9:50-10:30', subject: 'Математика', homework: '№ 579, 581, стр. 118' },
-        { time: '10:50-11:30', subject: 'ИЗО', homework: 'Нарисовать осенний пейзаж (акварель)' },
-        { time: '11:50-12:30', subject: 'Английский', homework: 'SB стр. 42-43, упр. 5,7' },
-        { time: '12:50-13:30', subject: 'ОДНКНР', homework: 'Сообщение о традициях' }
-    ],
-    'ЧТ': [
-        { time: '9:00-9:40', subject: 'Математика', homework: '№ 584, 586 (в,г), стр. 120' },
-        { time: '9:50-10:30', subject: 'Литература', homework: 'Сочинение по прочитанному' },
-        { time: '10:50-11:30', subject: 'История', homework: '§13 таблица "События"' },
-        { time: '11:50-12:30', subject: 'Технология', homework: 'доделать разделочную доску' },
-        { time: '12:50-13:30', subject: 'ОБЗР', homework: '§4, вопросы 1-4 устно' }
-    ],
-    'ПТ': [
-        { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 156, подготовиться к контрольной' },
-        { time: '9:50-10:30', subject: 'Математика', homework: 'Повторение № 590, 592' },
-        { time: '10:50-11:30', subject: 'Музыка', homework: 'слушать классику, заполнить дневник' },
-        { time: '11:50-12:30', subject: 'Физкультура', homework: 'форма, подтягивание' },
-        { time: '12:50-13:30', subject: 'Английский', homework: 'WB стр. 36-37' }
-    ],
-    'СБ': [
-        { time: '9:00-9:40', subject: 'Математика', homework: '№ 595, 598 (факультатив)' },
-        { time: '9:50-10:30', subject: 'Русский язык', homework: 'Тесты в РЭШ' },
-        { time: '10:50-11:30', subject: 'Классный час', homework: 'портфолио на понедельник' }
-    ]
-};
+<script src="js/firebase-config.js"></script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
-let currentDay = 'ПН';
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-function loadSchedule() {
-    const saved = localStorage.getItem('schedule5A');
-    if (saved) {
-        try { scheduleData = JSON.parse(saved); } catch (e) {}
-    }
-}
+    let scheduleData = {};
+    let currentDay = 'ПН';
+    let sortableInstance = null;
+    let isEditMode = false;
 
-function saveSchedule() {
-    localStorage.setItem('schedule5A', JSON.stringify(scheduleData));
-}
-
-function renderSchedule() {
-    const container = document.getElementById('scheduleContainer');
-    const lessons = scheduleData[currentDay];
-
-    if (!lessons || !lessons.length) {
-        container.innerHTML = '<div class="schedule-card" style="text-align:center;padding:2rem">Нет уроков</div>';
-        return;
-    }
-
-    let html = '<div class="schedule-card">';
-    lessons.forEach((lesson, idx) => {
-        html += `
-            <div class="lesson-item">
-                <div class="time-badge">${lesson.time}</div>
-                <div class="subject-name">${lesson.subject}</div>
-                <div class="hw-row">
-                    <div class="hw-text" data-day="${currentDay}" data-idx="${idx}">${lesson.homework || '—'}</div>
-                    <button type="button" class="hw-btn" data-day="${currentDay}" data-idx="${idx}">✏️</button>
-                </div>
-            </div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-
-    container.querySelectorAll('.hw-text, .hw-btn').forEach(el => {
-        el.addEventListener('click', () => {
-            editHomework(el.dataset.day, parseInt(el.dataset.idx, 10));
-        });
-    });
-}
-
-function editHomework(day, idx) {
-    if (prompt('Пароль для изменения ДЗ:') !== 'КИКИ99СССР') {
-        alert('Неверный пароль!');
-        return;
-    }
-    const neu = prompt('Новое домашнее задание:', scheduleData[day][idx].homework || '');
-    if (neu !== null) {
-        scheduleData[day][idx].homework = neu.trim();
-        saveSchedule();
+    // Загрузка из Firebase
+    async function loadSchedule() {
+        const docRef = doc(db, "schedule", "5A");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            scheduleData = docSnap.data();
+        } else {
+            // Дефолтное расписание (твоё)
+            scheduleData = {
+                'ПН': [
+                    { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 145, стр. 78-79 (выучить правила)' },
+                    { time: '9:50-10:30', subject: 'Математика', homework: '№ 567, 568 (а,б) стр. 112' },
+                    { time: '10:50-11:30', subject: 'Литература', homework: 'Прочитать главы 3-5, ответить на вопросы' },
+                    { time: '11:50-12:30', subject: 'Английский', homework: 'WB стр. 34-35, выучить слова (15 шт)' },
+                    { time: '12:50-13:30', subject: 'История', homework: '§12 пересказ, термины выучить' }
+                ],
+                'ВТ': [
+                    { time: '9:00-9:40', subject: 'Математика', homework: '№ 572, 574, стр. 115' },
+                    { time: '9:50-10:30', subject: 'Русский язык', homework: 'Упр. 148, подготовиться к словарному диктанту' },
+                    { time: '10:50-11:30', subject: 'Биология', homework: '§15, рисунок в тетради' },
+                    { time: '11:50-12:30', subject: 'География', homework: 'Контурная карта стр. 8-9' },
+                    { time: '12:50-13:30', subject: 'Физкультура', homework: 'форма, кросс 500 м' }
+                ],
+                'СР': [
+                    { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 152, разбор слов по составу' },
+                    { time: '9:50-10:30', subject: 'Математика', homework: '№ 579, 581, стр. 118' },
+                    { time: '10:50-11:30', subject: 'ИЗО', homework: 'Нарисовать осенний пейзаж (акварель)' },
+                    { time: '11:50-12:30', subject: 'Английский', homework: 'SB стр. 42-43, упр. 5,7' },
+                    { time: '12:50-13:30', subject: 'ОДНКНР', homework: 'Сообщение о традициях' }
+                ],
+                'ЧТ': [
+                    { time: '9:00-9:40', subject: 'Математика', homework: '№ 584, 586 (в,г), стр. 120' },
+                    { time: '9:50-10:30', subject: 'Литература', homework: 'Сочинение по прочитанному' },
+                    { time: '10:50-11:30', subject: 'История', homework: '§13 таблица "События"' },
+                    { time: '11:50-12:30', subject: 'Технология', homework: 'доделать разделочную доску' },
+                    { time: '12:50-13:30', subject: 'ОБЗР', homework: '§4, вопросы 1-4 устно' }
+                ],
+                'ПТ': [
+                    { time: '9:00-9:40', subject: 'Русский язык', homework: 'Упр. 156, подготовиться к контрольной' },
+                    { time: '9:50-10:30', subject: 'Математика', homework: 'Повторение № 590, 592' },
+                    { time: '10:50-11:30', subject: 'Музыка', homework: 'слушать классику, заполнить дневник' },
+                    { time: '11:50-12:30', subject: 'Физкультура', homework: 'форма, подтягивание' },
+                    { time: '12:50-13:30', subject: 'Английский', homework: 'WB стр. 36-37' }
+                ],
+                'СБ': [
+                    { time: '9:00-9:40', subject: 'Математика', homework: '№ 595, 598 (факультатив)' },
+                    { time: '9:50-10:30', subject: 'Русский язык', homework: 'Тесты в РЭШ' },
+                    { time: '10:50-11:30', subject: 'Классный час', homework: 'портфолио на понедельник' }
+                ]
+            };
+        }
         renderSchedule();
-        alert('ДЗ обновлено!');
     }
-}
 
-function editWholeDay() {
-    if (prompt('Пароль:') !== 'КИКИ99СССР') {
-        alert('Неверный пароль!');
-        return;
+    async function saveToFirebase() {
+        try {
+            await setDoc(doc(db, "schedule", "5A"), scheduleData);
+            alert("✅ Расписание сохранено в Firebase!");
+        } catch(e) {
+            alert("Ошибка сохранения: " + e.message);
+        }
     }
-    const text = prompt(
-        'Формат: время | предмет | ДЗ\nКаждый урок с новой строки.',
-        scheduleData[currentDay].map(l => l.time + ' | ' + l.subject + ' | ' + l.homework).join('\n')
-    );
-    if (!text) return;
 
-    const newLessons = [];
-    for (const line of text.split('\n')) {
-        if (!line.trim()) continue;
-        const parts = line.split('|');
-        if (parts.length < 2) {
-            alert('Ошибка в строке: ' + line);
+    function renderSchedule() {
+        const container = document.getElementById('scheduleContainer');
+        const lessons = scheduleData[currentDay] || [];
+
+        if (!lessons.length) {
+            container.innerHTML = '<div class="schedule-card" style="text-align:center;padding:2rem">Нет уроков. Добавь первый!</div>';
             return;
         }
-        newLessons.push({
-            time: parts[0].trim(),
-            subject: parts[1].trim(),
-            homework: (parts[2] || '').trim()
+
+        let html = '<div class="schedule-card" id="lessonsList">';
+        lessons.forEach((lesson, idx) => {
+            if (isEditMode) {
+                html += `
+                    <div class="lesson-item" data-idx="${idx}">
+                        <div class="drag-handle" style="cursor:grab; margin-right:8px;">⋮⋮</div>
+                        <input type="text" class="time-input" value="${lesson.time}" style="width:100px; margin-right:8px; border-radius:30px; padding:4px 8px; border:1px solid #ccc;">
+                        <div class="subject-name" style="min-width:130px;">${lesson.subject}</div>
+                        <input type="text" class="hw-input" value="${escapeHtml(lesson.homework)}" style="flex:1; margin:0 8px; border-radius:30px; padding:6px 12px; border:1px solid #ccc;">
+                        <button class="del-lesson-btn" data-idx="${idx}" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🗑️</button>
+                    </div>`;
+            } else {
+                html += `
+                    <div class="lesson-item">
+                        <div class="time-badge">${lesson.time}</div>
+                        <div class="subject-name">${lesson.subject}</div>
+                        <div class="hw-row">
+                            <div class="hw-text">${lesson.homework || '—'}</div>
+                        </div>
+                    </div>`;
+            }
+        });
+        html += '</div>';
+        if (isEditMode && lessons.length) {
+            html += `<button id="addLessonBtn" style="margin-top:12px; padding:8px 16px; border-radius:40px; background:#0a3f6f; color:white; border:none; cursor:pointer;">+ Добавить урок</button>`;
+        }
+        container.innerHTML = html;
+
+        if (isEditMode) {
+            document.querySelectorAll('.time-input').forEach((input, i) => {
+                input.addEventListener('change', (e) => {
+                    scheduleData[currentDay][i].time = e.target.value;
+                });
+            });
+            document.querySelectorAll('.hw-input').forEach((input, i) => {
+                input.addEventListener('change', (e) => {
+                    scheduleData[currentDay][i].homework = e.target.value;
+                });
+            });
+            document.querySelectorAll('.del-lesson-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const idx = parseInt(btn.dataset.idx);
+                    scheduleData[currentDay].splice(idx, 1);
+                    renderSchedule();
+                    initSortable();
+                });
+            });
+            const addBtn = document.getElementById('addLessonBtn');
+            if (addBtn) {
+                addBtn.addEventListener('click', () => {
+                    scheduleData[currentDay].push({ time: "12:00-12:45", subject: "Новый урок", homework: "" });
+                    renderSchedule();
+                    initSortable();
+                });
+            }
+            initSortable();
+        }
+    }
+
+    function initSortable() {
+        const container = document.getElementById('lessonsList');
+        if (!container) return;
+        if (sortableInstance) sortableInstance.destroy();
+        sortableInstance = new Sortable(container, {
+            handle: '.drag-handle',
+            animation: 200,
+            onEnd: () => {
+                const newOrder = [];
+                document.querySelectorAll('.lesson-item').forEach(item => {
+                    const idx = parseInt(item.dataset.idx);
+                    if (!isNaN(idx)) newOrder.push(scheduleData[currentDay][idx]);
+                });
+                if (newOrder.length) scheduleData[currentDay] = newOrder;
+                renderSchedule();
+                initSortable();
+            }
         });
     }
-    if (newLessons.length) {
-        scheduleData[currentDay] = newLessons;
-        saveSchedule();
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+
+    function renderDayButtons() {
+        const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+        document.getElementById('daySwitch').innerHTML = days.map(d =>
+            `<button type="button" class="day-btn${currentDay === d ? ' active' : ''}" data-day="${d}">${d}</button>`
+        ).join('');
+        document.querySelectorAll('.day-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentDay = btn.dataset.day;
+                renderDayButtons();
+                renderSchedule();
+            });
+        });
+    }
+
+    document.getElementById('editAllDayBtn').addEventListener('click', async () => {
+        const pwd = prompt("Введите пароль для входа в конструктор:");
+        if (pwd !== "КИКИ99СССР") { alert("Неверный пароль!"); return; }
+        isEditMode = !isEditMode;
         renderSchedule();
-        alert('День обновлён!');
-    }
-}
-
-function renderDayButtons() {
-    const days = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
-    document.getElementById('daySwitch').innerHTML = days.map(d =>
-        `<button type="button" class="day-btn${currentDay === d ? ' active' : ''}" data-day="${d}">${d}</button>`
-    ).join('');
-
-    document.querySelectorAll('.day-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            currentDay = btn.dataset.day;
-            renderDayButtons();
-            renderSchedule();
-        });
+        if (!isEditMode) await saveToFirebase();
+        document.getElementById('editAllDayBtn').textContent = isEditMode ? "💾 Выйти и сохранить" : "🛠 Конструктор (перетаскивание/правка)";
     });
-}
 
-loadSchedule();
-renderDayButtons();
-renderSchedule();
-document.getElementById('editAllDayBtn').addEventListener('click', editWholeDay);
+    renderDayButtons();
+    loadSchedule();
 </script>
 </body>
 </html>
