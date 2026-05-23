@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загрузка проекта | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-upload.css">
+</head>
+<body class="page-upload">
+
+<div class="radar" aria-hidden="true"></div>
+<div class="stack" aria-hidden="true"><span></span><span></span><span></span></div>
+
+<div class="page-wrap">
+    <div class="head">
+        <h1>📤 Загрузить проект</h1>
+        <p style="opacity:0.85;margin-top:0.5rem">Выбери <strong>папку</strong> с компьютера — все файлы сохранятся в браузере</p>
+    </div>
+
+    <div class="panel">
+        <label class="lbl" for="title">Название</label>
+        <input type="text" id="title" placeholder="Умная теплица">
+
+        <label class="lbl" for="type">Тип</label>
+        <select id="type">
+            <option value="Наука">🔬 Наука</option>
+            <option value="IT">💻 IT</option>
+            <option value="Искусство">🎨 Искусство</option>
+            <option value="Спорт">⚽ Спорт</option>
+            <option value="Волонтёрство">🤝 Волонтёрство</option>
+        </select>
+
+        <label class="lbl" for="desc">Описание</label>
+        <textarea id="desc" rows="3" placeholder="О чём проект?"></textarea>
+
+        <label class="lbl" for="color">Цвет карточки</label>
+        <input type="color" id="color" value="#7dd3fc">
+        <div class="color-box" id="colorPreview" style="background:#7dd3fc"></div>
+
+        <label class="lbl">Папка с проектом</label>
+        <div class="folder-zone" id="folderZone">
+            <div style="font-size:3rem">📁</div>
+            <p id="folderText"><strong>Нажми сюда</strong> и выбери папку</p>
+            <small>До ~80 МБ · один файл до 20 МБ</small>
+            <input type="file" id="folderInput" webkitdirectory directory multiple>
+        </div>
+        <ul class="file-list" id="fileList"></ul>
+
+        <label class="lbl" for="coverInput">Обложка (необязательно)</label>
+        <input type="file" id="coverInput" accept="image/*">
+
+        <button type="button" class="submit" id="submitBtn">🚀 Отправить на модерацию</button>
+        <div class="actions">
+            <a href="projects.html" class="back-btn">← К проектам</a>
+            <a href="index.html" class="back-btn">🏠 Главная</a>
+        </div>
+    </div>
+
+    <footer class="site-footer">Файлы хранятся только в этом браузере на этом компьютере</footer>
+</div>
+
+<script src="js/project-storage.js"></script>
+<script>
+let selectedFiles = null;
+let coverFile = null;
+
+const zone = document.getElementById('folderZone');
+const folderInput = document.getElementById('folderInput');
+const fileList = document.getElementById('fileList');
+
+zone.addEventListener('click', () => folderInput.click());
+
+folderInput.addEventListener('change', () => {
+    selectedFiles = folderInput.files;
+    if (!selectedFiles.length) return;
+    zone.classList.add('ok');
+    const name = selectedFiles[0].webkitRelativePath.split('/')[0];
+    document.getElementById('folderText').innerHTML = '<strong>' + name + '</strong><br>' + selectedFiles.length + ' файлов';
+    fileList.classList.add('show');
+    fileList.innerHTML = Array.from(selectedFiles).slice(0, 40).map(f =>
+        '<li>📄 ' + (f.webkitRelativePath || f.name) + '</li>'
+    ).join('') + (selectedFiles.length > 40 ? '<li>…и ещё ' + (selectedFiles.length - 40) + '</li>' : '');
+});
+
+document.getElementById('color').addEventListener('input', (e) => {
+    document.getElementById('colorPreview').style.background = e.target.value;
+});
+
+document.getElementById('coverInput').addEventListener('change', (e) => {
+    coverFile = e.target.files[0] || null;
+});
+
+document.getElementById('submitBtn').addEventListener('click', async () => {
+    const title = document.getElementById('title').value.trim();
+    const type = document.getElementById('type').value;
+    const desc = document.getElementById('desc').value.trim();
+    const color = document.getElementById('color').value;
+    const btn = document.getElementById('submitBtn');
+
+    if (!title || !desc) {
+        alert('Заполни название и описание!');
+        return;
+    }
+    if (!selectedFiles || !selectedFiles.length) {
+        alert('Выбери папку — нажми на зону 📁');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Сохраняем…';
+    const id = Date.now();
+
+    try {
+        const info = await ProjectStorage.saveProjectFolder(id, selectedFiles);
+        let image = await ProjectStorage.getThumbDataUrl(id);
+
+        if (coverFile) {
+            image = await new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(r.result);
+                r.onerror = reject;
+                r.readAsDataURL(coverFile);
+            });
+        }
+
+        const projects = ProjectStorage.getProjects();
+        projects.push({
+            id, title, type,
+            description: desc,
+            color,
+            image: image || '',
+            file: '',
+            status: 'pending',
+            hasFolder: true,
+            folderName: info.folderName,
+            fileCount: info.fileCount,
+            totalSize: info.totalSize
+        });
+        ProjectStorage.saveProjects(projects);
+
+        alert('✅ Проект и папка сохранены! Ждёт модерации.');
+        location.href = 'projects.html';
+    } catch (err) {
+        alert('Ошибка: ' + (err.message || err));
+        btn.disabled = false;
+        btn.textContent = '🚀 Отправить на модерацию';
+    }
+});
+</script>
+</body>
+</html>

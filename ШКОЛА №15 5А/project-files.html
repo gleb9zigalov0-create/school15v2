@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Файлы проекта | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-files.css">
+</head>
+<body class="page-files">
+
+<div class="page-wrap">
+    <div class="head">
+        <h1 id="pageTitle">📂 Файлы проекта</h1>
+        <p id="pageSub" style="opacity:0.9;margin-top:0.5rem"></p>
+    </div>
+
+    <div class="panel">
+        <ul class="file-list" id="fileList"><li>Загрузка…</li></ul>
+    </div>
+
+    <div style="text-align:center;padding:0 1rem 2rem">
+        <a href="projects.html" class="back-btn">← К проектам</a>
+    </div>
+
+    <footer class="site-footer">🏫 Школа №15 — скачивание файлов из сохранённой папки</footer>
+</div>
+
+<script src="js/project-storage.js"></script>
+<script>
+const projectId = parseInt(new URLSearchParams(location.search).get('id'), 10);
+
+function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+(async function () {
+    const listEl = document.getElementById('fileList');
+
+    if (!projectId) {
+        listEl.innerHTML = '<li>Неверная ссылка</li>';
+        return;
+    }
+
+    const proj = ProjectStorage.getProjects().find(p => p.id === projectId);
+    if (!proj) {
+        listEl.innerHTML = '<li>Проект не найден</li>';
+        return;
+    }
+
+    document.getElementById('pageTitle').textContent = '📂 ' + proj.title;
+    document.getElementById('pageSub').textContent =
+        (proj.folderName || 'Папка') + ' · ' + (proj.fileCount || '?') + ' файлов';
+
+    const files = await ProjectStorage.listProjectFiles(projectId);
+    if (!files.length) {
+        listEl.innerHTML = '<li>Файлов нет (старый проект только со ссылкой)</li>';
+        return;
+    }
+
+    listEl.innerHTML = files.map(f => `
+        <li>
+            <span class="name">${escapeHtml(f.path)}</span>
+            <span class="meta">${ProjectStorage.formatSize(f.size)}</span>
+            <button class="dl" data-path="${encodeURIComponent(f.path)}">Скачать</button>
+        </li>
+    `).join('');
+
+    listEl.querySelectorAll('.dl').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const path = decodeURIComponent(btn.dataset.path);
+            const record = await ProjectStorage.getFileRecord(projectId, path);
+            if (record) ProjectStorage.downloadRecord(record);
+        });
+    });
+})();
+</script>
+</body>
+</html>
