@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
+        /* ========== ОСНОВНОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -175,7 +175,7 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКИ ========== */
+        /* ========== МОДАЛКИ (ОБЕ ОДИНАКОВЫЕ, КАК РАБОТАЛО) ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -284,10 +284,8 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <!-- 😊 - стикеры -->
             <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
-            <!-- 📎 - скрепка -->
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
@@ -408,7 +406,7 @@
         });
     }
 
-    // ========== СТИКЕРЫ ==========
+    // СТИКЕРЫ
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         const container = document.getElementById('stickerList');
@@ -426,7 +424,6 @@
         }
     }
 
-    // ========== ОБЩИЕ ФУНКЦИИ МОДАЛОК ==========
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -495,7 +492,6 @@
         });
     }
 
-    // Кнопки закрытия
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -508,7 +504,6 @@
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
-    // Открытие модалок
     document.getElementById('stickerBtn').onclick = () => {
         loadStickers();
         openModal('stickerModal');
