@@ -66,6 +66,8 @@
             cursor: pointer;
             border: 3px solid white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            background-size: cover;
+            background-position: center;
         }
         .avatar-preview img {
             width: 100%;
@@ -131,9 +133,7 @@
             font-weight: 500;
         }
 
-        .error-msg {
-            color: #e94560;
-            background: rgba(255,255,255,0.8);
+        .error-msg, .success-msg {
             border-radius: 40px;
             padding: 0.4rem 1rem;
             font-size: 0.8rem;
@@ -141,16 +141,8 @@
             margin-bottom: 1rem;
             display: none;
         }
-        .success-msg {
-            color: #2e7d64;
-            background: rgba(255,255,255,0.8);
-            border-radius: 40px;
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-            text-align: center;
-            margin-bottom: 1rem;
-            display: none;
-        }
+        .error-msg { color: #e94560; background: rgba(255,255,255,0.8); }
+        .success-msg { color: #2e7d64; background: rgba(255,255,255,0.8); }
     </style>
 </head>
 <body>
@@ -185,12 +177,10 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 <script>
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    const storage = firebase.storage();
     let currentUser = null;
 
     function showError(msg) {
@@ -207,6 +197,21 @@
         setTimeout(() => sucDiv.style.display = 'none', 3000);
     }
 
+    // Отображение аватара из base64 или инициалов
+    function updateAvatarPreview(avatarBase64, name) {
+        const preview = document.getElementById('avatarPreview');
+        if (avatarBase64 && avatarBase64.startsWith('data:image')) {
+            preview.style.backgroundImage = `url(${avatarBase64})`;
+            preview.style.backgroundSize = 'cover';
+            preview.style.backgroundPosition = 'center';
+            preview.innerHTML = '';
+        } else {
+            preview.style.backgroundImage = '';
+            preview.innerHTML = name ? name.charAt(0).toUpperCase() : '?';
+            preview.style.background = '#0a3f6f';
+        }
+    }
+
     async function loadUserData() {
         if (!currentUser) return;
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
@@ -216,15 +221,11 @@
         const displayName = data.name || currentUser.displayName || 'Ученик';
         document.getElementById('userNameInput').value = displayName;
         
-        // Аватар
-        const preview = document.getElementById('avatarPreview');
-        if (data.avatarUrl) {
-            preview.innerHTML = `<img src="${data.avatarUrl}?t=${Date.now()}" alt="avatar">`;
+        // Аватар (base64)
+        if (data.avatarBase64) {
+            updateAvatarPreview(data.avatarBase64, displayName);
         } else {
-            preview.innerHTML = displayName.charAt(0).toUpperCase();
-            preview.style.background = '#0a3f6f';
-            preview.style.color = 'white';
-            preview.style.fontSize = '3rem';
+            updateAvatarPreview(null, displayName);
         }
     }
 
@@ -237,47 +238,40 @@
         await loadUserData();
     });
 
-    // Загрузка аватара
+    // Загрузка аватара через FileReader (base64)
     document.getElementById('changeAvatarBtn').onclick = () => {
         document.getElementById('avatarInput').click();
     };
 
-    document.getElementById('avatarInput').onchange = async (e) => {
+    document.getElementById('avatarInput').onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
         
-        // Проверка размера (максимум 2 МБ)
-        if (file.size > 2 * 1024 * 1024) {
-            showError('Аватар слишком большой (макс. 2 МБ)');
+        if (file.size > 1024 * 1024) {
+            showError('Аватар слишком большой (макс. 1 МБ)');
             return;
         }
         
-        // Проверка типа
         if (!file.type.startsWith('image/')) {
-            showError('Можно загружать только картинки (JPEG, PNG, GIF, WEBP)');
+            showError('Можно загружать только картинки');
             return;
         }
 
-        try {
-            showError('⏳ Загрузка...');
-            const storageRef = storage.ref().child(`avatars/${currentUser.uid}.jpg`);
-            await storageRef.put(file);
-            const avatarUrl = await storageRef.getDownloadURL();
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const base64 = event.target.result;
+            // Показываем превью сразу
+            updateAvatarPreview(base64, document.getElementById('userNameInput').value);
             
-            // Сохраняем в Firestore
-            await db.collection('users').doc(currentUser.uid).set({ avatarUrl }, { merge: true });
-            
-            // Обновляем превью
-            const preview = document.getElementById('avatarPreview');
-            preview.innerHTML = `<img src="${avatarUrl}?t=${Date.now()}" alt="avatar">`;
-            showSuccess('✅ Аватар загружен! Не забудь сохранить изменения.');
-        } catch (err) {
-            console.error(err);
-            showError('Ошибка загрузки аватара: ' + err.message);
-        }
+            // Сохраняем во временную переменную, сохранится при нажатии "Сохранить"
+            window.pendingAvatar = base64;
+            showSuccess('Аватар выбран. Не забудь сохранить изменения.');
+        };
+        reader.onerror = () => showError('Ошибка чтения файла');
+        reader.readAsDataURL(file);
     };
 
-    // Сохранение имени
+    // Сохранение имени и аватара
     document.getElementById('saveBtn').onclick = async () => {
         const newName = document.getElementById('userNameInput').value.trim();
         if (!newName) {
@@ -286,23 +280,31 @@
         }
         
         try {
-            // Обновляем в Auth (displayName)
+            // Обновляем в Auth
             await currentUser.updateProfile({ displayName: newName });
-            // Обновляем в Firestore users
-            await db.collection('users').doc(currentUser.uid).set({ name: newName }, { merge: true });
+            
+            // Готовим данные для Firestore
+            const updateData = { name: newName };
+            if (window.pendingAvatar) {
+                updateData.avatarBase64 = window.pendingAvatar;
+                window.pendingAvatar = null;
+            }
+            
+            // Сохраняем в Firestore
+            await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
+            
             // Обновляем в status (для левой панели)
             await db.collection('status').doc(currentUser.uid).set({ name: newName }, { merge: true });
             
-            showSuccess('✅ Имя успешно обновлено!');
+            showSuccess('✅ Имя и аватар сохранены!');
             
-            // Обновляем превью аватара (если нет картинки, показываем первую букву)
-            const preview = document.getElementById('avatarPreview');
-            const userData = (await db.collection('users').doc(currentUser.uid).get()).data();
-            if (!userData?.avatarUrl) {
-                preview.innerHTML = newName.charAt(0).toUpperCase();
-            }
+            // Перезагружаем данные
+            await loadUserData();
+            
+            // Через 1 секунду возвращаемся в чат
+            setTimeout(() => { window.location.href = 'chat.html'; }, 1500);
         } catch (err) {
-            showError('Ошибка сохранения имени: ' + err.message);
+            showError('Ошибка сохранения: ' + err.message);
         }
     };
 </script>
