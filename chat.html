@@ -220,7 +220,7 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКИ (ПРИВЯЗАНЫ К .CHAT-AREA) ========== */
+        /* ========== МОДАЛКИ ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -255,6 +255,7 @@
             border-radius: 10px;
             margin: 12px auto 8px;
             cursor: grab;
+            user-select: none;
         }
         .modal-handle:active {
             cursor: grabbing;
@@ -271,8 +272,7 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid,
-        .attach-grid {
+        .sticker-grid, .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -462,67 +462,87 @@
     }
     window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
 
-    let startY = 0, dragModal = null;
-    function attachDrag(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        const handle = modal.querySelector('.modal-handle');
-        if (!handle) return;
-        const onStart = (e) => {
-            startY = e.touches ? e.touches[0].clientY : e.clientY;
-            dragModal = modal;
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onEnd);
-            document.addEventListener('touchmove', onMove);
-            document.addEventListener('touchend', onEnd);
-        };
-        const onMove = (e) => {
-            if (!dragModal) return;
-            const moveY = e.touches ? e.touches[0].clientY : e.clientY;
-            const diff = moveY - startY;
-            if (diff > 0) {
-                dragModal.style.transform = `translateY(${diff}px)`;
-                dragModal.style.opacity = '0.7';
-            }
-        };
-        const onEnd = (e) => {
-            if (!dragModal) return;
-            const moveY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-            const diff = moveY - startY;
-            if (diff > 60) {
-                dragModal.classList.remove('active');
-                dragModal.style.transform = '';
-                dragModal.style.opacity = '';
-            } else {
-                dragModal.style.transform = '';
-                dragModal.style.opacity = '';
-            }
-            dragModal = null;
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onEnd);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('touchend', onEnd);
-        };
-        handle.addEventListener('mousedown', onStart);
-        handle.addEventListener('touchstart', onStart);
-    }
-
+    // Универсальная функция закрытия модалки
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
-        modal.style.transform = '';
     }
+
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.add('active');
     }
 
-    document.getElementById('closeStickerBtn').onclick = () => closeModal('stickerModal');
-    document.getElementById('closeAttachBtn').onclick = () => closeModal('attachModal');
-    attachDrag('stickerModal');
-    attachDrag('attachModal');
+    // Закрытие по серой полоске (свайп вниз)
+    function initSwipeClose(modalId, handleId) {
+        const modal = document.getElementById(modalId);
+        const handle = document.getElementById(handleId);
+        if (!modal || !handle) return;
+        let startY = 0;
+        let startTransform = 0;
+        const onTouchStart = (e) => {
+            startY = e.touches[0].clientY;
+            const transform = modal.style.transform;
+            if (transform && transform.includes('translateY')) {
+                startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
+            } else {
+                startTransform = 0;
+            }
+        };
+        const onTouchMove = (e) => {
+            const delta = e.touches[0].clientY - startY;
+            if (delta > 0) {
+                modal.style.transform = `translateY(${startTransform + delta}px)`;
+                modal.style.opacity = '0.7';
+            }
+        };
+        const onTouchEnd = (e) => {
+            const delta = e.changedTouches[0].clientY - startY;
+            if (delta > 80) {
+                closeModal(modalId);
+            }
+            modal.style.transform = '';
+            modal.style.opacity = '';
+        };
+        handle.addEventListener('touchstart', onTouchStart);
+        handle.addEventListener('touchmove', onTouchMove);
+        handle.addEventListener('touchend', onTouchEnd);
+        handle.addEventListener('mousedown', (e) => {
+            startY = e.clientY;
+            const onMouseMove = (moveEvent) => {
+                const delta = moveEvent.clientY - startY;
+                if (delta > 0) {
+                    modal.style.transform = `translateY(${delta}px)`;
+                    modal.style.opacity = '0.7';
+                }
+            };
+            const onMouseUp = (upEvent) => {
+                const delta = upEvent.clientY - startY;
+                if (delta > 80) {
+                    closeModal(modalId);
+                }
+                modal.style.transform = '';
+                modal.style.opacity = '';
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    document.getElementById('closeStickerBtn').onclick = (e) => {
+        e.preventDefault();
+        closeModal('stickerModal');
+    };
+    document.getElementById('closeAttachBtn').onclick = (e) => {
+        e.preventDefault();
+        closeModal('attachModal');
+    };
+    initSwipeClose('stickerModal', 'stickerHandle');
+    initSwipeClose('attachModal', 'attachHandle');
 
     document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
