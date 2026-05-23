@@ -73,6 +73,12 @@
             font-weight: bold;
             font-size: 1rem;
             text-transform: uppercase;
+            overflow: hidden;
+        }
+        .member-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .member-info { flex: 1; }
         .member-name { font-weight: 600; color: white; font-size: 0.9rem; }
@@ -132,6 +138,12 @@
             justify-content: center;
             color: white;
             font-size: 0.7rem;
+            overflow: hidden;
+        }
+        .msg-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .msg-bubble {
             background: rgba(255, 255, 255, 0.9);
@@ -271,9 +283,19 @@
     let currentUser = null;
     let messagesUnsub = null;
 
-    // ========== ВАЖНО: ПУТЬ К СООБЩЕНИЯМ ==========
-    // У тебя сообщения лежат в class5a или class5a_chat? Поставь нужный вариант:
-    const CHAT_PATH = 'class5a';   // ← если сообщения в class5a_chat — поменяй на 'class5a_chat'
+    // 🔥 ПУТЬ К СООБЩЕНИЯМ (если нужно class5a_chat — поменяй)
+    const CHAT_PATH = 'class5a';
+    
+    // Кэш пользователей (чтобы не дёргать базу на каждое сообщение)
+    const usersCache = new Map();
+
+    async function getUserData(uid) {
+        if (usersCache.has(uid)) return usersCache.get(uid);
+        const doc = await db.collection('users').doc(uid).get();
+        const data = doc.data() || { name: 'Ученик', avatarUrl: null };
+        usersCache.set(uid, data);
+        return data;
+    }
 
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
@@ -281,9 +303,16 @@
             return;
         }
         currentUser = user;
-        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
+        // Пишем статус и имя в status
+        await db.collection('status').doc(user.uid).set({ 
+            online: true, 
+            name: user.displayName || 'Ученик',
+            lastSeen: new Date()
+        }, { merge: true });
+        
         loadMessages();
         loadMembers();
+        
         window.addEventListener('beforeunload', () => {
             db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
         });
@@ -293,54 +322,59 @@
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages')
             .orderBy('createdAt')
-            .onSnapshot(snap => {
+            .onSnapshot(async (snap) => {
                 const container = document.getElementById('messagesArea');
                 container.innerHTML = '';
-                snap.forEach(doc => {
+                for (const doc of snap.docs) {
                     const m = doc.data();
                     const mine = m.uid === currentUser?.uid;
+                    const userData = await getUserData(m.uid);
+                    const avatarContent = userData.avatarUrl ? `<img src="${userData.avatarUrl}">` : (userData.name?.charAt(0) || '?');
                     const div = document.createElement('div');
                     div.className = `message ${mine ? 'mine' : ''}`;
                     div.innerHTML = `
-                        <div class="msg-avatar">${(m.name?.charAt(0) || '?')}</div>
+                        <div class="msg-avatar">${avatarContent}</div>
                         <div class="msg-bubble">
-                            <div class="msg-name">${m.name || 'Ученик'}</div>
+                            <div class="msg-name">${userData.name || m.name || 'Ученик'}</div>
                             <div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div>
                             <div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div>
                         </div>
                     `;
                     container.appendChild(div);
-                });
+                }
                 container.scrollTop = container.scrollHeight;
-            }, err => console.error('Ошибка загрузки сообщений:', err));
+            }, err => console.error('Ошибка сообщений:', err));
     }
 
     async function loadMembers() {
-        db.collection('status').onSnapshot(snap => {
+        db.collection('status').onSnapshot(async (snap) => {
             const container = document.getElementById('membersList');
             container.innerHTML = '';
-            snap.forEach(doc => {
-                const m = doc.data();
+            for (const doc of snap.docs) {
+                const status = doc.data();
+                const userData = await getUserData(doc.id);
+                const avatarContent = userData.avatarUrl ? `<img src="${userData.avatarUrl}">` : (userData.name?.charAt(0) || '?');
                 container.innerHTML += `
                     <li class="member-item">
-                        <div class="member-avatar">${(m.name?.charAt(0) || '?')}</div>
+                        <div class="member-avatar">${avatarContent}</div>
                         <div class="member-info">
-                            <div class="member-name">${m.name || 'Ученик'}</div>
-                            <div class="member-status ${m.online ? 'online-status' : 'offline-status'}">${m.online ? '🟢 Онлайн' : '⚫ Офлайн'}</div>
+                            <div class="member-name">${userData.name || status.name || 'Ученик'}</div>
+                            <div class="member-status ${status.online ? 'online-status' : 'offline-status'}">${status.online ? '🟢 Онлайн' : '⚫ Офлайн'}</div>
                         </div>
                     </li>
                 `;
-            });
+            }
         });
     }
 
     async function sendMessage(text, stickerUrl = null) {
         if (!text.trim() && !stickerUrl) return;
+        const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
             sticker: stickerUrl,
             uid: currentUser.uid,
-            name: currentUser.displayName || 'Ученик',
+            name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
