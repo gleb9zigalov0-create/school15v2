@@ -6,8 +6,13 @@
     <title>Мега-чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        /* Весь фон страницы — голубой */
         body {
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
@@ -15,6 +20,7 @@
             padding: 1rem;
         }
 
+        /* Основное стекло чата */
         .chat-glass {
             max-width: 1600px;
             margin: 0 auto;
@@ -29,6 +35,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
+        /* Шапка — голубая */
         .chat-header {
             padding: 1rem 1.5rem;
             background: rgba(255, 255, 255, 0.4);
@@ -43,14 +50,14 @@
         .online-count { background: #e94560; color: white; padding: 0.2rem 0.8rem; border-radius: 40px; font-size: 0.8rem; }
         .back-btn { background: rgba(255,255,255,0.6); padding: 0.3rem 1rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; font-weight: bold; }
 
+        /* Основная область */
         .chat-main {
             display: flex;
             flex: 1;
             overflow: hidden;
-            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
         }
 
-        /* Левая панель — голубая */
+        /* Левая панель — голубая, матовая */
         .members-panel {
             width: 280px;
             background: rgba(255, 255, 255, 0.35);
@@ -84,16 +91,19 @@
         .member-name { font-weight: bold; color: #0a2a44; }
         .member-status { font-size: 0.7rem; color: #2c5a7a; }
 
-        /* Область сообщений — простой голубой фон, без картинки */
+        /* Область сообщений — ТОЛЬКО ЗДЕСЬ ФОН С КАРТИНКОЙ */
         .messages-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
+            background-image: url('images/fon.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
-        /* Список сообщений */
+        /* Лента сообщений — полупрозрачный слой, чтобы текст читался, но фон был виден */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -101,9 +111,10 @@
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
+            background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Пузырьки сообщений */
+        /* Пузырьки сообщений — плотные, читаемые */
         .message {
             display: flex;
             gap: 0.6rem;
@@ -134,7 +145,7 @@
         .message-time { font-size: 0.6rem; color: #94a3b8; margin-top: 0.2rem; text-align: right; }
         .message-sticker { max-width: 150px; border-radius: 20px; }
 
-        /* Поле ввода — голубое */
+        /* Поле ввода — голубое, матовое */
         .input-area {
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(8px);
