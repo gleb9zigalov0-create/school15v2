@@ -6,6 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
+        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * {
             margin: 0;
             padding: 0;
@@ -219,6 +220,7 @@
             outline: none;
         }
 
+        /* ========== МОДАЛКИ ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -341,7 +343,7 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ -->
+        <!-- МОДАЛКА СТИКЕРОВ (КОПИЯ СКРЕПКИ, НО С ГИФКАМИ) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -455,12 +457,14 @@
         });
     }
 
+    // СТИКЕРЫ — ТОЧНАЯ КОПИЯ ЛОГИКИ СКРЕПКИ
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
     }
     window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
 
+    // ОБЩИЕ ФУНКЦИИ ДЛЯ ОБОИХ МОДАЛОК
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -473,7 +477,6 @@
         modal.classList.add('active');
     }
 
-    // Закрытие по серой полоске (свайп)
     function initSwipeClose(modalId, handleId) {
         const modal = document.getElementById(modalId);
         const handle = document.getElementById(handleId);
@@ -537,7 +540,7 @@
         });
     }
 
-    // Кнопки закрытия
+    // КНОПКИ ЗАКРЫТИЯ
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -547,15 +550,14 @@
         closeModal('attachModal');
     };
     
-    // Инициализация свайпа
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
-    // Открытие модалок
+    // ОТКРЫТИЕ
     document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
-    // Только скрепка показывает уведомление
+    // ФУНКЦИИ ДЛЯ СКРЕПКИ
     document.querySelectorAll('.attach-item').forEach(el => {
         el.onclick = () => { alert(`📎 Отправка ${el.dataset.type} — в разработке`); closeModal('attachModal'); };
     });
