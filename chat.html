@@ -7,7 +7,20 @@
     <link rel="stylesheet" href="common.css">
     <link rel="stylesheet" href="theme-chat.css">
     <style>
-        /* Дополнительные стили только для нового функционала */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ВЕСЬ ФОН СТРАНИЦЫ — ГОЛУБОЙ */
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
         .chat-glass {
             max-width: 1600px;
             margin: 0 auto;
@@ -22,13 +35,27 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
+        .chat-header {
+            padding: 1rem 1.5rem;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid rgba(255,255,255,0.4);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .chat-header h1 { color: #0a3f6f; font-size: 1.5rem; }
+        .online-count { background: #e94560; color: white; padding: 0.2rem 0.8rem; border-radius: 40px; font-size: 0.8rem; }
+        .back-btn { background: rgba(255,255,255,0.6); padding: 0.3rem 1rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; font-weight: bold; }
+
         .chat-main {
             display: flex;
             flex: 1;
             overflow: hidden;
         }
 
-        /* Левая панель — наследует стили из theme-chat.css, но добавим фон */
+        /* ЛЕВАЯ ПАНЕЛЬ — ГОЛУБАЯ */
         .members-panel {
             width: 280px;
             background: rgba(255, 255, 255, 0.35);
@@ -38,8 +65,31 @@
             padding: 1rem;
             flex-shrink: 0;
         }
+        .member-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem;
+            border-radius: 32px;
+            margin-bottom: 0.3rem;
+        }
+        .member-avatar {
+            width: 44px;
+            height: 44px;
+            background: #0a3f6f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .member-info { flex: 1; }
+        .member-name { font-weight: bold; color: #0a2a44; }
+        .member-status { font-size: 0.7rem; color: #2c5a7a; }
 
-        /* Область сообщений — ТОЛЬКО ЗДЕСЬ ФОН С КАРТИНКОЙ */
+        /* ОБЛАСТЬ СООБЩЕНИЙ — ТОЛЬКО ЗДЕСЬ ФОН С КАРТИНКОЙ */
         .messages-area {
             flex: 1;
             display: flex;
@@ -51,7 +101,7 @@
             background-repeat: no-repeat;
         }
 
-        /* Лента сообщений — полупрозрачный слой */
+        /* ЛЕНТА СООБЩЕНИЙ (поверх картинки, но с полупрозрачным слоем) */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -59,10 +109,10 @@
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.15);
         }
 
-        /* Пузырьки сообщений */
+        /* ПУЗЫРЬКИ СООБЩЕНИЙ */
         .message {
             display: flex;
             gap: 0.6rem;
@@ -93,7 +143,7 @@
         .message-time { font-size: 0.6rem; color: #94a3b8; margin-top: 0.2rem; text-align: right; }
         .message-sticker { max-width: 150px; border-radius: 20px; }
 
-        /* Поле ввода */
+        /* ПОЛЕ ВВОДА — ГОЛУБОЕ */
         .input-area {
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(8px);
@@ -304,7 +354,7 @@
         loadStickers();
     };
     document.getElementById('attachBtn').onclick = () => alert('📎 Прикрепление файлов скоро появится');
-    document.getElementById('showRegisterBtn').onclick = () => alert('Регистрация: напиши старосте, он добавит тебя в чат.');
+    document.getElementById('showRegisterBtn').onclick = () => alert('Регистрация: напиши старосте, он добавит тебя.');
 </script>
 </body>
 </html>
