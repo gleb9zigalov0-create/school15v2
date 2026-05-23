@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: url('images/fon.jpg') no-repeat center center fixed;
             background-size: cover;
             height: 100vh;
@@ -24,7 +24,8 @@
             overflow: hidden;
         }
 
-        .chat-container {
+        /* ОСНОВНОЙ КОНТЕЙНЕР */
+        .chat-main-container {
             width: 1400px;
             max-width: 98vw;
             height: 90vh;
@@ -37,7 +38,7 @@
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
-        /* Левая панель */
+        /* ЛЕВАЯ ПАНЕЛЬ — УЧАСТНИКИ */
         .members-panel {
             width: 280px;
             background: rgba(10, 30, 50, 0.3);
@@ -53,6 +54,7 @@
             font-weight: bold;
             color: white;
             background: rgba(0, 0, 0, 0.2);
+            font-size: 1.1rem;
         }
 
         .members-list {
@@ -67,13 +69,13 @@
             gap: 0.8rem;
             padding: 0.7rem;
             border-radius: 32px;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             margin-bottom: 0.5rem;
         }
 
         .member-avatar {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             background: #0a3f6f;
             border-radius: 50%;
             display: flex;
@@ -81,15 +83,30 @@
             justify-content: center;
             color: white;
             font-weight: bold;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .member-info {
+            flex: 1;
         }
 
         .member-name {
             font-weight: 600;
             color: white;
+            font-size: 0.9rem;
         }
 
-        /* Основная зона */
-        .chat-main {
+        .member-status {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+
+        .online-status { color: #4ade80; }
+        .offline-status { color: #9ca3af; }
+
+        /* ПРАВАЯ ЗОНА — ЧАТ */
+        .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -103,23 +120,28 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .chat-title {
             font-weight: bold;
             color: white;
+            font-size: 1.1rem;
         }
 
-        .logout-btn {
+        .settings-btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
             padding: 0.4rem 1rem;
             border-radius: 40px;
             color: white;
             cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
         }
+        .settings-btn:hover { background: rgba(255,255,255,0.4); }
 
-        /* Сообщения */
+        /* ЛЕНТА СООБЩЕНИЙ */
         .messages-area {
             flex: 1;
             overflow-y: auto;
@@ -131,17 +153,15 @@
 
         .message {
             display: flex;
-            gap: 0.8rem;
+            gap: 0.6rem;
             align-items: flex-start;
             max-width: 80%;
         }
-
         .message.mine {
             align-self: flex-end;
             flex-direction: row-reverse;
         }
-
-        .message-avatar {
+        .msg-avatar {
             width: 32px;
             height: 32px;
             background: #0a3f6f;
@@ -151,35 +171,38 @@
             justify-content: center;
             color: white;
             font-size: 0.7rem;
+            flex-shrink: 0;
         }
-
-        .message-bubble {
+        .msg-bubble {
             background: rgba(255, 255, 255, 0.9);
             padding: 0.5rem 1rem;
             border-radius: 20px;
             color: #1e2f3e;
+            word-wrap: break-word;
         }
-
-        .message.mine .message-bubble {
+        .message.mine .msg-bubble {
             background: #0a3f6f;
             color: white;
         }
-
-        .message-name {
-            font-size: 0.7rem;
+        .msg-name {
+            font-size: 0.65rem;
             font-weight: bold;
+            opacity: 0.8;
+            margin-bottom: 0.2rem;
         }
+        .msg-text { font-size: 0.9rem; }
+        .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
 
-        /* Нижняя панель */
-        .input-area {
-            padding: 1rem;
+        /* НИЖНЯЯ ПАНЕЛЬ */
+        .input-panel {
+            padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
             display: flex;
-            gap: 0.5rem;
+            gap: 0.6rem;
             align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
         }
-
-        .icon-btn {
+        .icon-button {
             background: rgba(255, 255, 255, 0.3);
             border: none;
             width: 44px;
@@ -187,17 +210,20 @@
             border-radius: 40px;
             font-size: 1.3rem;
             cursor: pointer;
+            transition: 0.2s;
         }
-
-        .message-input {
+        .icon-button:hover { background: rgba(255,255,255,0.6); transform: scale(1.02); }
+        .text-input {
             flex: 1;
             background: rgba(255, 255, 255, 0.7);
             border: none;
             border-radius: 40px;
             padding: 0.7rem 1rem;
+            font-size: 0.9rem;
+            outline: none;
         }
 
-        /* Модалки */
+        /* МОДАЛЬНЫЕ ОКНА */
         .modal {
             display: none;
             position: fixed;
@@ -206,178 +232,198 @@
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             justify-content: center;
-            align-items: center;
+            align-items: flex-end;
             z-index: 1000;
         }
-
-        .modal-content {
-            background: rgba(30, 50, 70, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 48px;
+        .modal-bottom {
+            background: #d4e8fc;
+            width: 100%;
+            border-radius: 32px 32px 0 0;
             padding: 1.5rem;
-            min-width: 260px;
-            text-align: center;
-            color: white;
+            max-height: 70vh;
+            overflow-y: auto;
         }
-
-        .sticker-pack {
+        .sticker-grid {
             display: flex;
-            gap: 1rem;
             flex-wrap: wrap;
+            gap: 1rem;
             justify-content: center;
-            margin: 1rem 0;
+            margin-top: 1rem;
         }
-
-        .sticker {
-            width: 80px;
+        .sticker-img {
+            width: 90px;
             cursor: pointer;
+            transition: 0.1s;
             background: white;
             border-radius: 20px;
             padding: 0.3rem;
         }
+        .sticker-img:hover { transform: scale(1.05); }
+        .close-btn {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
-<div id="authScreen" style="text-align:center; background:white; padding:2rem; border-radius:48px">
-    <h2>Вход в чат</h2>
-    <button id="googleBtn">Войти через Google</button>
-</div>
 
-<div class="chat-container" id="chatContainer" style="display:none">
+<div class="chat-main-container" id="chatContainer">
+    <!-- Левая панель -->
     <div class="members-panel">
-        <div class="members-header">👥 Онлайн</div>
+        <div class="members-header">👥 Участники 5А</div>
         <ul class="members-list" id="membersList"></ul>
     </div>
-    <div class="chat-main">
+
+    <!-- Правая зона -->
+    <div class="chat-area">
         <div class="chat-header">
-            <span class="chat-title">💬 5А класс</span>
-            <button class="logout-btn" id="logoutBtn">Выйти</button>
+            <span class="chat-title">💬 Общий чат 5 «А»</span>
+            <button class="settings-btn" id="settingsBtn">⚙️ Настройки</button>
         </div>
         <div class="messages-area" id="messagesArea"></div>
-        <div class="input-area">
-            <button class="icon-btn" id="stickerBtn">😊</button>
-            <input type="text" class="message-input" id="messageInput" placeholder="Сообщение...">
-            <button class="icon-btn" id="attachBtn">📎</button>
-            <button class="icon-btn" id="sendBtn">➤</button>
+        <div class="input-panel">
+            <button class="icon-button" id="stickerBtn">😊</button>
+            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+            <button class="icon-button" id="attachBtn">📎</button>
+            <button class="icon-button" id="sendBtn">➤</button>
         </div>
     </div>
 </div>
 
-<div id="stickerModal" class="modal"><div class="modal-content"><h3>Стикеры</h3><div id="stickerPack"></div><button onclick="closeModal('stickerModal')">Закрыть</button></div></div>
-<div id="attachModal" class="modal"><div class="modal-content"><h3>Выбери файл</h3><input type="file" id="fileInput" accept="image/*,video/*,.pdf"><button onclick="uploadFile()">Отправить</button><br><button onclick="closeModal('attachModal')">Отмена</button></div></div>
+<!-- Модалка стикеров -->
+<div id="stickerModal" class="modal">
+    <div class="modal-bottom">
+        <h3 style="text-align:center">Выбери стикер</h3>
+        <div id="stickerList" class="sticker-grid"></div>
+        <button class="close-btn" onclick="closeModal('stickerModal')">Закрыть</button>
+    </div>
+</div>
+
+<!-- Модалка скрепки -->
+<div id="attachModal" class="modal">
+    <div class="modal-bottom">
+        <h3 style="text-align:center">Отправить файл</h3>
+        <div class="sticker-grid" style="grid-template-columns: repeat(3,1fr);">
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📷</div><div>Фото</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🎥</div><div>Видео</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📄</div><div>Файл</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📊</div><div>Опрос</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🎤</div><div>Голос</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🔗</div><div>Ссылка</div></div>
+        </div>
+        <button class="close-btn" onclick="closeModal('attachModal')">Отмена</button>
+    </div>
+</div>
 
 <script src="js/firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-    // Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     let currentUser = null;
+    let messagesUnsub = null;
 
-    // Стикеры (все файлы из папки stickers/)
-    const stickers = ['stickers/okay.gif'];
-
-    function renderStickers() {
-        const container = document.getElementById('stickerPack');
-        container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker" onclick="sendSticker('${s}')">`).join('');
-    }
-
-    window.sendSticker = (url) => {
-        if (!currentUser) return;
-        db.collection('rooms').doc('class5a').collection('messages').add({
-            text: '',
-            stickerUrl: url,
-            uid: currentUser.uid,
-            name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Ученик',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    // Проверка авторизации
+    auth.onAuthStateChanged(async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+        currentUser = user;
+        // Статус онлайн
+        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
+        loadMessages();
+        loadMembers();
+        // При уходе со страницы — офлайн
+        window.addEventListener('beforeunload', () => {
+            db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
         });
-        closeModal('stickerModal');
-    };
-
-    function sendMessage(text) {
-        if (!text.trim() || !currentUser) return;
-        db.collection('rooms').doc('class5a').collection('messages').add({
-            text: text,
-            uid: currentUser.uid,
-            name: currentUser.displayName || currentUser.email?.split('@')[0] || 'Ученик',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }
+    });
 
     function loadMessages() {
-        db.collection('rooms').doc('class5a').collection('messages').orderBy('createdAt').onSnapshot(snap => {
-            const container = document.getElementById('messagesArea');
-            container.innerHTML = '';
+        if (messagesUnsub) messagesUnsub();
+        messagesUnsub = db.collection('rooms').doc('class5a').collection('messages')
+            .orderBy('createdAt')
+            .onSnapshot(snap => {
+                const container = document.getElementById('messagesArea');
+                container.innerHTML = '';
+                snap.forEach(doc => {
+                    const m = doc.data();
+                    const mine = m.uid === currentUser?.uid;
+                    const div = document.createElement('div');
+                    div.className = `message ${mine ? 'mine' : ''}`;
+                    div.innerHTML = `
+                        <div class="msg-avatar">${(m.name?.charAt(0) || '?')}</div>
+                        <div class="msg-bubble">
+                            <div class="msg-name">${m.name || 'Ученик'}</div>
+                            <div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div>
+                            <div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+                container.scrollTop = container.scrollHeight;
+            });
+    }
+
+    async function loadMembers() {
+        const membersList = document.getElementById('membersList');
+        db.collection('status').onSnapshot(snap => {
+            membersList.innerHTML = '';
             snap.forEach(doc => {
                 const m = doc.data();
-                const mine = m.uid === currentUser?.uid;
-                const div = document.createElement('div');
-                div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `
-                    <div class="message-avatar">${(m.name?.charAt(0) || '?')}</div>
-                    <div class="message-bubble">
-                        <div class="message-name">${m.name}</div>
-                        <div>${m.stickerUrl ? `<img src="${m.stickerUrl}" style="max-width:120px">` : (m.text || '')}</div>
-                    </div>
+                membersList.innerHTML += `
+                    <li class="member-item">
+                        <div class="member-avatar">${(m.name?.charAt(0) || '?')}</div>
+                        <div class="member-info">
+                            <div class="member-name">${m.name || 'Ученик'}</div>
+                            <div class="member-status ${m.online ? 'online-status' : 'offline-status'}">${m.online ? '🟢 Онлайн' : '⚫ Офлайн'}</div>
+                        </div>
+                    </li>
                 `;
-                container.appendChild(div);
-            });
-            container.scrollTop = container.scrollHeight;
-        });
-    }
-
-    function loadOnlineUsers() {
-        // упрощённо: просто список залогиненных через статус в Firestore
-        db.collection('status').onSnapshot(snap => {
-            const container = document.getElementById('membersList');
-            container.innerHTML = '';
-            snap.forEach(doc => {
-                const u = doc.data();
-                if (u.online) {
-                    const li = document.createElement('li');
-                    li.className = 'member-item';
-                    li.innerHTML = `<div class="member-avatar">${(u.name?.charAt(0) || '?')}</div><div class="member-name">${u.name}</div>`;
-                    container.appendChild(li);
-                }
             });
         });
     }
 
-    window.uploadFile = () => {
-        alert('Пока отправка файлов через Storage, сделаем позже');
-        closeModal('attachModal');
+    async function sendMessage(text, stickerUrl = null) {
+        if (!text.trim() && !stickerUrl) return;
+        await db.collection('rooms').doc('class5a').collection('messages').add({
+            text: text,
+            sticker: stickerUrl,
+            uid: currentUser.uid,
+            name: currentUser.displayName || 'Ученик',
+            createdAt: new Date()
+        });
+    }
+
+    // Стикеры из папки /stickers/
+    function loadStickers() {
+        const stickers = ['stickers/okay.gif'];
+        const container = document.getElementById('stickerList');
+        container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
+    }
+    window.sendSticker = (url) => {
+        sendMessage('', url);
+        closeModal('stickerModal');
     };
     window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 
-    // Авторизация
-    document.getElementById('googleBtn').onclick = () => {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider);
-    };
-    auth.onAuthStateChanged(async user => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('chatContainer').style.display = 'flex';
-            await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || user.email }, { merge: true });
-            loadMessages();
-            loadOnlineUsers();
-        } else {
-            document.getElementById('authScreen').style.display = 'block';
-            document.getElementById('chatContainer').style.display = 'none';
-        }
-    });
-    document.getElementById('logoutBtn').onclick = () => auth.signOut();
+    document.getElementById('stickerBtn').onclick = () => { loadStickers(); document.getElementById('stickerModal').style.display = 'flex'; };
+    document.getElementById('attachBtn').onclick = () => document.getElementById('attachModal').style.display = 'flex';
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
-        sendMessage(inp.value);
+        if (inp.value.trim()) sendMessage(inp.value);
         inp.value = '';
     };
-    document.getElementById('stickerBtn').onclick = () => { renderStickers(); document.getElementById('stickerModal').style.display = 'flex'; };
-    document.getElementById('attachBtn').onclick = () => document.getElementById('attachModal').style.display = 'flex';
+    document.getElementById('settingsBtn').onclick = () => alert('⚙️ Настройки профиля будут в settings.html (скоро)');
 </script>
 </body>
 </html>
