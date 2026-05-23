@@ -225,21 +225,12 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid, .attach-grid {
+        .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
             justify-content: center;
         }
-        .sticker-img {
-            width: 85px;
-            cursor: pointer;
-            background: white;
-            border-radius: 20px;
-            padding: 0.3rem;
-            transition: 0.1s;
-        }
-        .sticker-img:hover { transform: scale(1.05); }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -284,19 +275,20 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
+            <!-- 😊 - стикеры (просто копия скрепки, но без контента) -->
             <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+            <!-- 📎 - скрепка -->
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ -->
+        <!-- МОДАЛКА СТИКЕРОВ (ПУСТАЯ, БЕЗ УВЕДОМЛЕНИЙ) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
                 <div class="modal-content-inner">
                     <div class="modal-title">✨ Стикеры</div>
-                    <div id="stickerList" class="sticker-grid"></div>
                     <button class="close-btn" id="closeStickerBtn">Закрыть</button>
                 </div>
             </div>
@@ -374,7 +366,7 @@
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -394,37 +386,18 @@
         });
     }
 
-    async function sendMessage(text, stickerUrl = null) {
-        if (!text.trim() && !stickerUrl) return;
+    async function sendMessage(text) {
+        if (!text.trim()) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
-            sticker: stickerUrl,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
 
-    // ========== СТИКЕРЫ ==========
-    function loadStickers() {
-        const stickers = ['stickers/okay.gif'];
-        const container = document.getElementById('stickerList');
-        if (container) {
-            container.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-            document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-                img.onclick = () => {
-                    const url = img.getAttribute('data-sticker-url');
-                    if (url) {
-                        sendMessage('', url);
-                        closeModal('stickerModal');
-                    }
-                };
-            });
-        }
-    }
-
-    // ========== ОБЩИЕ ФУНКЦИИ МОДАЛОК ==========
+    // ОБЩИЕ ФУНКЦИИ ДЛЯ МОДАЛОК
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -493,6 +466,7 @@
         });
     }
 
+    // НАЗНАЧАЕМ ЗАКРЫТИЕ ДЛЯ ОБОИХ МОДАЛОК
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -505,11 +479,8 @@
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
-    // ОТКРЫТИЕ — ТОЛЬКО ОТКРЫТИЕ, БЕЗ ЛИШНИХ УВЕДОМЛЕНИЙ
-    document.getElementById('stickerBtn').onclick = () => {
-        loadStickers();
-        openModal('stickerModal');
-    };
+    // ОТКРЫТИЕ МОДАЛОК
+    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal');
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
     // ТОЛЬКО СКРЕПКА ПОКАЗЫВАЕТ УВЕДОМЛЕНИЕ
