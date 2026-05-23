@@ -5,22 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Мега-чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="theme-chat.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* Весь фон страницы — голубой */
-        body {
-            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
-            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
-            min-height: 100vh;
-            padding: 1rem;
-        }
-
-        /* Основное стекло чата */
+        /* Дополнительные стили только для нового функционала */
         .chat-glass {
             max-width: 1600px;
             margin: 0 auto;
@@ -35,29 +22,13 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        /* Шапка — голубая */
-        .chat-header {
-            padding: 1rem 1.5rem;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid rgba(255,255,255,0.4);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .chat-header h1 { color: #0a3f6f; font-size: 1.5rem; }
-        .online-count { background: #e94560; color: white; padding: 0.2rem 0.8rem; border-radius: 40px; font-size: 0.8rem; }
-        .back-btn { background: rgba(255,255,255,0.6); padding: 0.3rem 1rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; font-weight: bold; }
-
-        /* Основная область */
         .chat-main {
             display: flex;
             flex: 1;
             overflow: hidden;
         }
 
-        /* Левая панель — голубая, матовая */
+        /* Левая панель — наследует стили из theme-chat.css, но добавим фон */
         .members-panel {
             width: 280px;
             background: rgba(255, 255, 255, 0.35);
@@ -67,29 +38,6 @@
             padding: 1rem;
             flex-shrink: 0;
         }
-        .member-item {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.6rem;
-            border-radius: 32px;
-            margin-bottom: 0.3rem;
-        }
-        .member-avatar {
-            width: 44px;
-            height: 44px;
-            background: #0a3f6f;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1rem;
-        }
-        .member-info { flex: 1; }
-        .member-name { font-weight: bold; color: #0a2a44; }
-        .member-status { font-size: 0.7rem; color: #2c5a7a; }
 
         /* Область сообщений — ТОЛЬКО ЗДЕСЬ ФОН С КАРТИНКОЙ */
         .messages-area {
@@ -103,7 +51,7 @@
             background-repeat: no-repeat;
         }
 
-        /* Лента сообщений — полупрозрачный слой, чтобы текст читался, но фон был виден */
+        /* Лента сообщений — полупрозрачный слой */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -114,7 +62,7 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        /* Пузырьки сообщений — плотные, читаемые */
+        /* Пузырьки сообщений */
         .message {
             display: flex;
             gap: 0.6rem;
@@ -145,7 +93,7 @@
         .message-time { font-size: 0.6rem; color: #94a3b8; margin-top: 0.2rem; text-align: right; }
         .message-sticker { max-width: 150px; border-radius: 20px; }
 
-        /* Поле ввода — голубое, матовое */
+        /* Поле ввода */
         .input-area {
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(8px);
@@ -204,7 +152,13 @@
         .auth-box input { margin: 0.5rem auto; display: block; width: 80%; max-width: 300px; padding: 0.6rem; border-radius: 40px; border: none; }
     </style>
 </head>
-<body>
+<body class="page-chat">
+
+<div class="chat-deco" aria-hidden="true">
+    <div class="msg-cube mc1"></div>
+    <div class="msg-cube mc2"></div>
+    <div class="msg-cube mc3"></div>
+</div>
 
 <div class="chat-glass">
     <div class="chat-header">
@@ -217,11 +171,14 @@
 
     <div id="authContainer" class="auth-box">
         <h2>🔐 Вход в чат</h2>
-        <button id="googleLoginBtn" style="background:#0a3f6f; color:white; border:none; padding:0.8rem 1.5rem; border-radius:40px; margin:1rem;">Войти через Google</button>
+        <button id="googleLoginBtn" class="btn btn-google" style="background:#0a3f6f; color:white; border:none; padding:0.8rem 1.5rem; border-radius:40px; margin:1rem;">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:20px; margin-right:8px;">
+            Войти через Google
+        </button>
         <p style="margin:1rem">или</p>
         <input type="email" id="loginEmail" placeholder="Email">
         <input type="password" id="loginPassword" placeholder="Пароль">
-        <button id="emailLoginBtn" style="background:#0a3f6f; color:white; border:none; padding:0.6rem 1.5rem; border-radius:40px;">Войти</button>
+        <button id="emailLoginBtn" class="btn btn-primary">Войти</button>
         <p style="margin-top:1rem">Нет аккаунта? <button id="showRegisterBtn" style="background:none; border:none; color:#0a3f6f; font-weight:bold;">Зарегистрироваться</button></p>
     </div>
 
@@ -234,7 +191,7 @@
             <div class="messages-list" id="messagesList"></div>
             <div class="input-area">
                 <button class="icon-btn" id="stickerBtn">😊</button>
-                <input type="text" id="messageInput" placeholder="Напиши сообщение...">
+                <input type="text" id="messageInput" placeholder="Сообщение для класса…">
                 <button class="icon-btn" id="attachBtn">📎</button>
                 <button class="icon-btn" id="sendBtn">➤</button>
             </div>
@@ -282,7 +239,7 @@
         const data = doc.data();
         const isMine = data.uid === currentUser?.uid;
         const div = document.createElement('div');
-        div.className = `message ${isMine ? 'mine' : ''}`;
+        div.className = `message ${isMine ? 'mine' : 'other'}`;
         const avatar = document.createElement('div');
         avatar.className = 'message-avatar';
         avatar.textContent = (data.displayName || '?')[0].toUpperCase();
@@ -347,6 +304,7 @@
         loadStickers();
     };
     document.getElementById('attachBtn').onclick = () => alert('📎 Прикрепление файлов скоро появится');
+    document.getElementById('showRegisterBtn').onclick = () => alert('Регистрация: напиши старосте, он добавит тебя в чат.');
 </script>
 </body>
 </html>
