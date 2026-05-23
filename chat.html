@@ -6,12 +6,8 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* ========== ОСНОВНОЙ СТИЛЬ (без изменений) ========== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: url('images/fon.jpg') no-repeat center center fixed;
@@ -44,18 +40,8 @@
             flex-direction: column;
             overflow-y: auto;
         }
-        .members-header {
-            padding: 1.5rem 1rem;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.2);
-            font-size: 1.1rem;
-        }
-        .members-list {
-            flex: 1;
-            list-style: none;
-            padding: 0.5rem;
-        }
+        .members-header { padding: 1.5rem 1rem; font-weight: bold; color: white; background: rgba(0, 0, 0, 0.2); font-size: 1.1rem; }
+        .members-list { flex: 1; list-style: none; padding: 0.5rem; }
         .member-item {
             display: flex;
             align-items: center;
@@ -81,24 +67,11 @@
             background-size: cover;
             background-position: center;
         }
-        .member-info {
-            flex: 1;
-        }
-        .member-name {
-            font-weight: 600;
-            color: white;
-            font-size: 0.9rem;
-        }
-        .member-status {
-            font-size: 0.7rem;
-            opacity: 0.8;
-        }
-        .online-status {
-            color: #4ade80;
-        }
-        .offline-status {
-            color: #9ca3af;
-        }
+        .member-info { flex: 1; }
+        .member-name { font-weight: 600; color: white; font-size: 0.9rem; }
+        .member-status { font-size: 0.7rem; opacity: 0.8; }
+        .online-status { color: #4ade80; }
+        .offline-status { color: #9ca3af; }
         .chat-area {
             flex: 1;
             display: flex;
@@ -115,11 +88,7 @@
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .chat-title {
-            font-weight: bold;
-            color: white;
-            font-size: 1.1rem;
-        }
+        .chat-title { font-weight: bold; color: white; font-size: 1.1rem; }
         .settings-btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -171,20 +140,9 @@
             background: #0a3f6f;
             color: white;
         }
-        .msg-name {
-            font-size: 0.65rem;
-            font-weight: bold;
-            margin-bottom: 0.2rem;
-        }
-        .msg-text {
-            font-size: 0.9rem;
-        }
-        .msg-time {
-            font-size: 0.6rem;
-            opacity: 0.6;
-            margin-top: 0.2rem;
-            text-align: right;
-        }
+        .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
+        .msg-text { font-size: 0.9rem; }
+        .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -206,10 +164,7 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .icon-button:hover {
-            background: rgba(255, 255, 255, 0.6);
-            transform: scale(1.02);
-        }
+        .icon-button:hover { background: rgba(255,255,255,0.6); transform: scale(1.02); }
         .text-input {
             flex: 1;
             background: rgba(255, 255, 255, 0.7);
@@ -257,9 +212,7 @@
             cursor: grab;
             user-select: none;
         }
-        .modal-handle:active {
-            cursor: grabbing;
-        }
+        .modal-handle:active { cursor: grabbing; }
         .modal-content-inner {
             padding: 0 1rem 1.5rem;
             max-height: 55vh;
@@ -272,8 +225,7 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid,
-        .attach-grid {
+        .sticker-grid, .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -287,9 +239,7 @@
             padding: 0.3rem;
             transition: 0.1s;
         }
-        .sticker-img:hover {
-            transform: scale(1.05);
-        }
+        .sticker-img:hover { transform: scale(1.05); }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -302,10 +252,7 @@
             opacity: 0.7;
             transition: 0.1s;
         }
-        .attach-icon:hover {
-            opacity: 1;
-            transform: scale(1.05);
-        }
+        .attach-icon:hover { opacity: 1; transform: scale(1.05); }
         .attach-label {
             font-size: 0.65rem;
             color: #bbb;
@@ -343,7 +290,7 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ (КОПИЯ СКРЕПКИ, НО С ГИФКАМИ) -->
+        <!-- МОДАЛКА СТИКЕРОВ -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -457,14 +404,24 @@
         });
     }
 
-    // СТИКЕРЫ — ТОЧНАЯ КОПИЯ ЛОГИКИ СКРЕПКИ
+    // ========== СТИКЕРЫ (ТОЛЬКО СТИКЕРЫ, БЕЗ УВЕДОМЛЕНИЙ) ==========
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
-        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
+        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+        
+        // Вешаем отдельный обработчик на стикеры
+        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+            img.onclick = () => {
+                const url = img.getAttribute('data-sticker-url');
+                if (url) {
+                    sendMessage('', url);
+                    closeModal('stickerModal');
+                }
+            };
+        });
     }
-    window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
 
-    // ОБЩИЕ ФУНКЦИИ ДЛЯ ОБОИХ МОДАЛОК
+    // ========== ОБЩИЕ ФУНКЦИИ МОДАЛОК ==========
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -482,16 +439,13 @@
         const handle = document.getElementById(handleId);
         if (!modal || !handle) return;
         
-        let startY = 0;
-        let startTransform = 0;
+        let startY = 0, startTransform = 0;
         
         const onTouchStart = (e) => {
             startY = e.touches[0].clientY;
             const transform = modal.style.transform;
             if (transform && transform.includes('translateY')) {
                 startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
-            } else {
-                startTransform = 0;
             }
         };
         
@@ -505,9 +459,7 @@
         
         const onTouchEnd = (e) => {
             const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) {
-                closeModal(modalId);
-            }
+            if (delta > 80) closeModal(modalId);
             modal.style.transform = '';
             modal.style.opacity = '';
         };
@@ -527,9 +479,7 @@
             };
             const onMouseUp = (upEvent) => {
                 const delta = upEvent.clientY - startY;
-                if (delta > 80) {
-                    closeModal(modalId);
-                }
+                if (delta > 80) closeModal(modalId);
                 modal.style.transform = '';
                 modal.style.opacity = '';
                 document.removeEventListener('mousemove', onMouseMove);
@@ -540,7 +490,7 @@
         });
     }
 
-    // КНОПКИ ЗАКРЫТИЯ
+    // ========== КНОПКИ ЗАКРЫТИЯ ==========
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -553,13 +503,16 @@
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
-    // ОТКРЫТИЕ
+    // ========== ОТКРЫТИЕ ==========
     document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
-    // ФУНКЦИИ ДЛЯ СКРЕПКИ
+    // ========== СКРЕПКА (с уведомлением) ==========
     document.querySelectorAll('.attach-item').forEach(el => {
-        el.onclick = () => { alert(`📎 Отправка ${el.dataset.type} — в разработке`); closeModal('attachModal'); };
+        el.onclick = () => { 
+            alert(`📎 Отправка ${el.dataset.type} — в разработке`); 
+            closeModal('attachModal'); 
+        };
     });
     
     document.getElementById('sendBtn').onclick = () => {
