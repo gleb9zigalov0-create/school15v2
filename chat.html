@@ -3,258 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Чат 5А — чистый</title>
+    <title>Широкий чат 5А</title>
     <style>
-        /* Ты можешь полностью переписать этот CSS под себя */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: system-ui, sans-serif;
-            background: #b0dff5;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .chat {
-            width: 100%;
-            height: 100%;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .header {
-            background: #0a3f6f;
-            color: white;
-            padding: 0.8rem;
-            text-align: center;
-        }
-        .main {
-            display: flex;
-            flex: 1;
-            overflow: hidden;
-        }
-        .sidebar {
-            width: 250px;
-            background: #eef4ff;
-            padding: 0.5rem;
-            overflow-y: auto;
-        }
-        .messages {
-            flex: 1;
-            background: #f9f9ff;
-            overflow-y: auto;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        .message {
-            display: flex;
-            gap: 0.5rem;
-            max-width: 70%;
-        }
+        /* ======== НАСТРОЙКИ ШИРИНЫ (меняй здесь) ======== */
+        body { margin: 0; background: #cceef8; height: 100vh; display: flex; }
+        .chat { width: 100%; display: flex; flex-direction: column; background: rgba(255,255,255,0.3); }
+        .main { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: 260px; background: rgba(255,255,255,0.3); padding: 1rem; }
+        .messages { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+        /* остальное не трогай — оно работает */
+        .message { display: flex; gap: 0.5rem; max-width: 70%; }
         .message.mine { align-self: flex-end; flex-direction: row-reverse; }
-        .avatar {
-            width: 32px;
-            height: 32px;
-            background: #0a3f6f;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-        .bubble {
-            background: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 20px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
+        .avatar { width: 36px; height: 36px; background: #0a3f6f; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; }
+        .bubble { background: white; padding: 0.3rem 0.8rem; border-radius: 20px; }
         .mine .bubble { background: #d9f0ff; }
-        .name { font-size: 0.7rem; font-weight: bold; }
-        .text { font-size: 0.85rem; }
-        .time { font-size: 0.6rem; color: gray; text-align: right; }
-        .input-bar {
-            display: flex;
-            gap: 0.5rem;
-            padding: 0.5rem;
-            background: #eee;
-            border-top: 1px solid #ccc;
-        }
-        .input-bar input { flex: 1; padding: 0.5rem; border-radius: 20px; border: 1px solid #ccc; }
-        button { background: #0a3f6f; color: white; border: none; padding: 0.3rem 1rem; border-radius: 20px; cursor: pointer; }
-        .icon-btn { background: #ccc; }
-        .auth-card {
-            max-width: 400px;
-            margin: 2rem auto;
-            background: white;
-            padding: 1.5rem;
-            border-radius: 24px;
-            text-align: center;
-        }
-        .auth-card input { width: 100%; margin: 0.3rem 0; padding: 0.5rem; }
+        .input-bar { display: flex; gap: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.5); }
+        .input-bar input { flex: 1; border-radius: 40px; border: none; padding: 0.5rem 1rem; }
+        button { background: #0a3f6f; color: white; border: none; border-radius: 40px; padding: 0.3rem 1rem; cursor: pointer; }
+        .auth-card { max-width: 400px; margin: 2rem auto; background: white; padding: 1.5rem; border-radius: 24px; }
         .hidden { display: none; }
-        .avatar-select { display: flex; justify-content: center; gap: 0.5rem; margin: 1rem 0; }
-        .avatar-opt { width: 48px; height: 48px; background: #0a3f6f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; }
-        .selected { border: 2px solid #e94560; }
     </style>
 </head>
 <body>
-
-<div id="authScreen" class="auth-card">
-    <h2>Вход / Регистрация</h2>
-    <div class="avatar-select" id="avatarSelect">
-        <div class="avatar-opt" data-avatar="😎">😎</div>
-        <div class="avatar-opt" data-avatar="🐱">🐱</div>
-        <div class="avatar-opt" data-avatar="⭐">⭐</div>
-        <div class="avatar-opt" data-avatar="🎓">🎓</div>
-    </div>
-    <input type="text" id="regName" placeholder="Имя">
-    <input type="email" id="regEmail" placeholder="Email">
-    <input type="password" id="regPass" placeholder="Пароль">
-    <button id="doLogin">Войти</button>
-    <button id="doRegister" style="background: none; color: #0a3f6f;">Зарегистрироваться</button>
+<div id="auth" class="auth-card">
+    <h3>Вход / Регистрация</h3>
+    <input type="text" id="name" placeholder="Имя"><br>
+    <input type="email" id="email" placeholder="Email"><br>
+    <input type="password" id="pass" placeholder="Пароль"><br>
+    <button id="loginBtn">Войти</button>
+    <button id="regBtn">Зарегистрироваться</button>
 </div>
-
-<div id="chatScreen" class="hidden" style="height: 100vh; display: flex; flex-direction: column;">
-    <div class="header">
-        <span>💬 Чат 5А</span>
-        <a href="index.html" style="float: right; color: white;">🏠</a>
-    </div>
+<div id="chat" class="chat hidden">
+    <div style="background: rgba(255,255,255,0.4); padding: 0.5rem 1rem;">💬 Чат 5А <a href="index.html" style="float:right;">🏠</a></div>
     <div class="main">
         <div class="sidebar">
-            <div style="background: white; border-radius: 20px; padding: 0.5rem; margin-bottom: 1rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <div id="profileAvatar" class="avatar" style="width: 40px; height: 40px;">😎</div>
-                    <input type="text" id="profileName" style="flex:1; border-radius: 20px; border: 1px solid #ccc; padding: 0.3rem;">
-                    <button id="saveProfile">💾</button>
-                </div>
-            </div>
-            <h4>Участники</h4>
-            <div id="membersList">—</div>
+            <div><span id="avatar">😎</span> <input id="profileName" placeholder="Имя"> <button id="save">💾</button></div>
+            <hr><b>Участники</b><div id="members"></div>
         </div>
         <div class="messages" id="messagesList"></div>
     </div>
     <div class="input-bar">
-        <button class="icon-btn" id="stickerBtn">😊</button>
-        <input type="text" id="messageInput" placeholder="Сообщение...">
-        <button id="sendBtn">➤</button>
+        <input id="msgInput" placeholder="Сообщение...">
+        <button id="send">➤</button>
     </div>
 </div>
-
-<div id="stickerPanel" style="position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: white; padding: 0.5rem; border-radius: 20px; display: none; gap: 0.5rem; z-index: 1000;"></div>
-
 <script src="js/firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-
 <script>
-    let auth, db, currentUser, unsub;
-    let selectedAvatar = "😎";
-    document.querySelectorAll('.avatar-opt').forEach(el => {
-        el.onclick = () => {
-            document.querySelectorAll('.avatar-opt').forEach(opt => opt.classList.remove('selected'));
-            el.classList.add('selected');
-            selectedAvatar = el.dataset.avatar;
-        };
-    });
-    document.querySelector('.avatar-opt').classList.add('selected');
-
-    firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.firestore();
-
-    function renderMessage(doc) {
-        const data = doc.data();
-        const isMine = data.uid === currentUser?.uid;
-        const div = document.createElement('div');
-        div.className = `message ${isMine ? 'mine' : ''}`;
-        div.innerHTML = `
-            <div class="avatar">${data.avatar || '😎'}</div>
-            <div class="bubble">
-                <div class="name">${escapeHtml(data.displayName || '?')}</div>
-                ${data.sticker ? `<img src="${data.sticker}" style="max-width:100px;">` : `<div class="text">${escapeHtml(data.text || '')}</div>`}
-                <div class="time">${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleTimeString().slice(0,5) : ''}</div>
-            </div>
-        `;
-        return div;
-    }
-    function escapeHtml(s) { return s?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]) || ''; }
-
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('chatScreen').classList.remove('hidden');
-            document.getElementById('profileName').value = user.displayName || '';
-            document.getElementById('profileAvatar').textContent = user.photoURL || '😎';
-            if (unsub) unsub();
-            unsub = db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').orderBy('createdAt').onSnapshot(snap => {
-                const container = document.getElementById('messagesList');
-                container.innerHTML = '';
-                snap.forEach(doc => container.appendChild(renderMessage(doc)));
-                container.scrollTop = container.scrollHeight;
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(), db = firebase.firestore();
+let currentUser, unsub;
+auth.onAuthStateChanged(user => {
+    if(user){
+        currentUser = user;
+        document.getElementById('auth').classList.add('hidden');
+        document.getElementById('chat').classList.remove('hidden');
+        document.getElementById('profileName').value = user.displayName || '';
+        document.getElementById('avatar').textContent = user.photoURL || '😎';
+        if(unsub) unsub();
+        unsub = db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').orderBy('createdAt').onSnapshot(snap => {
+            const cont = document.getElementById('messagesList');
+            cont.innerHTML = '';
+            snap.forEach(doc => {
+                const d = doc.data();
+                const isMine = d.uid === currentUser.uid;
+                cont.innerHTML += `<div class="message ${isMine ? 'mine' : ''}">
+                    <div class="avatar">${d.avatar || '😎'}</div>
+                    <div class="bubble"><b>${escapeHtml(d.displayName)}</b><br>${d.sticker ? `<img src="${d.sticker}" style="max-width:100px">` : escapeHtml(d.text)}<div style="font-size:0.6rem">${d.createdAt ? new Date(d.createdAt.toDate()).toLocaleTimeString().slice(0,5) : ''}</div></div>
+                </div>`;
             });
-            document.getElementById('membersList').innerHTML = `<div>👤 ${user.displayName || user.email}</div>`;
-        } else {
-            document.getElementById('authScreen').style.display = 'block';
-            document.getElementById('chatScreen').classList.add('hidden');
-        }
-    });
-
-    document.getElementById('doLogin').onclick = () => {
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-        auth.signInWithEmailAndPassword(email, pass).catch(e => alert(e.message));
-    };
-    document.getElementById('doRegister').onclick = () => {
-        const name = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-        if (!name || !email || !pass) return alert('Заполни все поля');
-        auth.createUserWithEmailAndPassword(email, pass)
-            .then(cred => cred.user.updateProfile({ displayName: name, photoURL: selectedAvatar }))
-            .catch(e => alert(e.message));
-    };
-    document.getElementById('sendBtn').onclick = async () => {
-        const input = document.getElementById('messageInput');
-        if (!input.value.trim() || !currentUser) return;
-        await db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({
-            uid: currentUser.uid, displayName: currentUser.displayName, avatar: currentUser.photoURL || '😎',
-            text: input.value, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            cont.scrollTop = cont.scrollHeight;
         });
-        input.value = '';
-    };
-    document.getElementById('stickerBtn').onclick = () => {
-        const panel = document.getElementById('stickerPanel');
-        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-        if (panel.style.display === 'flex') {
-            panel.innerHTML = '';
-            ['okay.gif'].forEach(f => {
-                const img = document.createElement('img');
-                img.src = `stickers/${f}`;
-                img.style.width = '60px'; img.style.cursor = 'pointer';
-                img.onclick = () => {
-                    if (!currentUser) return;
-                    db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({
-                        uid: currentUser.uid, displayName: currentUser.displayName, avatar: currentUser.photoURL || '😎',
-                        sticker: `stickers/${f}`, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    panel.style.display = 'none';
-                };
-                panel.appendChild(img);
-            });
-        }
-    };
-    document.getElementById('saveProfile').onclick = async () => {
-        const newName = document.getElementById('profileName').value;
-        const newAvatar = document.getElementById('profileAvatar').textContent;
-        await currentUser.updateProfile({ displayName: newName, photoURL: newAvatar });
-        alert('Профиль обновлён');
-        location.reload();
-    };
+        document.getElementById('members').innerHTML = `<div>👤 ${user.displayName || user.email}</div>`;
+    } else {
+        document.getElementById('auth').classList.remove('hidden');
+        document.getElementById('chat').classList.add('hidden');
+    }
+});
+function escapeHtml(s){ return s?.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]) || ''; }
+document.getElementById('loginBtn').onclick = () => auth.signInWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value);
+document.getElementById('regBtn').onclick = () => auth.createUserWithEmailAndPassword(document.getElementById('email').value, document.getElementById('pass').value).then(cred => cred.user.updateProfile({ displayName: document.getElementById('name').value, photoURL: '😎' }));
+document.getElementById('send').onclick = async () => {
+    const inp = document.getElementById('msgInput');
+    if(!inp.value.trim()) return;
+    await db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({ uid: currentUser.uid, displayName: currentUser.displayName, avatar: currentUser.photoURL || '😎', text: inp.value, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+    inp.value = '';
+};
+document.getElementById('save').onclick = async () => {
+    await currentUser.updateProfile({ displayName: document.getElementById('profileName').value, photoURL: document.getElementById('avatar').textContent });
+    alert('Сохранено');
+};
 </script>
 </body>
 </html>
