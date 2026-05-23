@@ -13,7 +13,6 @@
             box-sizing: border-box;
         }
 
-        /* ВЕСЬ ФОН СТРАНИЦЫ — ГОЛУБОЙ */
         body {
             font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
             background: linear-gradient(145deg, #b0dff5 0%, #cceef8 100%);
@@ -21,8 +20,9 @@
             padding: 1rem;
         }
 
+        /* ШИРОКИЙ ЧАТ — НА ВСЮ ШИРИНУ */
         .chat-glass {
-            max-width: 1600px;
+            max-width: 100%;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(12px);
@@ -55,9 +55,9 @@
             overflow: hidden;
         }
 
-        /* ЛЕВАЯ ПАНЕЛЬ — ГОЛУБАЯ */
+        /* ЛЕВАЯ ПАНЕЛЬ */
         .members-panel {
-            width: 280px;
+            width: 300px;
             background: rgba(255, 255, 255, 0.35);
             backdrop-filter: blur(8px);
             border-right: 1px solid rgba(255,255,255,0.4);
@@ -89,7 +89,7 @@
         .member-name { font-weight: bold; color: #0a2a44; }
         .member-status { font-size: 0.7rem; color: #2c5a7a; }
 
-        /* ОБЛАСТЬ СООБЩЕНИЙ — ТОЛЬКО ЗДЕСЬ ФОН С КАРТИНКОЙ */
+        /* ОБЛАСТЬ СООБЩЕНИЙ С ФОНОМ */
         .messages-area {
             flex: 1;
             display: flex;
@@ -101,7 +101,6 @@
             background-repeat: no-repeat;
         }
 
-        /* ЛЕНТА СООБЩЕНИЙ (поверх картинки, но с полупрозрачным слоем) */
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -112,7 +111,6 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
-        /* ПУЗЫРЬКИ СООБЩЕНИЙ */
         .message {
             display: flex;
             gap: 0.6rem;
@@ -143,7 +141,7 @@
         .message-time { font-size: 0.6rem; color: #94a3b8; margin-top: 0.2rem; text-align: right; }
         .message-sticker { max-width: 150px; border-radius: 20px; }
 
-        /* ПОЛЕ ВВОДА — ГОЛУБОЕ */
+        /* ПОЛЕ ВВОДА */
         .input-area {
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(8px);
@@ -169,9 +167,11 @@
             border-radius: 50%;
             font-size: 1.4rem;
             cursor: pointer;
+            transition: 0.2s;
         }
         .icon-btn:hover { background: #0a3f6f; color: white; }
 
+        /* СТИКЕРЫ */
         .stickers-panel {
             position: fixed;
             bottom: 90px;
@@ -198,8 +198,65 @@
         .sticker-img:hover { transform: scale(1.05); }
 
         .hidden { display: none; }
-        .auth-box { text-align: center; padding: 2rem; background: rgba(255,255,255,0.4); border-radius: 48px; margin: 2rem; }
-        .auth-box input { margin: 0.5rem auto; display: block; width: 80%; max-width: 300px; padding: 0.6rem; border-radius: 40px; border: none; }
+
+        /* КРАСИВАЯ КАРТОЧКА РЕГИСТРАЦИИ/ВХОДА */
+        .auth-card {
+            max-width: 480px;
+            margin: 2rem auto;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 56px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .auth-card h2 { color: #0a3f6f; margin-bottom: 1.5rem; }
+        .avatar-selector {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .avatar-option {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #0a3f6f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: 0.1s;
+            border: 2px solid transparent;
+        }
+        .avatar-option.selected { border-color: #e94560; transform: scale(1.05); background: #1e6a9f; }
+        .auth-card input {
+            width: 100%;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255,255,255,0.8);
+            font-size: 1rem;
+        }
+        .auth-card button {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+        }
+        .auth-card .switch-btn {
+            background: none;
+            color: #0a3f6f;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body class="page-chat">
@@ -219,19 +276,26 @@
         </div>
     </div>
 
-    <div id="authContainer" class="auth-box">
-        <h2>🔐 Вход в чат</h2>
-        <button id="googleLoginBtn" class="btn btn-google" style="background:#0a3f6f; color:white; border:none; padding:0.8rem 1.5rem; border-radius:40px; margin:1rem;">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:20px; margin-right:8px;">
-            Войти через Google
-        </button>
-        <p style="margin:1rem">или</p>
-        <input type="email" id="loginEmail" placeholder="Email">
-        <input type="password" id="loginPassword" placeholder="Пароль">
-        <button id="emailLoginBtn" class="btn btn-primary">Войти</button>
-        <p style="margin-top:1rem">Нет аккаунта? <button id="showRegisterBtn" style="background:none; border:none; color:#0a3f6f; font-weight:bold;">Зарегистрироваться</button></p>
+    <!-- КАРТОЧКА ВХОДА/РЕГИСТРАЦИИ -->
+    <div id="authContainer" class="auth-card">
+        <h2 id="authTitle">🔐 Вход в чат</h2>
+        
+        <div id="avatarSelector" class="avatar-selector">
+            <div class="avatar-option" data-avatar="😎">😎</div>
+            <div class="avatar-option" data-avatar="🐱">🐱</div>
+            <div class="avatar-option" data-avatar="⭐">⭐</div>
+            <div class="avatar-option" data-avatar="🎓">🎓</div>
+            <div class="avatar-option" data-avatar="🔥">🔥</div>
+            <div class="avatar-option" data-avatar="💪">💪</div>
+        </div>
+        <input type="text" id="authName" placeholder="Твоё имя (например: Саша 5А)">
+        <input type="email" id="authEmail" placeholder="Email">
+        <input type="password" id="authPassword" placeholder="Пароль (минимум 6 символов)">
+        <button id="authSubmitBtn">Войти</button>
+        <button id="switchAuthBtn" class="switch-btn">Нет аккаунта? Зарегистрироваться</button>
     </div>
 
+    <!-- ЧАТ -->
     <div id="chatContainer" class="hidden" style="display: flex; flex: 1; overflow: hidden;">
         <div class="members-panel" id="membersPanel">
             <h3 style="color:#0a3f6f; margin-bottom:1rem">📋 Участники</h3>
@@ -260,6 +324,18 @@
     let auth, db;
     let currentUser = null;
     let unsubscribeMessages = null;
+    let isLogin = true;
+    let selectedAvatar = "😎";
+
+    // Выбор аватарки
+    document.querySelectorAll('.avatar-option').forEach(el => {
+        el.addEventListener('click', () => {
+            document.querySelectorAll('.avatar-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedAvatar = el.dataset.avatar;
+        });
+    });
+    document.querySelectorAll('.avatar-option')[0].classList.add('selected');
 
     async function loadStickers() {
         const panel = document.getElementById('stickersPanel');
@@ -278,7 +354,8 @@
         if (!currentUser) return;
         db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({
             uid: currentUser.uid,
-            displayName: currentUser.displayName || currentUser.email.split('@')[0],
+            displayName: currentUser.displayName,
+            avatar: currentUser.photoURL || selectedAvatar,
             sticker: url,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -292,7 +369,7 @@
         div.className = `message ${isMine ? 'mine' : 'other'}`;
         const avatar = document.createElement('div');
         avatar.className = 'message-avatar';
-        avatar.textContent = (data.displayName || '?')[0].toUpperCase();
+        avatar.textContent = data.avatar && data.avatar.length === 2 ? data.avatar : (data.displayName?.[0] || '?');
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
         bubble.innerHTML = `<div class="message-name">${escapeHtml(data.displayName || 'Ученик')}</div>`;
@@ -312,6 +389,45 @@
         return str.replace(/[&<>]/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); 
     }
 
+    function switchAuthMode() {
+        isLogin = !isLogin;
+        const title = document.getElementById('authTitle');
+        const submitBtn = document.getElementById('authSubmitBtn');
+        const switchBtn = document.getElementById('switchAuthBtn');
+        if (isLogin) {
+            title.textContent = '🔐 Вход в чат';
+            submitBtn.textContent = 'Войти';
+            switchBtn.textContent = 'Нет аккаунта? Зарегистрироваться';
+        } else {
+            title.textContent = '📝 Регистрация';
+            submitBtn.textContent = 'Зарегистрироваться';
+            switchBtn.textContent = 'Уже есть аккаунт? Войти';
+        }
+    }
+
+    document.getElementById('switchAuthBtn').onclick = switchAuthMode;
+
+    document.getElementById('authSubmitBtn').onclick = async () => {
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        const name = document.getElementById('authName').value;
+        if (!email || !password || (!isLogin && !name)) {
+            alert('Заполни все поля');
+            return;
+        }
+        try {
+            if (isLogin) {
+                await auth.signInWithEmailAndPassword(email, password);
+            } else {
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                await cred.user.updateProfile({ displayName: name, photoURL: selectedAvatar });
+                await cred.user.reload();
+            }
+        } catch (e) {
+            alert('Ошибка: ' + e.message);
+        }
+    };
+
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
@@ -328,21 +444,20 @@
                 snap.forEach(doc => container.appendChild(renderMessage(doc)));
                 container.scrollTop = container.scrollHeight;
             });
-            document.getElementById('membersList').innerHTML = `<div class="member-item"><div class="member-avatar">${(user.displayName||'?')[0]}</div><div class="member-info"><div class="member-name">${user.displayName || user.email}</div><div class="member-status"><span style="color:#22c55e">🟢 Онлайн</span></div></div></div>`;
+            document.getElementById('membersList').innerHTML = `<div class="member-item"><div class="member-avatar">${user.photoURL || (user.displayName?.[0] || '?')}</div><div class="member-info"><div class="member-name">${user.displayName || user.email}</div><div class="member-status"><span style="color:#22c55e">🟢 Онлайн</span></div></div></div>`;
         } else {
             document.getElementById('authContainer').style.display = 'block';
             document.getElementById('chatContainer').style.display = 'none';
         }
     });
 
-    document.getElementById('googleLoginBtn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    document.getElementById('emailLoginBtn').onclick = () => auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
     document.getElementById('sendBtn').onclick = async () => {
         const input = document.getElementById('messageInput');
         if (!input.value.trim()) return;
         await db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({
             uid: currentUser.uid,
             displayName: currentUser.displayName,
+            avatar: currentUser.photoURL || selectedAvatar,
             text: input.value,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
@@ -353,8 +468,14 @@
         panel.classList.toggle('hidden');
         loadStickers();
     };
-    document.getElementById('attachBtn').onclick = () => alert('📎 Прикрепление файлов скоро появится');
-    document.getElementById('showRegisterBtn').onclick = () => alert('Регистрация: напиши старосте, он добавит тебя.');
+    document.getElementById('attachBtn').onclick = () => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = (e) => {
+            alert('Файл выбран: ' + e.target.files[0].name + '\nСкоро добавим загрузку в облако!');
+        };
+        input.click();
+    };
 </script>
 </body>
 </html>
