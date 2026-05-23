@@ -220,7 +220,7 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКА ПРИВЯЗАНА К .CHAT-AREA ========== */
+        /* ========== МОДАЛКИ (ПРИВЯЗАНЫ К .CHAT-AREA) ========== */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -489,9 +489,14 @@
             if (!dragModal) return;
             const moveY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
             const diff = moveY - startY;
-            if (diff > 60) closeModal(dragModal.id);
-            dragModal.style.transform = '';
-            dragModal.style.opacity = '';
+            if (diff > 60) {
+                dragModal.classList.remove('active');
+                dragModal.style.transform = '';
+                dragModal.style.opacity = '';
+            } else {
+                dragModal.style.transform = '';
+                dragModal.style.opacity = '';
+            }
             dragModal = null;
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onEnd);
@@ -506,6 +511,7 @@
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
+        modal.style.transform = '';
     }
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
