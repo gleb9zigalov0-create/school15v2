@@ -275,7 +275,7 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <!-- 😊 - пустые стикеры (только заглушка) -->
+            <!-- 😊 - стикеры (просто копия скрепки, но без контента) -->
             <button class="icon-button" id="stickerBtn">😊</button>
             <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
             <!-- 📎 - скрепка -->
@@ -283,13 +283,12 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ (ПУСТАЯ) -->
+        <!-- МОДАЛКА СТИКЕРОВ (ПУСТАЯ, БЕЗ УВЕДОМЛЕНИЙ) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
                 <div class="modal-content-inner">
                     <div class="modal-title">✨ Стикеры</div>
-                    <p style="text-align:center; color:#aaa; padding:1rem;">Здесь будут стикеры. Пока ничего нет.</p>
                     <button class="close-btn" id="closeStickerBtn">Закрыть</button>
                 </div>
             </div>
@@ -398,6 +397,7 @@
         });
     }
 
+    // ОБЩИЕ ФУНКЦИИ ДЛЯ МОДАЛОК
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -466,6 +466,7 @@
         });
     }
 
+    // НАЗНАЧАЕМ ЗАКРЫТИЕ ДЛЯ ОБОИХ МОДАЛОК
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -478,9 +479,11 @@
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
+    // ОТКРЫТИЕ МОДАЛОК
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal');
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
     
+    // ТОЛЬКО СКРЕПКА ПОКАЗЫВАЕТ УВЕДОМЛЕНИЕ
     document.querySelectorAll('.attach-item').forEach(el => {
         el.onclick = () => {
             alert(`📎 Отправка ${el.dataset.type} — в разработке`);
