@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ===== ОСНОВНОЙ СТИЛЬ (без изменений) ===== */
+        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * {
             margin: 0;
             padding: 0;
@@ -81,16 +81,30 @@
             background-size: cover;
             background-position: center;
         }
-        .member-info { flex: 1; }
-        .member-name { font-weight: 600; color: white; font-size: 0.9rem; }
-        .member-status { font-size: 0.7rem; opacity: 0.8; }
-        .online-status { color: #4ade80; }
-        .offline-status { color: #9ca3af; }
+        .member-info {
+            flex: 1;
+        }
+        .member-name {
+            font-weight: 600;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .member-status {
+            font-size: 0.7rem;
+            opacity: 0.8;
+        }
+        .online-status {
+            color: #4ade80;
+        }
+        .offline-status {
+            color: #9ca3af;
+        }
         .chat-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             background: rgba(0, 0, 0, 0.2);
+            position: relative;
         }
         .chat-header {
             padding: 1rem 1.5rem;
@@ -101,7 +115,11 @@
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .chat-title { font-weight: bold; color: white; font-size: 1.1rem; }
+        .chat-title {
+            font-weight: bold;
+            color: white;
+            font-size: 1.1rem;
+        }
         .settings-btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -153,11 +171,20 @@
             background: #0a3f6f;
             color: white;
         }
-        .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
-        .msg-text { font-size: 0.9rem; }
-        .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
-
-        /* ===== ПОЛЕ ВВОДА ===== */
+        .msg-name {
+            font-size: 0.65rem;
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+        }
+        .msg-text {
+            font-size: 0.9rem;
+        }
+        .msg-time {
+            font-size: 0.6rem;
+            opacity: 0.6;
+            margin-top: 0.2rem;
+            text-align: right;
+        }
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -193,36 +220,33 @@
             outline: none;
         }
 
-        /* ===== МОДАЛКА ===== */
-        .modal {
+        /* ========== МОДАЛКА ПРИВЯЗАНА К .CHAT-AREA ========== */
+        .modal-wrapper {
             position: absolute;
-            bottom: 100%;
+            bottom: 80px;
             left: 0;
             right: 0;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            z-index: 20;
+            z-index: 25;
             pointer-events: none;
+        }
+        .modal {
+            width: calc(100% - 2rem);
+            max-width: 500px;
+            background: rgba(30, 47, 62, 0.96);
+            backdrop-filter: blur(20px);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            pointer-events: auto;
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
             transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
         .modal.active {
             opacity: 1;
             transform: translateY(0);
-            pointer-events: auto;
-        }
-        .modal-sheet {
-            background: #1e2f3e;
-            border-radius: 28px;
-            width: calc(100% - 2rem);
-            max-width: 500px;
-            background: rgba(30, 47, 62, 0.96);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            margin-bottom: 12px;
         }
         .modal-handle {
             width: 50px;
@@ -305,7 +329,7 @@
         <div class="members-header">👥 Участники 5А</div>
         <ul class="members-list" id="membersList"></ul>
     </div>
-    <div class="chat-area">
+    <div class="chat-area" id="chatArea">
         <div class="chat-header">
             <span class="chat-title">💬 Общий чат 5 «А»</span>
             <button class="settings-btn" id="settingsBtn">⚙️ Настройки</button>
@@ -317,34 +341,36 @@
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
-    </div>
-</div>
 
-<div id="stickerModal" class="modal">
-    <div class="modal-sheet">
-        <div class="modal-handle" id="stickerHandle"></div>
-        <div class="modal-content-inner">
-            <div class="modal-title">✨ Стикеры</div>
-            <div id="stickerList" class="sticker-grid"></div>
-            <button class="close-btn" id="closeStickerBtn">Закрыть</button>
-        </div>
-    </div>
-</div>
-
-<div id="attachModal" class="modal">
-    <div class="modal-sheet">
-        <div class="modal-handle" id="attachHandle"></div>
-        <div class="modal-content-inner">
-            <div class="modal-title">📎 Отправить</div>
-            <div class="attach-grid">
-                <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
-                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+        <!-- МОДАЛКА СТИКЕРОВ -->
+        <div class="modal-wrapper" id="stickerWrapper">
+            <div class="modal" id="stickerModal">
+                <div class="modal-handle" id="stickerHandle"></div>
+                <div class="modal-content-inner">
+                    <div class="modal-title">✨ Стикеры</div>
+                    <div id="stickerList" class="sticker-grid"></div>
+                    <button class="close-btn" id="closeStickerBtn">Закрыть</button>
+                </div>
             </div>
-            <button class="close-btn" id="closeAttachBtn">Закрыть</button>
+        </div>
+
+        <!-- МОДАЛКА СКРЕПКИ -->
+        <div class="modal-wrapper" id="attachWrapper">
+            <div class="modal" id="attachModal">
+                <div class="modal-handle" id="attachHandle"></div>
+                <div class="modal-content-inner">
+                    <div class="modal-title">📎 Отправить</div>
+                    <div class="attach-grid">
+                        <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
+                        <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                        <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                        <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                        <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                        <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+                    </div>
+                    <button class="close-btn" id="closeAttachBtn">Закрыть</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -439,7 +465,7 @@
     let startY = 0, dragModal = null;
     function attachDrag(modalId) {
         const modal = document.getElementById(modalId);
-        const sheet = modal.querySelector('.modal-sheet');
+        if (!modal) return;
         const handle = modal.querySelector('.modal-handle');
         if (!handle) return;
         const onStart = (e) => {
@@ -456,7 +482,7 @@
             const diff = moveY - startY;
             if (diff > 0) {
                 dragModal.style.transform = `translateY(${diff}px)`;
-                dragModal.style.opacity = '0.8';
+                dragModal.style.opacity = '0.7';
             }
         };
         const onEnd = (e) => {
