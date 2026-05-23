@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Вход в чат — Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: url('images/fon.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .glass-card {
+            max-width: 460px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px);
+            border-radius: 56px;
+            padding: 2rem 1.8rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.2s;
+        }
+
+        h1 { text-align: center; font-size: 2rem; color: #0a3f6f; margin-bottom: 0.3rem; }
+        .sub { text-align: center; color: #2c5a7a; margin-bottom: 2rem; font-weight: 500; }
+
+        .btn-google {
+            background: white; border: none; width: 100%; padding: 0.9rem; border-radius: 60px;
+            font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+            gap: 12px; cursor: pointer; transition: 0.2s; margin-bottom: 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .btn-google:hover { background: #f0f2f5; transform: scale(1.02); }
+
+        .divider { text-align: center; color: #fff; font-size: 0.8rem; margin: 1rem 0; position: relative; }
+        .divider::before, .divider::after {
+            content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: rgba(255,255,255,0.4);
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+
+        .toggle-buttons { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; }
+        .toggle-btn {
+            flex: 1; background: rgba(255,255,255,0.2); border: none; padding: 0.6rem; border-radius: 40px;
+            font-weight: 600; color: white; cursor: pointer; transition: 0.2s;
+        }
+        .toggle-btn.active { background: #0a3f6f; color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #0a3f6f; margin-bottom: 0.3rem; }
+        .form-group input { width: 100%; padding: 0.7rem 1rem; border-radius: 40px; border: none; background: rgba(255,255,255,0.8); font-size: 0.95rem; }
+
+        .btn-primary { background: #0a3f6f; color: white; border: none; width: 100%; padding: 0.8rem; border-radius: 60px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.2s; margin-top: 0.5rem; }
+        .btn-primary:hover { background: #e94560; transform: scale(1.01); }
+
+        .switch-link { text-align: center; margin-top: 1.2rem; color: white; font-size: 0.85rem; }
+        .switch-link span { color: #ffd966; cursor: pointer; font-weight: bold; }
+
+        .error-msg { color: #e94560; background: rgba(255,255,255,0.8); border-radius: 40px; padding: 0.4rem 1rem; font-size: 0.8rem; text-align: center; margin-bottom: 1rem; display: none; }
+        footer { text-align: center; margin-top: 1.8rem; color: #0a3f6f; font-size: 0.7rem; }
+    </style>
+</head>
+<body>
+
+<div class="glass-card" id="loginContainer">
+    <h1>🏫 Школа №15</h1>
+    <div class="sub">Чат 5А класса</div>
+
+    <button class="btn-google" id="googleLoginBtn">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22" alt="">
+        Войти через Google
+    </button>
+
+    <div class="divider">или</div>
+
+    <div class="toggle-buttons">
+        <button class="toggle-btn active" id="showLoginBtn">Вход</button>
+        <button class="toggle-btn" id="showRegisterBtn">Регистрация</button>
+    </div>
+
+    <div id="errorMsg" class="error-msg"></div>
+
+    <!-- Форма входа -->
+    <div id="loginForm">
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="you@mail.ru">
+        </div>
+        <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" id="loginPassword" placeholder="••••••">
+        </div>
+        <button class="btn-primary" id="doLoginBtn">Войти</button>
+        <div class="switch-link">
+            Нет аккаунта? <span id="toRegisterBtn">Зарегистрироваться</span>
+        </div>
+    </div>
+
+    <!-- Форма регистрации -->
+    <div id="registerForm" style="display:none">
+        <div class="form-group">
+            <label>Твоё имя в чате (например, Саша 5А)</label>
+            <input type="text" id="regName" placeholder="Саша 5А">
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="regEmail" placeholder="you@mail.ru">
+        </div>
+        <div class="form-group">
+            <label>Пароль (мин. 6 символов)</label>
+            <input type="password" id="regPassword" placeholder="••••••">
+        </div>
+        <button class="btn-primary" id="doRegisterBtn">Зарегистрироваться</button>
+        <div class="switch-link">
+            Уже есть аккаунт? <span id="toLoginBtn">Войти</span>
+        </div>
+    </div>
+
+    <footer>🔒 Только для учеников и учителей 5А</footer>
+</div>
+
+<script src="js/firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script>
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const loginFormDiv = document.getElementById('loginForm');
+    const registerFormDiv = document.getElementById('registerForm');
+    const errorDiv = document.getElementById('errorMsg');
+
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 4000);
+    }
+
+    function switchToLogin() {
+        loginFormDiv.style.display = 'block';
+        registerFormDiv.style.display = 'none';
+        document.getElementById('showLoginBtn').classList.add('active');
+        document.getElementById('showRegisterBtn').classList.remove('active');
+    }
+
+    function switchToRegister() {
+        loginFormDiv.style.display = 'none';
+        registerFormDiv.style.display = 'block';
+        document.getElementById('showRegisterBtn').classList.add('active');
+        document.getElementById('showLoginBtn').classList.remove('active');
+    }
+
+    document.getElementById('showLoginBtn').onclick = switchToLogin;
+    document.getElementById('showRegisterBtn').onclick = switchToRegister;
+    document.getElementById('toRegisterBtn').onclick = switchToRegister;
+    document.getElementById('toLoginBtn').onclick = switchToLogin;
+
+    // Google вход
+    document.getElementById('googleLoginBtn').onclick = async () => {
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await auth.signInWithPopup(provider);
+            // перенаправление произойдёт в onAuthStateChanged
+        } catch (e) {
+            showError('Ошибка Google: ' + e.message);
+        }
+    };
+
+    // Email/пароль вход
+    document.getElementById('doLoginBtn').onclick = async () => {
+        const email = document.getElementById('loginEmail').value.trim();
+        const pass = document.getElementById('loginPassword').value;
+        if (!email || !pass) return showError('Введи email и пароль');
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            // перенаправление произойдёт в onAuthStateChanged
+        } catch (e) {
+            showError('Неверный email или пароль');
+        }
+    };
+
+    // Регистрация с именем
+    document.getElementById('doRegisterBtn').onclick = async () => {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const pass = document.getElementById('regPassword').value;
+        if (!name || !email || !pass) return showError('Заполни все поля');
+        if (pass.length < 6) return showError('Пароль должен быть не менее 6 символов');
+        try {
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            // Обновляем профиль с именем
+            await cred.user.updateProfile({ displayName: name });
+            // Принудительная перезагрузка, чтобы имя точно сохранилось
+            await cred.user.reload();
+            // Сохраняем в Firestore
+            await db.collection('users').doc(cred.user.uid).set({
+                name: name,
+                avatar: '',
+                createdAt: new Date()
+            });
+            // перенаправление произойдёт в onAuthStateChanged
+        } catch (e) {
+            if (e.code === 'auth/email-already-in-use') showError('Этот email уже используется');
+            else showError(e.message);
+        }
+    };
+
+    // Глобальный слушатель: если пользователь вошёл — отправляем в чат
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            window.location.href = 'chat.html';
+        }
+    });
+</script>
+</body>
+</html>
