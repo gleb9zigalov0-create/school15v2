@@ -272,7 +272,8 @@
             font-weight: 500;
             margin-bottom: 1rem;
         }
-        .sticker-grid, .attach-grid {
+        .sticker-grid,
+        .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -342,7 +343,7 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ -->
+        <!-- МОДАЛКА СТИКЕРОВ (ТОЧНО КАК СКРЕПКА) -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -462,7 +463,7 @@
     }
     window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
 
-    // Универсальная функция закрытия модалки
+    // Функции управления модалками
     function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -475,13 +476,15 @@
         modal.classList.add('active');
     }
 
-    // Закрытие по серой полоске (свайп вниз)
+    // Закрытие по серой полоске
     function initSwipeClose(modalId, handleId) {
         const modal = document.getElementById(modalId);
         const handle = document.getElementById(handleId);
         if (!modal || !handle) return;
+        
         let startY = 0;
         let startTransform = 0;
+        
         const onTouchStart = (e) => {
             startY = e.touches[0].clientY;
             const transform = modal.style.transform;
@@ -491,6 +494,7 @@
                 startTransform = 0;
             }
         };
+        
         const onTouchMove = (e) => {
             const delta = e.touches[0].clientY - startY;
             if (delta > 0) {
@@ -498,6 +502,7 @@
                 modal.style.opacity = '0.7';
             }
         };
+        
         const onTouchEnd = (e) => {
             const delta = e.changedTouches[0].clientY - startY;
             if (delta > 80) {
@@ -506,9 +511,12 @@
             modal.style.transform = '';
             modal.style.opacity = '';
         };
+        
         handle.addEventListener('touchstart', onTouchStart);
         handle.addEventListener('touchmove', onTouchMove);
         handle.addEventListener('touchend', onTouchEnd);
+        
+        // Для мыши
         handle.addEventListener('mousedown', (e) => {
             startY = e.clientY;
             const onMouseMove = (moveEvent) => {
@@ -533,6 +541,7 @@
         });
     }
 
+    // Кнопки закрытия
     document.getElementById('closeStickerBtn').onclick = (e) => {
         e.preventDefault();
         closeModal('stickerModal');
@@ -541,19 +550,25 @@
         e.preventDefault();
         closeModal('attachModal');
     };
+    
+    // Инициализация свайпа для обеих модалок
     initSwipeClose('stickerModal', 'stickerHandle');
     initSwipeClose('attachModal', 'attachHandle');
 
+    // Открытие модалок
     document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
+    
     document.querySelectorAll('.attach-item').forEach(el => {
         el.onclick = () => { alert(`📎 Отправка ${el.dataset.type} — в разработке`); closeModal('attachModal'); };
     });
+    
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
         if (inp.value.trim()) sendMessage(inp.value);
         inp.value = '';
     };
+    
     document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
 </script>
 </body>
