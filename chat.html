@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ОСНОВНОЙ СТИЛЬ (ТВОЙ) ========== */
+        /* ========== ОСНОВНОЙ СТИЛЬ ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -151,10 +151,13 @@
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
             display: flex;
             gap: 0.6rem;
             align-items: center;
             border-top: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 5;
         }
         .icon-button {
             background: rgba(255, 255, 255, 0.3);
@@ -177,32 +180,46 @@
             outline: none;
         }
 
-        /* ========== МОДАЛЬНЫЕ ОКНА (НОВЫЕ, ПЛАВНЫЕ) ========== */
+        /* ========== МОДАЛЬНОЕ ОКНО (над полем ввода) ========== */
         .modal {
             display: none;
-            position: fixed;
-            bottom: 0;
+            position: absolute;
+            bottom: 80px;
             left: 0;
-            width: 100%;
-            background: rgba(0,0,0,0.3);
-            backdrop-filter: blur(4px);
+            right: 0;
             justify-content: center;
             align-items: flex-end;
-            z-index: 1000;
-            transition: opacity 0.2s;
+            z-index: 20;
+            pointer-events: none;
         }
         .modal.active {
             display: flex;
+            pointer-events: auto;
         }
         .modal-sheet {
-            background: #2a3a4e;
-            border-radius: 28px 28px 0 0;
-            width: 100%;
+            background: #1e2f3e;
+            border-radius: 32px 32px 24px 24px;
+            width: calc(100% - 2rem);
             max-width: 500px;
             margin: 0 auto;
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 -8px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(30px);
+            background: rgba(30, 47, 62, 0.9);
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        /* градиентное рассеивание блюра снизу вверх */
+        .modal-sheet::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to top, rgba(30,47,62,0.9), rgba(30,47,62,0));
+            pointer-events: none;
+            border-radius: 0 0 32px 32px;
         }
         .modal.active .modal-sheet {
             transform: translateY(0);
@@ -213,17 +230,21 @@
             background: #7f8c8d;
             border-radius: 10px;
             margin: 12px auto 8px;
-            cursor: pointer;
+            cursor: grab;
+            transition: 0.1s;
+        }
+        .modal-handle:active {
+            cursor: grabbing;
         }
         .modal-content-inner {
             padding: 0 1rem 1.5rem;
-            max-height: 60vh;
+            max-height: 55vh;
             overflow-y: auto;
         }
         .modal-title {
             text-align: center;
-            color: white;
-            font-size: 1rem;
+            color: #e0e0e0;
+            font-size: 0.9rem;
             font-weight: 500;
             margin-bottom: 1rem;
         }
@@ -234,7 +255,7 @@
             justify-content: center;
         }
         .sticker-img {
-            width: 90px;
+            width: 85px;
             cursor: pointer;
             background: white;
             border-radius: 20px;
@@ -245,19 +266,19 @@
         .attach-item {
             text-align: center;
             flex: 1;
-            min-width: 80px;
+            min-width: 70px;
             cursor: pointer;
         }
         .attach-icon {
-            font-size: 2.5rem;
+            font-size: 2.2rem;
             filter: grayscale(100%);
             opacity: 0.7;
             transition: 0.1s;
         }
         .attach-icon:hover { opacity: 1; transform: scale(1.05); }
         .attach-label {
-            font-size: 0.7rem;
-            color: #ccc;
+            font-size: 0.65rem;
+            color: #bbb;
             margin-top: 0.3rem;
         }
         .close-btn {
@@ -297,9 +318,9 @@
 <!-- МОДАЛКА СТИКЕРОВ -->
 <div id="stickerModal" class="modal">
     <div class="modal-sheet">
-        <div class="modal-handle" id="closeStickerHandle"></div>
+        <div class="modal-handle" id="stickerHandle"></div>
         <div class="modal-content-inner">
-            <div class="modal-title">Выбери стикер</div>
+            <div class="modal-title">✨ Стикеры</div>
             <div id="stickerList" class="sticker-grid"></div>
             <button class="close-btn" id="closeStickerBtn">Закрыть</button>
         </div>
@@ -309,9 +330,9 @@
 <!-- МОДАЛКА СКРЕПКИ -->
 <div id="attachModal" class="modal">
     <div class="modal-sheet">
-        <div class="modal-handle" id="closeAttachHandle"></div>
+        <div class="modal-handle" id="attachHandle"></div>
         <div class="modal-content-inner">
-            <div class="modal-title">Отправить файл</div>
+            <div class="modal-title">📎 Отправить</div>
             <div class="attach-grid">
                 <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
                 <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
@@ -406,31 +427,71 @@
         });
     }
 
-    // Стикеры
     function loadStickers() {
         const stickers = ['stickers/okay.gif'];
         document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" onclick="sendSticker('${s}')">`).join('');
     }
     window.sendSticker = (url) => { sendMessage('', url); closeModal('stickerModal'); };
-    window.closeModal = (modalId) => {
+
+    let startY = 0, currentSheet = null, currentModalId = null;
+    function attachDrag(modalId, sheetSelector) {
+        const modal = document.getElementById(modalId);
+        const sheet = modal.querySelector('.modal-sheet');
+        const handle = modal.querySelector('.modal-handle');
+        if (!handle) return;
+        const onStart = (e) => {
+            startY = e.touches ? e.touches[0].clientY : e.clientY;
+            currentSheet = sheet;
+            currentModalId = modalId;
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchmove', onMove);
+            document.addEventListener('touchend', onEnd);
+        };
+        const onMove = (e) => {
+            if (!currentSheet) return;
+            const moveY = e.touches ? e.touches[0].clientY : e.clientY;
+            const diff = moveY - startY;
+            if (diff > 0) {
+                currentSheet.style.transform = `translateY(${diff}px)`;
+            }
+        };
+        const onEnd = (e) => {
+            if (!currentSheet) return;
+            const moveY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            const diff = moveY - startY;
+            if (diff > 80) {
+                closeModal(currentModalId);
+            }
+            currentSheet.style.transform = '';
+            currentSheet = null;
+            currentModalId = null;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onEnd);
+            document.removeEventListener('touchmove', onMove);
+            document.removeEventListener('touchend', onEnd);
+        };
+        handle.addEventListener('mousedown', onStart);
+        handle.addEventListener('touchstart', onStart);
+    }
+
+    function closeModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
         setTimeout(() => modal.style.display = 'none', 300);
-    };
+    }
     function openModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('active'), 10);
     }
-    function closeModalOnHandle(modalId) {
-        closeModal(modalId);
-    }
+
     document.getElementById('closeStickerBtn').onclick = () => closeModal('stickerModal');
-    document.getElementById('closeStickerHandle').onclick = () => closeModal('stickerModal');
     document.getElementById('closeAttachBtn').onclick = () => closeModal('attachModal');
-    document.getElementById('closeAttachHandle').onclick = () => closeModal('attachModal');
+    attachDrag('stickerModal', '.modal-sheet');
+    attachDrag('attachModal', '.modal-sheet');
 
     document.getElementById('stickerBtn').onclick = () => { loadStickers(); openModal('stickerModal'); };
     document.getElementById('attachBtn').onclick = () => openModal('attachModal');
