@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ТВОЙ СТИЛЬ (полностью сохранён, ничего не менял, только добавил ava-img */
+        /* ===== ТВОЙ СТИЛЬ (полностью сохранён) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -73,12 +73,6 @@
             font-weight: bold;
             font-size: 1rem;
             text-transform: uppercase;
-            overflow: hidden;
-        }
-        .member-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
         .member-info { flex: 1; }
         .member-name { font-weight: 600; color: white; font-size: 0.9rem; }
@@ -138,12 +132,6 @@
             justify-content: center;
             color: white;
             font-size: 0.7rem;
-            overflow: hidden;
-        }
-        .msg-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
         .msg-bubble {
             background: rgba(255, 255, 255, 0.9);
@@ -229,7 +217,7 @@
 </head>
 <body>
 
-<div class="chat-main-container" id="chatContainer">
+<div class="chat-main-container">
     <div class="members-panel">
         <div class="members-header">👥 Участники 5А</div>
         <ul class="members-list" id="membersList"></ul>
@@ -251,7 +239,7 @@
 
 <div id="stickerModal" class="modal">
     <div class="modal-bottom">
-        <h3 style="text-align:center">Выбери стикер</h3>
+        <h3>Выбери стикер</h3>
         <div id="stickerList" class="sticker-grid"></div>
         <button class="close-btn" onclick="closeModal('stickerModal')">Закрыть</button>
     </div>
@@ -259,14 +247,14 @@
 
 <div id="attachModal" class="modal">
     <div class="modal-bottom">
-        <h3 style="text-align:center">Отправить файл</h3>
+        <h3>Отправить файл</h3>
         <div class="sticker-grid" style="grid-template-columns: repeat(3,1fr);">
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📷</div><div>Фото</div></div>
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🎥</div><div>Видео</div></div>
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📄</div><div>Файл</div></div>
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">📊</div><div>Опрос</div></div>
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🎤</div><div>Голос</div></div>
-            <div style="text-align:center"><div class="icon-button" style="font-size:2rem; width:70px; margin:0 auto;">🔗</div><div>Ссылка</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">📷</div><div>Фото</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">🎥</div><div>Видео</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">📄</div><div>Файл</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">📊</div><div>Опрос</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">🎤</div><div>Голос</div></div>
+            <div style="text-align:center"><div class="icon-button" style="font-size:2rem;">🔗</div><div>Ссылка</div></div>
         </div>
         <button class="close-btn" onclick="closeModal('attachModal')">Отмена</button>
     </div>
@@ -282,15 +270,10 @@
     const db = firebase.firestore();
     let currentUser = null;
     let messagesUnsub = null;
-    const usersCache = new Map(); // кэш аватарок
 
-    async function getUserData(uid) {
-        if (usersCache.has(uid)) return usersCache.get(uid);
-        const doc = await db.collection('users').doc(uid).get();
-        const data = doc.data() || { name: 'Ученик', avatarUrl: null };
-        usersCache.set(uid, data);
-        return data;
-    }
+    // ========== ВАЖНО: ПУТЬ К СООБЩЕНИЯМ ==========
+    // У тебя сообщения лежат в class5a или class5a_chat? Поставь нужный вариант:
+    const CHAT_PATH = 'class5a';   // ← если сообщения в class5a_chat — поменяй на 'class5a_chat'
 
     auth.onAuthStateChanged(async (user) => {
         if (!user) {
@@ -298,7 +281,7 @@
             return;
         }
         currentUser = user;
-        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик', lastSeen: new Date() }, { merge: true });
+        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
         loadMessages();
         loadMembers();
         window.addEventListener('beforeunload', () => {
@@ -306,65 +289,58 @@
         });
     });
 
-    const CHAT_PATH = 'class5a';  // если нужно 'class5a_chat' — поменяй
-
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages')
             .orderBy('createdAt')
-            .onSnapshot(async (snap) => {
+            .onSnapshot(snap => {
                 const container = document.getElementById('messagesArea');
                 container.innerHTML = '';
-                for (const doc of snap.docs) {
+                snap.forEach(doc => {
                     const m = doc.data();
                     const mine = m.uid === currentUser?.uid;
-                    const userData = await getUserData(m.uid);
-                    const avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}">` : (m.name?.charAt(0) || '?');
                     const div = document.createElement('div');
                     div.className = `message ${mine ? 'mine' : ''}`;
                     div.innerHTML = `
-                        <div class="msg-avatar">${avatarHtml}</div>
+                        <div class="msg-avatar">${(m.name?.charAt(0) || '?')}</div>
                         <div class="msg-bubble">
-                            <div class="msg-name">${userData.name || m.name || 'Ученик'}</div>
+                            <div class="msg-name">${m.name || 'Ученик'}</div>
                             <div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div>
                             <div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div>
                         </div>
                     `;
                     container.appendChild(div);
-                }
+                });
                 container.scrollTop = container.scrollHeight;
-            });
+            }, err => console.error('Ошибка загрузки сообщений:', err));
     }
 
     async function loadMembers() {
-        db.collection('status').onSnapshot(async (snap) => {
+        db.collection('status').onSnapshot(snap => {
             const container = document.getElementById('membersList');
             container.innerHTML = '';
-            for (const doc of snap.docs) {
+            snap.forEach(doc => {
                 const m = doc.data();
-                const userData = await getUserData(doc.id);
-                const avatarHtml = userData.avatarUrl ? `<img src="${userData.avatarUrl}">` : (m.name?.charAt(0) || '?');
                 container.innerHTML += `
                     <li class="member-item">
-                        <div class="member-avatar">${avatarHtml}</div>
+                        <div class="member-avatar">${(m.name?.charAt(0) || '?')}</div>
                         <div class="member-info">
-                            <div class="member-name">${userData.name || m.name || 'Ученик'}</div>
+                            <div class="member-name">${m.name || 'Ученик'}</div>
                             <div class="member-status ${m.online ? 'online-status' : 'offline-status'}">${m.online ? '🟢 Онлайн' : '⚫ Офлайн'}</div>
                         </div>
                     </li>
                 `;
-            }
+            });
         });
     }
 
     async function sendMessage(text, stickerUrl = null) {
         if (!text.trim() && !stickerUrl) return;
-        const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
             sticker: stickerUrl,
             uid: currentUser.uid,
-            name: userData.name || currentUser.displayName || 'Ученик',
+            name: currentUser.displayName || 'Ученик',
             createdAt: new Date()
         });
     }
