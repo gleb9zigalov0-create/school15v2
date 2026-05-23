@@ -40,7 +40,6 @@
             justify-content: center;
             z-index: 2000;
         }
-
         .modal-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -51,7 +50,6 @@
             box-shadow: 0 25px 50px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.5);
         }
-
         .modal-card h2 {
             background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
@@ -59,7 +57,6 @@
             color: transparent;
             margin-bottom: 1rem;
         }
-
         .avatar-selector {
             display: flex;
             justify-content: center;
@@ -67,7 +64,6 @@
             margin: 20px 0;
             flex-wrap: wrap;
         }
-
         .avatar-opt {
             width: 56px;
             height: 56px;
@@ -79,19 +75,16 @@
             font-size: 28px;
             cursor: pointer;
             border: 2px solid transparent;
-            transition: 0.2s;
+            transition: all 0.2s ease;
         }
-
         .avatar-opt:hover {
             transform: scale(1.1);
         }
-
         .avatar-opt.selected {
             border-color: #f5576c;
             transform: scale(1.1);
             box-shadow: 0 0 20px rgba(245,87,108,0.5);
         }
-
         .modal-card input {
             width: 100%;
             padding: 14px 18px;
@@ -100,14 +93,13 @@
             border: none;
             background: rgba(255,255,255,0.9);
             font-size: 16px;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-
         .modal-card input:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(102,126,234,0.3);
+            transform: scale(1.02);
         }
-
         .modal-card button {
             width: 100%;
             padding: 14px;
@@ -118,19 +110,16 @@
             font-weight: bold;
             margin-top: 12px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-
         .modal-card button:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102,126,234,0.4);
         }
-
         .switch-btn {
             background: transparent !important;
             color: #667eea !important;
         }
-
         .switch-btn:hover {
             background: rgba(102,126,234,0.1) !important;
             transform: none !important;
@@ -146,7 +135,6 @@
             flex-direction: column;
             overflow: hidden;
         }
-
         .chat-header {
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(20px);
@@ -156,7 +144,6 @@
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.3);
         }
-
         .chat-header h1 {
             background: linear-gradient(135deg, #fff, #f0f0f0);
             -webkit-background-clip: text;
@@ -164,7 +151,6 @@
             color: transparent;
             font-size: 1.5rem;
         }
-
         .back-btn {
             background: rgba(255,255,255,0.2);
             backdrop-filter: blur(8px);
@@ -172,15 +158,13 @@
             border-radius: 40px;
             text-decoration: none;
             color: white;
-            transition: 0.2s;
+            transition: all 0.2s;
             border: 1px solid rgba(255,255,255,0.3);
         }
-
         .back-btn:hover {
             background: rgba(255,255,255,0.4);
             transform: scale(0.95);
         }
-
         .main-layout {
             display: flex;
             flex: 1;
@@ -188,7 +172,6 @@
             padding: 16px;
             gap: 16px;
         }
-
         /* Левая панель */
         .sidebar {
             width: 300px;
@@ -199,7 +182,6 @@
             overflow-y: auto;
             border: 1px solid rgba(255,255,255,0.3);
         }
-
         .profile-card {
             background: rgba(255,255,255,0.25);
             border-radius: 32px;
@@ -209,7 +191,6 @@
             gap: 12px;
             margin-bottom: 20px;
         }
-
         .profile-avatar {
             width: 48px;
             height: 48px;
@@ -220,14 +201,12 @@
             justify-content: center;
             font-size: 24px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s;
             border: 2px solid rgba(255,255,255,0.5);
         }
-
         .profile-avatar:hover {
             transform: scale(1.05);
         }
-
         .profile-name {
             flex: 1;
             padding: 8px 16px;
@@ -235,7 +214,6 @@
             border: none;
             background: rgba(255,255,255,0.8);
         }
-
         .save-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
@@ -243,20 +221,17 @@
             padding: 6px 12px;
             border-radius: 40px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-
         .save-btn:hover {
             transform: scale(1.05);
         }
-
         .members-title {
             color: white;
             margin: 15px 0 10px;
             font-weight: bold;
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         /* Область сообщений */
         .messages-area {
             flex: 1;
@@ -268,7 +243,6 @@
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.3);
         }
-
         .messages-list {
             flex: 1;
             overflow-y: auto;
@@ -277,29 +251,24 @@
             flex-direction: column;
             gap: 12px;
         }
-
         /* Стилизация скроллбара */
         .messages-list::-webkit-scrollbar {
             width: 6px;
         }
-
         .messages-list::-webkit-scrollbar-track {
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
         }
-
         .messages-list::-webkit-scrollbar-thumb {
             background: rgba(255,255,255,0.4);
             border-radius: 10px;
         }
-
         .message {
             display: flex;
             gap: 12px;
             max-width: 75%;
             animation: fadeInUp 0.3s ease;
         }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -310,12 +279,10 @@
                 transform: translateY(0);
             }
         }
-
         .message.mine {
             align-self: flex-end;
             flex-direction: row-reverse;
         }
-
         .msg-avatar {
             width: 40px;
             height: 40px;
@@ -326,43 +293,36 @@
             justify-content: center;
             font-size: 20px;
         }
-
         .msg-bubble {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 24px;
             padding: 8px 14px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-
         .message.mine .msg-bubble {
             background: linear-gradient(135deg, rgba(102,126,234,0.9), rgba(118,75,162,0.9));
             color: white;
         }
-
         .msg-name {
             font-weight: bold;
             font-size: 11px;
             opacity: 0.7;
             margin-bottom: 4px;
         }
-
         .msg-text {
             font-size: 14px;
             word-wrap: break-word;
         }
-
         .msg-time {
             font-size: 10px;
             opacity: 0.6;
             text-align: right;
             margin-top: 4px;
         }
-
         .msg-sticker {
             max-width: 120px;
             border-radius: 16px;
         }
-
         /* Поле ввода */
         .input-bar {
             background: rgba(255,255,255,0.2);
@@ -372,7 +332,6 @@
             gap: 8px;
             border-top: 1px solid rgba(255,255,255,0.3);
         }
-
         .input-bar input {
             flex: 1;
             padding: 10px 16px;
@@ -380,12 +339,10 @@
             border: none;
             background: rgba(255,255,255,0.9);
         }
-
         .input-bar input:focus {
             outline: none;
             box-shadow: 0 0 0 3px rgba(102,126,234,0.3);
         }
-
         .icon-btn {
             background: rgba(255,255,255,0.3);
             border: none;
@@ -393,14 +350,12 @@
             border-radius: 50%;
             font-size: 20px;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-
         .icon-btn:hover {
             background: rgba(255,255,255,0.5);
             transform: scale(1.05);
         }
-
         .sticker-panel {
             position: fixed;
             bottom: 80px;
@@ -408,7 +363,7 @@
             transform: translateX(-50%);
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(20px);
-            padding: 12px 20px;
+            padding: 10px 20px;
             border-radius: 60px;
             display: flex;
             gap: 12px;
@@ -416,21 +371,16 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.5);
         }
-
         .sticker-img {
             width: 60px;
             cursor: pointer;
             border-radius: 20px;
-            transition: 0.2s;
+            transition: all 0.2s;
         }
-
         .sticker-img:hover {
             transform: scale(1.1);
         }
-
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
 
         /* Адаптив */
         @media (max-width: 768px) {
@@ -453,10 +403,10 @@
 </head>
 <body>
 
-<!-- МОДАЛКА ВХОДА -->
+<!-- МОДАЛКА ВХОДА (НЕ ЗАКРЫВАЕТСЯ) -->
 <div id="modal" class="modal">
     <div class="modal-card">
-        <h2 id="modalTitle">🔐 Вход в чат 5А</h2>
+        <h2 id="modalTitle">🔐 Вход в чат</h2>
         <div class="avatar-selector" id="avatarSelector">
             <div class="avatar-opt" data-avatar="😎">😎</div>
             <div class="avatar-opt" data-avatar="🐱">🐱</div>
@@ -472,7 +422,7 @@
     </div>
 </div>
 
-<!-- ОСНОВНОЙ ЧАТ -->
+<!-- ЧАТ (ИЗНАЧАЛЬНО СКРЫТ) -->
 <div id="chatScreen" class="chat hidden">
     <div class="chat-header">
         <h1>💬 Чат 5 «А»</h1>
@@ -501,7 +451,6 @@
 
 <div id="stickerPanel" class="sticker-panel hidden"></div>
 
-<!-- Firebase -->
 <script src="js/firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -511,7 +460,6 @@
     let auth, db, currentUser, unsub;
     let isLogin = true;
     let selectedAvatar = "😎";
-    const CHAT_ROOM_ID = "class5a_chat";
 
     // Выбор аватарки в модалке
     document.querySelectorAll('#avatarSelector .avatar-opt').forEach(el => {
@@ -549,26 +497,22 @@
     function loadStickers() {
         const panel = document.getElementById('stickerPanel');
         panel.innerHTML = '';
-        // Эмодзи-стикеры вместо gif
-        const stickers = ['😊', '😂', '🥰', '😎', '🔥', '🎉', '❤️', '👍'];
-        stickers.forEach(sticker => {
-            const div = document.createElement('div');
-            div.textContent = sticker;
-            div.style.cssText = 'font-size: 48px; cursor: pointer; padding: 8px; transition: 0.2s; background: rgba(0,0,0,0.05); border-radius: 50%; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;';
-            div.onmouseover = () => div.style.transform = 'scale(1.2)';
-            div.onmouseout = () => div.style.transform = 'scale(1)';
-            div.onclick = () => {
+        ['okay.gif'].forEach(f => {
+            const img = document.createElement('img');
+            img.src = `stickers/${f}`;
+            img.className = 'sticker-img';
+            img.onclick = () => {
                 if (!currentUser) return;
                 db.collection('rooms').doc(CHAT_ROOM_ID).collection('messages').add({
                     uid: currentUser.uid,
                     displayName: currentUser.displayName,
                     avatar: currentUser.photoURL || '😎',
-                    text: sticker,
+                    sticker: `stickers/${f}`,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 document.getElementById('stickerPanel').classList.add('hidden');
             };
-            panel.appendChild(div);
+            panel.appendChild(img);
         });
     }
 
@@ -577,13 +521,12 @@
         const isMine = data.uid === currentUser?.uid;
         const div = document.createElement('div');
         div.className = `message ${isMine ? 'mine' : ''}`;
-        const timeStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleTimeString().slice(0,5) : '';
         div.innerHTML = `
             <div class="msg-avatar">${escapeHtml(data.avatar) || '😎'}</div>
             <div class="msg-bubble">
                 <div class="msg-name">${escapeHtml(data.displayName)}</div>
-                <div class="msg-text">${escapeHtml(data.text)}</div>
-                <div class="msg-time">${timeStr}</div>
+                ${data.sticker ? `<img src="${data.sticker}" class="msg-sticker">` : `<div class="msg-text">${escapeHtml(data.text)}</div>`}
+                <div class="msg-time">${data.createdAt ? new Date(data.createdAt.toDate()).toLocaleTimeString().slice(0,5) : ''}</div>
             </div>
         `;
         return div;
@@ -594,7 +537,6 @@
         return s.replace(/[&<>]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;'})[m]); 
     }
 
-    // Инициализация Firebase
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
@@ -613,9 +555,7 @@
                 snap.forEach(doc => container.appendChild(renderMessage(doc)));
                 container.scrollTop = container.scrollHeight;
             });
-            
-            // Простой список участников
-            document.getElementById('membersList').innerHTML = `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:rgba(255,255,255,0.2); padding:8px; border-radius:40px;"><div class="msg-avatar" style="width:32px;height:32px;">${escapeHtml(user.photoURL) || '😎'}</div><div style="color:white;">${escapeHtml(user.displayName || user.email)}</div></div>`;
+            document.getElementById('membersList').innerHTML = `<div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;"><div class="msg-avatar" style="width:32px;height:32px;">${escapeHtml(user.photoURL) || '😎'}</div><div>${escapeHtml(user.displayName || user.email)}</div></div>`;
         } else {
             document.getElementById('modal').classList.remove('hidden');
             document.getElementById('chatScreen').classList.add('hidden');
@@ -634,45 +574,18 @@
         });
         input.value = '';
     };
-
-    document.getElementById('messageInput').onkeypress = (e) => {
-        if (e.key === 'Enter') {
-            document.getElementById('sendBtn').click();
-        }
-    };
-
     document.getElementById('stickerBtn').onclick = () => {
         const panel = document.getElementById('stickerPanel');
         panel.classList.toggle('hidden');
         if (!panel.classList.contains('hidden')) loadStickers();
     };
-
     document.getElementById('saveProfileBtn').onclick = async () => {
         const newName = document.getElementById('profileName').value;
         const newAvatar = document.getElementById('profileAvatar').innerText;
-        if (newName && currentUser) {
-            await currentUser.updateProfile({ displayName: newName, photoURL: newAvatar });
-            alert('✅ Профиль обновлён!');
-            location.reload();
-        }
+        if (newName) await currentUser.updateProfile({ displayName: newName, photoURL: newAvatar });
+        alert('Профиль обновлён!');
+        location.reload();
     };
-
-    // Смена аватара по клику
-    document.getElementById('profileAvatar').onclick = () => {
-        const avatars = ['😎', '🐱', '⭐', '🎓', '🔥', '🌸', '🚀'];
-        let current = avatars.indexOf(document.getElementById('profileAvatar').innerText);
-        current = (current + 1) % avatars.length;
-        document.getElementById('profileAvatar').innerText = avatars[current];
-    };
-
-    // Закрытие панели стикеров при клике вне
-    document.addEventListener('click', (e) => {
-        const panel = document.getElementById('stickerPanel');
-        const stickerBtn = document.getElementById('stickerBtn');
-        if (!panel.classList.contains('hidden') && !panel.contains(e.target) && e.target !== stickerBtn) {
-            panel.classList.add('hidden');
-        }
-    });
 </script>
 </body>
 </html>
