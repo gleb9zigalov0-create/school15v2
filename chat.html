@@ -105,6 +105,20 @@
             flex-direction: column;
             gap: 0.8rem;
         }
+        .date-divider {
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .date-badge {
+            display: inline-block;
+            background: rgba(100, 100, 120, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
         .message {
             display: flex;
             gap: 0.6rem;
@@ -214,56 +228,65 @@
         .text-input::placeholder { color: #555; }
 
         .modal-wrapper {
-            position: absolute;
-            bottom: 80px;
+            position: fixed;
+            top: 0;
             left: 0;
             right: 0;
-            display: flex;
+            bottom: 0;
+            display: none;
             justify-content: center;
-            z-index: 25;
-            pointer-events: none;
+            align-items: center;
+            z-index: 1000;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
         }
-        .modal {
-            width: calc(100% - 2rem);
-            max-width: 500px;
+        .modal-wrapper.active {
+            display: flex;
+        }
+        .confirm-modal {
             background: rgba(30, 47, 62, 0.96);
             backdrop-filter: blur(20px);
             border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            pointer-events: auto;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: opacity 0.2s ease, transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            max-width: 400px;
+            width: 80%;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
         }
-        .modal.active {
-            opacity: 1;
-            transform: translateY(0);
+        .confirm-modal p {
+            color: white;
+            margin-bottom: 1rem;
+            word-break: break-word;
         }
-        .modal-handle {
-            width: 50px;
-            height: 5px;
-            background: #7f8c8d;
-            border-radius: 10px;
-            margin: 12px auto 8px;
-            cursor: grab;
-            user-select: none;
+        .confirm-modal .quote {
+            background: rgba(255,255,255,0.1);
+            padding: 0.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
+            font-style: italic;
+            font-size: 0.9rem;
         }
-        .modal-handle:active { cursor: grabbing; }
-        .modal-content-inner {
-            padding: 0 1rem 1.5rem;
-            max-height: 55vh;
-            overflow-y: auto;
+        .confirm-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
         }
+        .confirm-buttons button {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .confirm-buttons button.confirm { background: #e94560; }
         .close-btn {
             background: #0a3f6f;
             color: white;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 40px;
-            margin-top: 1rem;
             cursor: pointer;
-            width: 100%;
         }
         .sticker-grid {
             display: flex;
@@ -462,6 +485,17 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
+        <div class="modal-wrapper" id="deleteConfirmModal">
+            <div class="confirm-modal">
+                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
+                <div class="quote" id="deleteQuote"></div>
+                <div class="confirm-buttons">
+                    <button id="cancelDeleteBtn">Отмена</button>
+                    <button id="confirmDeleteBtn" class="confirm">Удалить</button>
+                </div>
+            </div>
+        </div>
+
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -500,6 +534,18 @@
     let selectedImages = [];
     let attachScreen = 'main';
     let pendingMessages = new Map();
+    let pendingDelete = { msgId: null, msgUid: null };
+
+    function formatDateLabel(date) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        if (msgDate.getTime() === today.getTime()) return 'Сегодня';
+        if (msgDate.getTime() === yesterday.getTime()) return 'Вчера';
+        return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    }
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -532,27 +578,38 @@
         });
     }
 
-    async function deleteMessage(msgId, msgUid) {
-        const isMine = msgUid === currentUser.uid;
+    function showDeleteConfirm(msgId, msgUid, messageText) {
+        pendingDelete = { msgId, msgUid, messageText };
+        const modal = document.getElementById('deleteConfirmModal');
+        const quote = document.getElementById('deleteQuote');
+        quote.textContent = messageText.length > 100 ? messageText.substring(0, 100) + '…' : messageText;
+        modal.classList.add('active');
+    }
+
+    document.getElementById('cancelDeleteBtn').onclick = () => {
+        document.getElementById('deleteConfirmModal').classList.remove('active');
+        pendingDelete = { msgId: null, msgUid: null, messageText: null };
+    };
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        const modal = document.getElementById('deleteConfirmModal');
+        modal.classList.remove('active');
+        if (!pendingDelete.msgId) return;
+        const isMine = pendingDelete.msgUid === currentUser.uid;
         let canDelete = isMine;
-        
         if (!isMine) {
-            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора для удаления:');
+            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
             if (password !== 'КИКИ99СССР') {
                 alert('Неверный пароль! Удаление отменено.');
-                return false;
+                pendingDelete = { msgId: null, msgUid: null, messageText: null };
+                return;
             }
             canDelete = true;
         }
-        
         if (canDelete) {
-            if (confirm('🗑️ Вы действительно хотите удалить это сообщение?')) {
-                await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId).delete();
-                return true;
-            }
+            await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDelete.msgId).delete();
         }
-        return false;
-    }
+        pendingDelete = { msgId: null, msgUid: null, messageText: null };
+    };
 
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
@@ -568,9 +625,26 @@
                 }
             });
             
-            container.innerHTML = '';
+            const messages = [];
             for (const doc of snap.docs) {
                 const m = doc.data();
+                messages.push({ id: doc.id, ...m });
+            }
+            
+            let lastDate = null;
+            container.innerHTML = '';
+            for (const m of messages) {
+                const msgDate = m.createdAt?.toDate();
+                if (msgDate) {
+                    const dateLabel = formatDateLabel(msgDate);
+                    if (dateLabel !== lastDate) {
+                        const divider = document.createElement('div');
+                        divider.className = 'date-divider';
+                        divider.innerHTML = `<div class="date-badge">${dateLabel}</div>`;
+                        container.appendChild(divider);
+                        lastDate = dateLabel;
+                    }
+                }
                 const mine = m.uid === currentUser?.uid;
                 const userData = await getUserData(m.uid);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
@@ -585,19 +659,20 @@
                 
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.id = doc.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${doc.id}" data-msg-uid="${m.uid}">🗑️</button><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.id = m.id;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
                 const deleteBtn = div.querySelector('.delete-btn');
-                if (deleteBtn) deleteBtn.onclick = async (e) => {
+                if (deleteBtn) deleteBtn.onclick = (e) => {
                     e.stopPropagation();
                     const msgId = deleteBtn.dataset.msgId;
                     const msgUid = deleteBtn.dataset.msgUid;
-                    await deleteMessage(msgId, msgUid);
+                    const msgText = deleteBtn.dataset.msgText;
+                    showDeleteConfirm(msgId, msgUid, msgText);
                 };
                 const seenBtn = div.querySelector('.seen-btn');
-                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
+                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(m.id, m.seenBy || []); };
             }
             
             for (let [tempId, pending] of pendingMessages.entries()) {
@@ -683,6 +758,11 @@
         `;
         modal.classList.add('active');
         document.getElementById('seenCloseBtn').onclick = () => modal.classList.remove('active');
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
     }
 
     function renderStickerModal() {
