@@ -142,15 +142,14 @@
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
         .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
-        .msg-text .loading-photo {
+        .loading-photo {
             filter: brightness(0.5) blur(4px);
-            position: relative;
         }
-        .loading-spinner-overlay {
+        .spinner-overlay {
             position: relative;
             display: inline-block;
         }
-        .loading-spinner-overlay .spinner {
+        .spinner-overlay .spinner {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -161,7 +160,6 @@
             border-top: 3px solid white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            z-index: 5;
             pointer-events: none;
         }
         @keyframes spin {
@@ -327,20 +325,6 @@
             font-weight: bold;
             z-index: 2;
         }
-        .loading-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            z-index: 3;
-            pointer-events: none;
-        }
         .camera-round-btn {
             background: #2e7d64;
             border: none;
@@ -424,7 +408,7 @@
     let attachScreen = 'main';
 
     // Временные сообщения (оптимистичный интерфейс)
-    let pendingMessages = new Map(); // key = tempId, value = { docId, images }
+    let pendingMessages = new Map(); // key = tempId, value = { text, images }
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -454,16 +438,27 @@
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
             const container = document.getElementById('messagesArea');
-            // Удаляем временные сообщения, которые уже загрузились
+            
+            // Обрабатываем изменения
             snap.docChanges().forEach(change => {
+                const m = change.doc.data();
                 if (change.type === 'added') {
-                    const m = change.doc.data();
-                    // Проверяем, есть ли временное сообщение с таким же текстом/изображениями
+                    // Проверяем, есть ли временное сообщение с такими же фото и текстом
                     for (let [tempId, pending] of pendingMessages.entries()) {
-                        if (JSON.stringify(pending.images) === JSON.stringify(m.images) && m.text === pending.text) {
-                            // Удаляем временное сообщение
+                        if (JSON.stringify(pending.images) === JSON.stringify(m.images) && pending.text === (m.text || '')) {
+                            // Заменяем временное сообщение реальным
                             const tempElem = document.getElementById(tempId);
-                            if (tempElem) tempElem.remove();
+                            if (tempElem) {
+                                const userData = getUserData(m.uid);
+                                const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
+                                let mediaHtml = '';
+                                if (m.images && m.images.length) {
+                                    mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
+                                } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
+                                if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
+                                tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                                tempElem.id = change.doc.id;
+                            }
                             pendingMessages.delete(tempId);
                             break;
                         }
@@ -471,6 +466,7 @@
                 }
             });
             
+            // Отображаем все сообщения (обычные)
             container.innerHTML = '';
             for (const doc of snap.docs) {
                 const m = doc.data();
@@ -484,8 +480,33 @@
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
+                div.id = doc.id;
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+            }
+            
+            // Добавляем все временные сообщения, которых ещё нет в рендере
+            for (let [tempId, pending] of pendingMessages.entries()) {
+                if (!document.getElementById(tempId)) {
+                    const userData = getUserData(currentUser.uid);
+                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
+                    let mediaHtml = '';
+                    if (pending.images && pending.images.length) {
+                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
+                        for (let img of pending.images) {
+                            mediaHtml += `<div class="spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
+                                            <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
+                                            <div class="spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border:3px solid rgba(255,255,255,0.3); border-top:3px solid white; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+                                        </div>`;
+                        }
+                        mediaHtml += `</div>`;
+                    }
+                    const div = document.createElement('div');
+                    div.className = 'message mine';
+                    div.id = tempId;
+                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-time">отправляется...</div></div>`;
+                    container.appendChild(div);
+                }
             }
             container.scrollTop = container.scrollHeight;
         });
@@ -508,47 +529,24 @@
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
         
-        // Показываем временное сообщение с размытыми фото
-        const container = document.getElementById('messagesArea');
-        const tempDiv = document.createElement('div');
-        tempDiv.id = tempId;
-        tempDiv.className = 'message mine';
+        // Сохраняем во временном хранилище
+        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
         
-        let mediaHtml = '';
-        if (imagesArray && imagesArray.length) {
-            mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-            for (let img of imagesArray) {
-                mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
-                                <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
-                                <div class="spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border:3px solid rgba(255,255,255,0.3); border-top:3px solid white; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
-                            </div>`;
-            }
-            mediaHtml += `</div>`;
-        }
-        
-        tempDiv.innerHTML = `<div class="msg-avatar">${userData.name?.charAt(0) || '?'}</div>
-                            <div class="msg-bubble">
-                                <div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div>
-                                <div class="msg-text">${mediaHtml} ${text || ''}</div>
-                                <div class="msg-time">отправляется...</div>
-                            </div>`;
-        container.appendChild(tempDiv);
-        container.scrollTop = container.scrollHeight;
-        
-        // Отправляем в Firebase
+        // Добавляем в Firebase
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '',
-                images: imagesArray,
+                images: imagesArray || [],
                 uid: currentUser.uid,
                 name: userData.name || currentUser.displayName || 'Ученик',
                 createdAt: new Date()
             });
-            // Удаляем временное сообщение (оно заменится реальным из snapshot)
-            tempDiv.remove();
         } catch (err) {
-            tempDiv.innerHTML = tempDiv.innerHTML.replace('отправляется...', 'ошибка при отправке');
-            setTimeout(() => tempDiv.remove(), 3000);
+            console.error(err);
+            const tempElem = document.getElementById(tempId);
+            if (tempElem) tempElem.remove();
+            pendingMessages.delete(tempId);
+            alert('Ошибка отправки фото');
         }
     }
 
