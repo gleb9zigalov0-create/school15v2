@@ -294,32 +294,23 @@
             align-items: center;
             margin-bottom: 1rem;
         }
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        .camera-preview {
-            width: 100%;
-            border-radius: 24px;
-            margin-bottom: 1rem;
-            background: #000;
-        }
-        .camera-controls {
-            display: flex;
-            justify-content: center;
-            gap: 1rem;
-        }
-        .shutter-btn {
-            background: white;
+        .back-btn, .camera-btn, .attach-file-btn, .next-btn, .send-btn {
+            background: #0a3f6f;
+            color: white;
             border: none;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 1.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 40px;
             cursor: pointer;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+            font-size: 0.8rem;
+        }
+        .caption-input {
+            width: calc(100% - 70px);
+            margin-left: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            color: #000;
         }
     </style>
 </head>
@@ -338,12 +329,11 @@
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
             <button class="icon-button" id="stickerBtn">😊</button>
-            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение..." style="color:#fff;">
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКА СТИКЕРОВ -->
         <div class="modal-wrapper" id="stickerWrapper">
             <div class="modal" id="stickerModal">
                 <div class="modal-handle" id="stickerHandle"></div>
@@ -351,7 +341,6 @@
             </div>
         </div>
 
-        <!-- МОДАЛКА СКРЕПКИ (ГАЛЕРЕЯ + КАМЕРА) -->
         <div class="modal-wrapper" id="attachWrapper">
             <div class="modal" id="attachModal">
                 <div class="modal-handle" id="attachHandle"></div>
@@ -373,16 +362,11 @@
     let messagesUnsub = null;
     const CHAT_PATH = 'class5a_chat';
     const usersCache = new Map();
-
-    // Переменные для скрепки / фото
-    let selectedImages = [];    // массив dataURL выбранных фото
+    let selectedImages = [];
     let cameraStream = null;
-    let cameraActive = false;
 
     function getAvatarHtml(avatarBase64, name) {
-        if (avatarBase64 && avatarBase64.startsWith('data:image')) {
-            return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
-        }
+        if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
         return (name?.charAt(0) || '?').toUpperCase();
     }
 
@@ -416,7 +400,9 @@
                 const userData = await getUserData(m.uid);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 let mediaHtml = '';
-                if (m.image) mediaHtml += `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
+                if (m.images && m.images.length) {
+                    mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
+                } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
@@ -440,13 +426,13 @@
         });
     }
 
-    async function sendMessage(text, stickerUrl = null, imageDataUrl = null) {
-        if (!text.trim() && !stickerUrl && !imageDataUrl) return;
+    async function sendMessage(text, stickerUrl = null, imagesArray = null) {
+        if (!text.trim() && !stickerUrl && (!imagesArray || !imagesArray.length)) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
             sticker: stickerUrl,
-            image: imageDataUrl,
+            images: imagesArray,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
@@ -454,44 +440,31 @@
     }
 
     async function sendPendingImages() {
-        if (selectedImages.length === 0) return;
+        if (!selectedImages.length) return;
         const caption = document.getElementById('messageInput').value;
-        for (let img of selectedImages) {
-            await sendMessage(caption, null, img);
-        }
+        await sendMessage(caption, null, [...selectedImages]);
         selectedImages = [];
         document.getElementById('messageInput').value = '';
         closeModal('attachModal', 'attachModalContent');
-        alert(`✅ Отправлено ${selectedImages.length} фото`);
+        alert(`✅ Отправлено фото`);
     }
 
-    // ========== СТИКЕРЫ ==========
     function renderStickerModal() {
         const container = document.getElementById('stickerModalContent');
         if (!container) return;
-        container.innerHTML = `
-            <div class="modal-title">✨ Стикеры</div>
-            <div id="stickerList" class="sticker-grid"></div>
-            <button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>
-        `;
+        container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
         const stickers = ['stickers/okay.gif'];
-        const stickerContainer = document.getElementById('stickerList');
-        if (stickerContainer) {
-            stickerContainer.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-            document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-                img.onclick = (e) => {
-                    e.stopPropagation();
-                    const url = img.getAttribute('data-sticker-url');
-                    if (url) sendMessage('', url);
-                    closeModal('stickerModal', 'stickerModalContent');
-                };
-            });
-        }
-        const closeBtn = document.getElementById('stickerModalCloseBtn');
-        if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); closeModal('stickerModal', 'stickerModalContent'); };
+        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+            img.onclick = (e) => {
+                e.stopPropagation();
+                sendMessage('', img.getAttribute('data-sticker-url'));
+                closeModal('stickerModal', 'stickerModalContent');
+            };
+        });
+        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerModal', 'stickerModalContent'); };
     }
 
-    // ========== ГАЛЕРЕЯ И КАМЕРА ==========
     function renderAttachModal() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
@@ -504,48 +477,31 @@
             <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
             <button class="close-btn" id="attachModalCloseBtn" style="margin-top:0.5rem;">Закрыть</button>
         `;
-        
         renderPhotoGallery();
-        
-        document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-        document.getElementById('photoInput').onchange = (e) => {
-            if (e.target.files) addFiles(e.target.files);
-            document.getElementById('photoInput').value = '';
-        };
-        // Добавляем скрытый инпут для выбора файлов
-        const hiddenInput = document.createElement('input');
-        hiddenInput.type = 'file';
-        hiddenInput.accept = 'image/*';
-        hiddenInput.multiple = true;
-        hiddenInput.style.display = 'none';
-        hiddenInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
-        container.appendChild(hiddenInput);
-        // Кнопка выбора из галереи (можно добавить отдельную, но пока через скрытый)
+        const openCamera = document.getElementById('openCameraBtn');
+        openCamera.onclick = () => showCameraModal();
+        const fileInput = document.getElementById('photoInput');
+        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
         const selectBtn = document.createElement('button');
         selectBtn.textContent = '📁 Выбрать из галереи';
         selectBtn.className = 'close-btn';
         selectBtn.style.marginTop = '0.5rem';
         selectBtn.style.background = '#0a3f6f';
-        selectBtn.onclick = () => hiddenInput.click();
+        selectBtn.onclick = () => fileInput.click();
         container.appendChild(selectBtn);
-        
-        const closeBtn = document.getElementById('attachModalCloseBtn');
-        if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); };
     }
 
     function renderPhotoGallery() {
         const gallery = document.getElementById('photoGallery');
         if (!gallery) return;
-        if (selectedImages.length === 0) {
-            gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ccc;">Нет выбранных фото</div>';
-            return;
-        }
+        if (!selectedImages.length) { gallery.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#ccc;">Нет выбранных фото</div>'; return; }
         gallery.innerHTML = '';
-        for (let i = 0; i < selectedImages.length; i++) {
+        for (let i=0; i<selectedImages.length; i++) {
             const div = document.createElement('div');
             div.className = 'photo-item';
-            div.innerHTML = `<img src="${selectedImages[i]}" data-idx="${i}"><div class="photo-number">${i+1}</div>`;
-            div.onclick = () => removePhoto(i);
+            div.innerHTML = `<img src="${selectedImages[i]}"><div class="photo-number">${i+1}</div>`;
+            div.onclick = () => { selectedImages.splice(i,1); renderPhotoGallery(); };
             gallery.appendChild(div);
         }
     }
@@ -556,18 +512,10 @@
         const toAdd = newFiles.slice(0, remaining);
         for (const file of toAdd) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                selectedImages.push(e.target.result);
-                renderPhotoGallery();
-            };
+            reader.onload = (e) => { selectedImages.push(e.target.result); renderPhotoGallery(); };
             reader.readAsDataURL(file);
         }
-        if (newFiles.length > remaining) alert(`Можно выбрать максимум 8 фото. Добавлено только ${remaining}.`);
-    }
-
-    function removePhoto(index) {
-        selectedImages.splice(index, 1);
-        renderPhotoGallery();
+        if (newFiles.length > remaining) alert(`Можно выбрать до 8 фото. Добавлено ${remaining}.`);
     }
 
     function showCameraModal() {
@@ -575,70 +523,50 @@
         if (!modal) return;
         const origContent = document.getElementById('attachModalContent').innerHTML;
         document.getElementById('attachModalContent').innerHTML = `
-            <div class="preview-header">
-                <button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f; border:none; width:36px; height:36px; border-radius:50%;">←</button>
+            <div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                <button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f;">← Назад</button>
                 <span class="modal-title">Снять фото</span>
-                <button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f; border:none; width:36px; height:36px; border-radius:50%;">🔄</button>
+                <button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f;">🔄</button>
             </div>
-            <video id="cameraVideo" class="camera-preview" autoplay playsinline style="width:100%; border-radius:24px;"></video>
-            <div class="camera-controls">
-                <button class="shutter-btn" id="captureBtn">📸</button>
+            <video id="cameraVideo" class="camera-preview" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video>
+            <div class="camera-controls" style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;">
+                <button class="shutter-btn" id="captureBtn" style="background:white; border:none; width:60px; height:60px; border-radius:50%; font-size:1.8rem;">📸</button>
             </div>
             <button class="close-btn" id="cameraCloseBtn">Закрыть</button>
         `;
-        
         let facingMode = 'environment';
         let stream = null;
-        
         async function startCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode } } });
-                const video = document.getElementById('cameraVideo');
-                if (video) video.srcObject = stream;
-            } catch (err) {
-                try {
-                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    const video = document.getElementById('cameraVideo');
-                    if (video) video.srcObject = stream;
-                } catch (e) { alert('Не удалось получить доступ к камере'); }
-            }
+            if (stream) stream.getTracks().forEach(t => t.stop());
+            try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode } } }); }
+            catch { try { stream = await navigator.mediaDevices.getUserMedia({ video: true }); } catch(e) { alert('Нет доступа к камере'); return; } }
+            const video = document.getElementById('cameraVideo');
+            if (video) video.srcObject = stream;
         }
         startCamera();
-        
         document.getElementById('cameraBackBtn').onclick = () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
+            if (stream) stream.getTracks().forEach(t => t.stop());
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
-            // восстанавливаем обработчики
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-            const hiddenInput = document.querySelector('#attachModalContent input[type="file"]');
-            if (hiddenInput) hiddenInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
+            const fileInput = document.getElementById('photoInput');
+            if (fileInput) fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
         };
-        document.getElementById('rotateCameraBtn').onclick = () => {
-            facingMode = facingMode === 'environment' ? 'user' : 'environment';
-            startCamera();
-        };
+        document.getElementById('rotateCameraBtn').onclick = () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
         document.getElementById('captureBtn').onclick = () => {
             const video = document.getElementById('cameraVideo');
             if (!video) return;
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg');
-            if (selectedImages.length < 8) {
-                selectedImages.push(dataUrl);
-                renderPhotoGallery();
-            } else {
-                alert('Максимум 8 фото');
-            }
+            if (selectedImages.length < 8) selectedImages.push(dataUrl);
+            else alert('Максимум 8 фото');
+            renderPhotoGallery();
         };
         document.getElementById('cameraCloseBtn').onclick = () => {
-            if (stream) stream.getTracks().forEach(track => track.stop());
+            if (stream) stream.getTracks().forEach(t => t.stop());
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
@@ -649,10 +577,7 @@
         const modal = document.getElementById(modalId);
         if (!modal) return;
         modal.classList.remove('active');
-        setTimeout(() => {
-            const container = document.getElementById(contentId);
-            if (container) container.innerHTML = '';
-        }, 300);
+        setTimeout(() => { const container = document.getElementById(contentId); if (container) container.innerHTML = ''; }, 300);
     }
 
     function openModal(modalId, renderFunction) {
@@ -666,63 +591,29 @@
         const modal = document.getElementById(modalId);
         const handle = document.getElementById(handleId);
         if (!modal || !handle) return;
-        let startY = 0, startTransform = 0, isDragging = false;
-        const onTouchStart = (e) => {
-            startY = e.touches[0].clientY;
-            const transform = modal.style.transform;
-            if (transform && transform.includes('translateY')) startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
-            isDragging = true;
-        };
-        const onTouchMove = (e) => {
-            if (!isDragging) return;
-            const delta = e.touches[0].clientY - startY;
-            if (delta > 0) { modal.style.transform = `translateY(${startTransform + delta}px)`; modal.style.opacity = '0.7'; }
-        };
-        const onTouchEnd = (e) => {
-            if (!isDragging) return;
-            const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) closeModal(modalId, contentId);
-            modal.style.transform = ''; modal.style.opacity = '';
-            isDragging = false;
-        };
-        handle.addEventListener('touchstart', onTouchStart);
-        handle.addEventListener('touchmove', onTouchMove);
-        handle.addEventListener('touchend', onTouchEnd);
-        let mouseDown = false, mouseStartY = 0;
-        handle.addEventListener('mousedown', (e) => {
-            mouseDown = true; mouseStartY = e.clientY; e.preventDefault();
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (!mouseDown) return;
-            const delta = e.clientY - mouseStartY;
-            if (delta > 0) { modal.style.transform = `translateY(${delta}px)`; modal.style.opacity = '0.7'; }
-        });
-        window.addEventListener('mouseup', (e) => {
-            if (!mouseDown) return;
-            const delta = e.clientY - mouseStartY;
-            if (delta > 80) closeModal(modalId, contentId);
-            modal.style.transform = ''; modal.style.opacity = '';
-            mouseDown = false;
-        });
+        let startY=0, startTransform=0, dragging=false;
+        handle.addEventListener('touchstart', (e) => { startY=e.touches[0].clientY; const t=modal.style.transform; if(t && t.includes('translateY')) startTransform=parseFloat(t.match(/translateY\(([-\d]+)px\)/)?.[1]||0); dragging=true; });
+        handle.addEventListener('touchmove', (e) => { if(!dragging) return; const delta=e.touches[0].clientY-startY; if(delta>0){ modal.style.transform=`translateY(${startTransform+delta}px)`; modal.style.opacity='0.7'; } });
+        handle.addEventListener('touchend', (e) => { if(!dragging) return; const delta=e.changedTouches[0].clientY-startY; if(delta>80) closeModal(modalId, contentId); modal.style.transform=''; modal.style.opacity=''; dragging=false; });
+        let mouseDown=false, mouseStartY=0;
+        handle.addEventListener('mousedown', (e) => { mouseDown=true; mouseStartY=e.clientY; e.preventDefault(); });
+        window.addEventListener('mousemove', (e) => { if(!mouseDown) return; const delta=e.clientY-mouseStartY; if(delta>0){ modal.style.transform=`translateY(${delta}px)`; modal.style.opacity='0.7'; } });
+        window.addEventListener('mouseup', (e) => { if(!mouseDown) return; const delta=e.clientY-mouseStartY; if(delta>80) closeModal(modalId, contentId); modal.style.transform=''; modal.style.opacity=''; mouseDown=false; });
     }
 
     initSwipeClose('stickerModal', 'stickerHandle', 'stickerModalContent');
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
 
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
-    document.getElementById('attachBtn').onclick = () => {
-        openModal('attachModal', renderAttachModal);
-    };
+    document.getElementById('attachBtn').onclick = () => { selectedImages = []; openModal('attachModal', renderAttachModal); };
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
-        if (selectedImages.length > 0) {
-            for (let img of selectedImages) {
-                await sendMessage(text, null, img);
-            }
+        if (selectedImages.length) {
+            await sendMessage(text, null, [...selectedImages]);
             selectedImages = [];
             document.getElementById('messageInput').value = '';
             closeModal('attachModal', 'attachModalContent');
-            alert(`✅ Отправлено фото`);
+            alert('✅ Фото отправлены');
         } else if (text.trim()) {
             await sendMessage(text);
             document.getElementById('messageInput').value = '';
