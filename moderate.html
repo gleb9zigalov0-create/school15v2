@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Модерация | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 50%, #b8e4fa 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .glass-moderate {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(20px);
+            border-radius: 56px;
+            padding: 2rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        h1 { text-align: center; color: #0a3f6f; font-size: 2rem; margin-bottom: 0.5rem; }
+        .sub { text-align: center; color: #2c5a7a; margin-bottom: 2rem; }
+        .project-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+        .project-card {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 48px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+        }
+        .project-header {
+            position: relative;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            background-color: #cce8f5;
+        }
+        .project-header .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+            padding: 1rem;
+        }
+        .project-header h2 { color: white; font-size: 1.5rem; margin: 0; }
+        .project-details { padding: 1.5rem; }
+        .info-row { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; align-items: center; }
+        .info-badge { background: rgba(10, 63, 111, 0.15); padding: 0.3rem 1rem; border-radius: 40px; font-size: 0.85rem; color: #0a3f6f; font-weight: 500; }
+        .color-preview { width: 40px; height: 40px; border-radius: 20px; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .description { background: rgba(255, 255, 255, 0.6); border-radius: 28px; padding: 1rem; margin: 1rem 0; color: #1e2f3e; line-height: 1.4; }
+        .files-list { background: rgba(255, 255, 255, 0.4); border-radius: 28px; padding: 1rem; margin: 1rem 0; }
+        .file-item { padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .download-btn { background: #0a3f6f; color: white; border: none; padding: 0.3rem 1rem; border-radius: 40px; cursor: pointer; font-size: 0.8rem; }
+        .action-buttons { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
+        .btn-approve { background: #2e7d64; color: white; padding: 0.6rem 1.5rem; border-radius: 60px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-reject { background: #e94560; color: white; padding: 0.6rem 1.5rem; border-radius: 60px; border: none; cursor: pointer; font-weight: bold; }
+        .empty-state { text-align: center; padding: 3rem; background: rgba(255,255,255,0.5); border-radius: 48px; color: #0a3f6f; }
+        .back-link { display: block; text-align: center; margin-top: 2rem; color: #0a3f6f; text-decoration: none; font-weight: 500; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 1rem; gap: 1rem; }
+        .nav-btn { background: rgba(10,63,111,0.7); border: none; color: white; padding: 0.5rem 1rem; border-radius: 40px; cursor: pointer; }
+        @media (max-width: 700px) { .project-header h2 { font-size: 1.2rem; } .action-buttons { justify-content: center; } }
+    </style>
+</head>
+<body>
+<div class="glass-moderate">
+    <h1>🛡 Панель модерации</h1>
+    <div class="sub">Проекты на проверку</div>
+    <div id="moderatorContent"></div>
+    <a href="index.html" class="back-link">← На главную</a>
+</div>
+<script src="js/project-storage.js"></script>
+<script>
+    if (localStorage.getItem('moderator_mode') !== 'true') {
+        window.location.href = 'index.html';
+    }
+
+    let projects = [];
+    let currentIndex = 0;
+
+    async function loadProjects() {
+        const allProjects = ProjectStorage.getProjects();
+        projects = allProjects.filter(p => p.status !== 'approved');
+        if (projects.length === 0) {
+            document.getElementById('moderatorContent').innerHTML = '<div class="empty-state">✅ Нет проектов на модерации</div>';
+            return;
+        }
+        currentIndex = 0;
+        renderCurrentProject();
+    }
+
+    async function renderCurrentProject() {
+        const project = projects[currentIndex];
+        if (!project) return;
+
+        const files = await ProjectStorage.listProjectFiles(project.id);
+        
+        let filesHtml = '';
+        if (files.length === 0) {
+            filesHtml = '<div style="color:#e94560;">⚠️ Файлы не загружены</div>';
+        } else {
+            filesHtml = files.map(f => `
+                <div class="file-item">
+                    <span>📄 ${escapeHtml(f.name)} (${ProjectStorage.formatSize(f.size)})</span>
+                    <button class="download-btn" onclick="downloadFile('${project.id}', '${escapeAttr(f.name)}')">📥 Скачать</button>
+                </div>
+            `).join('');
+        }
+
+        const html = `
+            <div class="project-card">
+                <div class="project-header" style="background-image: url('${project.thumb || 'https://placehold.co/600x300/8fc9e8/white?text=Нет+обложки'}');">
+                    <div class="overlay">
+                        <h2>${escapeHtml(project.title)}</h2>
+                    </div>
+                </div>
+                <div class="project-details">
+                    <div class="info-row">
+                        <span class="info-badge">📚 ${escapeHtml(project.subject || 'Без предмета')}</span>
+                        <div class="color-preview" style="background: ${project.color || '#cce8f5'};"></div>
+                    </div>
+                    <div class="description">
+                        <strong>📝 Описание:</strong><br>
+                        ${escapeHtml(project.description || '—')}
+                    </div>
+                    <div class="files-list">
+                        <h4>📁 Файлы проекта (${files.length})</h4>
+                        ${filesHtml}
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-approve" onclick="approveProject()">✅ Одобрить</button>
+                        <button class="btn-reject" onclick="deleteProject()">❌ Удалить</button>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-buttons">
+                <button class="nav-btn" onclick="prevProject()" ${currentIndex === 0 ? 'disabled' : ''}>← Назад</button>
+                <span>${currentIndex + 1} / ${projects.length}</span>
+                <button class="nav-btn" onclick="nextProject()" ${currentIndex === projects.length - 1 ? 'disabled' : ''}>Вперед →</button>
+            </div>
+        `;
+        
+        document.getElementById('moderatorContent').innerHTML = html;
+    }
+
+    function prevProject() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            renderCurrentProject();
+        }
+    }
+    function nextProject() {
+        if (currentIndex < projects.length - 1) {
+            currentIndex++;
+            renderCurrentProject();
+        }
+    }
+
+    window.downloadFile = async (projectId, fileName) => {
+        const record = await ProjectStorage.getFileRecord(projectId, fileName);
+        if (record) {
+            ProjectStorage.downloadRecord(record);
+        } else {
+            alert('Не удалось найти файл для скачивания');
+        }
+    };
+
+    window.approveProject = async () => {
+        const proj = projects[currentIndex];
+        await ProjectStorage.approveProject(proj.id);
+        projects.splice(currentIndex, 1);
+        if (projects.length === 0) {
+            document.getElementById('moderatorContent').innerHTML = '<div class="empty-state">✅ Нет проектов на модерации</div>';
+        } else {
+            if (currentIndex >= projects.length) currentIndex = projects.length - 1;
+            renderCurrentProject();
+        }
+        alert(`✅ Проект "${proj.title}" одобрен!`);
+    };
+
+    window.deleteProject = async () => {
+        const proj = projects[currentIndex];
+        if (confirm(`Удалить проект "${proj.title}"?`)) {
+            await ProjectStorage.deleteProject(proj.id);
+            projects.splice(currentIndex, 1);
+            if (projects.length === 0) {
+                document.getElementById('moderatorContent').innerHTML = '<div class="empty-state">✅ Нет проектов на модерации</div>';
+            } else {
+                if (currentIndex >= projects.length) currentIndex = projects.length - 1;
+                renderCurrentProject();
+            }
+            alert(`❌ Проект "${proj.title}" удалён.`);
+        }
+    };
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+
+    function escapeAttr(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    loadProjects();
+</script>
+</body>
+</html>
