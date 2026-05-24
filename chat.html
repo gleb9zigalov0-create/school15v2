@@ -590,14 +590,12 @@
                 container.appendChild(div);
                 
                 const deleteBtn = div.querySelector('.delete-btn');
-                if (deleteBtn) {
-                    deleteBtn.onclick = async (e) => {
-                        e.stopPropagation();
-                        const msgId = deleteBtn.dataset.msgId;
-                        const msgUid = deleteBtn.dataset.msgUid;
-                        await deleteMessage(msgId, msgUid);
-                    };
-                }
+                if (deleteBtn) deleteBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const msgId = deleteBtn.dataset.msgId;
+                    const msgUid = deleteBtn.dataset.msgUid;
+                    await deleteMessage(msgId, msgUid);
+                };
                 const seenBtn = div.querySelector('.seen-btn');
                 if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
             }
