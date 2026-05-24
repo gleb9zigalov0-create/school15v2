@@ -643,10 +643,14 @@
         container.innerHTML = `
             <div class="modal-title">📎 Отправить</div>
             <div class="attach-grid">
-                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Снять фото</div></div>
-                <div class="attach-item" data-type="gallery"><div class="attach-icon">🖼️</div><div class="attach-label">Галерея</div></div>
-                <div class="attach-item" data-type="cancel"><div class="attach-icon">❌</div><div class="attach-label">Отмена</div></div>
+                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
+                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
             </div>
+            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         document.querySelectorAll('.attach-item').forEach(el => {
             el.onclick = (e) => {
@@ -655,27 +659,15 @@
                 if (type === 'camera') {
                     attachScreen = 'camera';
                     renderCameraScreen();
-                } else if (type === 'gallery') {
-                    document.getElementById('photoInput').click();
                 } else {
+                    alert(`📎 Отправка ${type} — в разработке`);
                     closeModal('attachModal', 'attachModalContent');
                     attachScreen = 'main';
                 }
             };
         });
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.multiple = true;
-        fileInput.style.display = 'none';
-        fileInput.id = 'photoInput';
-        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
-        container.appendChild(fileInput);
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Закрыть';
-        closeBtn.className = 'close-btn';
-        closeBtn.onclick = () => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
-        container.appendChild(closeBtn);
+        const closeBtn = document.getElementById('attachModalCloseBtn');
+        if (closeBtn) closeBtn.onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
     function renderCameraScreen() {
@@ -688,6 +680,7 @@
                 <button class="camera-round-btn" id="openCameraBtn">📷</button>
             </div>
             <div id="photoGallery" class="photo-gallery"></div>
+            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
             <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         renderPhotoGallery();
@@ -696,6 +689,15 @@
             renderAttachMain();
         };
         document.getElementById('openCameraBtn').onclick = () => showCameraModal();
+        const fileInput = document.getElementById('photoInput');
+        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
+        const selectBtn = document.createElement('button');
+        selectBtn.textContent = '📁 Выбрать из галереи';
+        selectBtn.className = 'close-btn';
+        selectBtn.style.marginTop = '0.5rem';
+        selectBtn.style.background = '#0a3f6f';
+        selectBtn.onclick = () => fileInput.click();
+        container.appendChild(selectBtn);
         document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
