@@ -459,12 +459,13 @@
     async function sendPendingAndClose() {
         if (!selectedImages.length) return;
         const caption = document.getElementById('messageInput').value;
-        await sendMessage(caption, null, [...selectedImages]);
+        const imagesToSend = [...selectedImages]; // копируем
         selectedImages = [];
         document.getElementById('messageInput').value = '';
+        await sendMessage(caption, null, imagesToSend);
         attachScreen = 'main';
         closeModal('attachModal', 'attachModalContent');
-        alert(`✅ Отправлено ${selectedImages.length} фото`);
+        alert(`✅ Отправлено ${imagesToSend.length} фото`);
     }
 
     function renderStickerModal() {
@@ -660,13 +661,7 @@
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
-            const caption = text;
-            await sendMessage(caption, null, [...selectedImages]);
-            selectedImages = [];
-            document.getElementById('messageInput').value = '';
-            attachScreen = 'main';
-            closeModal('attachModal', 'attachModalContent');
-            alert('✅ Фото отправлены');
+            await sendPendingAndClose();
         } else if (text.trim()) {
             await sendMessage(text);
             document.getElementById('messageInput').value = '';
