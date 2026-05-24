@@ -177,7 +177,6 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -381,7 +380,7 @@
     const usersCache = new Map();
     let selectedImages = [];
     let cameraStream = null;
-    let attachScreen = 'main'; // 'main' or 'camera'
+    let attachScreen = 'main';
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -465,10 +464,9 @@
         document.getElementById('messageInput').value = '';
         attachScreen = 'main';
         closeModal('attachModal', 'attachModalContent');
-        alert('✅ Фото отправлены');
+        alert(`✅ Отправлено ${selectedImages.length} фото`);
     }
 
-    // ========== СТИКЕРЫ ==========
     function renderStickerModal() {
         const container = document.getElementById('stickerModalContent');
         if (!container) return;
@@ -485,7 +483,6 @@
         document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerModal', 'stickerModalContent'); };
     }
 
-    // ========== ОСНОВНОЕ МЕНЮ СКРЕПКИ ==========
     function renderAttachMain() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
@@ -518,7 +515,6 @@
         document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
-    // ========== ЭКРАН КАМЕРЫ / ВЫБОРА ФОТО ==========
     function renderCameraScreen() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
@@ -533,7 +529,6 @@
             <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         renderPhotoGallery();
-        
         document.getElementById('cameraBackBtn').onclick = () => {
             attachScreen = 'main';
             renderAttachMain();
@@ -665,7 +660,8 @@
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
-            await sendMessage(text, null, [...selectedImages]);
+            const caption = text;
+            await sendMessage(caption, null, [...selectedImages]);
             selectedImages = [];
             document.getElementById('messageInput').value = '';
             attachScreen = 'main';
