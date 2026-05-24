@@ -178,7 +178,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
-    firebase.initializeApp(firebaseConfig);
+    // Инициализация Firebase
+    if (typeof firebaseConfig !== 'undefined') {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+    } else {
+        alert('Firebase не настроен. Проверь файл firebase-config.js');
+    }
+
     const auth = firebase.auth();
     const db = firebase.firestore();
     let currentUser = null;
@@ -197,7 +205,6 @@
         setTimeout(() => sucDiv.style.display = 'none', 3000);
     }
 
-    // Отображение аватара из base64 или инициалов
     function updateAvatarPreview(avatarBase64, name) {
         const preview = document.getElementById('avatarPreview');
         if (avatarBase64 && avatarBase64.startsWith('data:image')) {
@@ -214,18 +221,18 @@
 
     async function loadUserData() {
         if (!currentUser) return;
-        const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        const data = userDoc.data() || {};
-        
-        // Имя
-        const displayName = data.name || currentUser.displayName || 'Ученик';
-        document.getElementById('userNameInput').value = displayName;
-        
-        // Аватар (base64)
-        if (data.avatarBase64) {
-            updateAvatarPreview(data.avatarBase64, displayName);
-        } else {
-            updateAvatarPreview(null, displayName);
+        try {
+            const userDoc = await db.collection('users').doc(currentUser.uid).get();
+            const data = userDoc.data() || {};
+            const displayName = data.name || currentUser.displayName || 'Ученик';
+            document.getElementById('userNameInput').value = displayName;
+            if (data.avatarBase64) {
+                updateAvatarPreview(data.avatarBase64, displayName);
+            } else {
+                updateAvatarPreview(null, displayName);
+            }
+        } catch (err) {
+            console.error('Ошибка загрузки данных:', err);
         }
     }
 
@@ -238,7 +245,6 @@
         await loadUserData();
     });
 
-    // Загрузка аватара через FileReader (base64)
     document.getElementById('changeAvatarBtn').onclick = () => {
         document.getElementById('avatarInput').click();
     };
@@ -260,10 +266,7 @@
         const reader = new FileReader();
         reader.onload = async (event) => {
             const base64 = event.target.result;
-            // Показываем превью сразу
             updateAvatarPreview(base64, document.getElementById('userNameInput').value);
-            
-            // Сохраняем во временную переменную, сохранится при нажатии "Сохранить"
             window.pendingAvatar = base64;
             showSuccess('Аватар выбран. Не забудь сохранить изменения.');
         };
@@ -271,7 +274,6 @@
         reader.readAsDataURL(file);
     };
 
-    // Сохранение имени и аватара
     document.getElementById('saveBtn').onclick = async () => {
         const newName = document.getElementById('userNameInput').value.trim();
         if (!newName) {
@@ -280,28 +282,16 @@
         }
         
         try {
-            // Обновляем в Auth
             await currentUser.updateProfile({ displayName: newName });
-            
-            // Готовим данные для Firestore
             const updateData = { name: newName };
             if (window.pendingAvatar) {
                 updateData.avatarBase64 = window.pendingAvatar;
                 window.pendingAvatar = null;
             }
-            
-            // Сохраняем в Firestore
             await db.collection('users').doc(currentUser.uid).set(updateData, { merge: true });
-            
-            // Обновляем в status (для левой панели)
             await db.collection('status').doc(currentUser.uid).set({ name: newName }, { merge: true });
-            
             showSuccess('✅ Имя и аватар сохранены!');
-            
-            // Перезагружаем данные
             await loadUserData();
-            
-            // Через 1 секунду возвращаемся в чат
             setTimeout(() => { window.location.href = 'chat.html'; }, 1500);
         } catch (err) {
             showError('Ошибка сохранения: ' + err.message);
