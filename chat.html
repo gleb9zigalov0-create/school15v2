@@ -141,7 +141,33 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
+        .msg-text .loading-photo {
+            filter: brightness(0.5) blur(4px);
+            position: relative;
+        }
+        .loading-spinner-overlay {
+            position: relative;
+            display: inline-block;
+        }
+        .loading-spinner-overlay .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            z-index: 5;
+            pointer-events: none;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .input-panel {
             padding: 0.8rem 1rem;
@@ -284,10 +310,6 @@
             aspect-ratio: 1;
             object-fit: cover;
             border-radius: 16px;
-            transition: filter 0.3s ease;
-        }
-        .photo-item.loading img {
-            filter: brightness(0.5) blur(4px);
         }
         .photo-number {
             position: absolute;
@@ -318,21 +340,6 @@
             animation: spin 0.8s linear infinite;
             z-index: 3;
             pointer-events: none;
-        }
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        .sending-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top: 2px solid white;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-            margin-left: 8px;
-            vertical-align: middle;
         }
         .camera-round-btn {
             background: #2e7d64;
@@ -414,8 +421,10 @@
     const CHAT_PATH = 'class5a_chat';
     const usersCache = new Map();
     let selectedImages = [];
-    let cameraStream = null;
     let attachScreen = 'main';
+
+    // Временные сообщения (оптимистичный интерфейс)
+    let pendingMessages = new Map(); // key = tempId, value = { docId, images }
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -445,6 +454,23 @@
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
             const container = document.getElementById('messagesArea');
+            // Удаляем временные сообщения, которые уже загрузились
+            snap.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const m = change.doc.data();
+                    // Проверяем, есть ли временное сообщение с таким же текстом/изображениями
+                    for (let [tempId, pending] of pendingMessages.entries()) {
+                        if (JSON.stringify(pending.images) === JSON.stringify(m.images) && m.text === pending.text) {
+                            // Удаляем временное сообщение
+                            const tempElem = document.getElementById(tempId);
+                            if (tempElem) tempElem.remove();
+                            pendingMessages.delete(tempId);
+                            break;
+                        }
+                    }
+                }
+            });
+            
             container.innerHTML = '';
             for (const doc of snap.docs) {
                 const m = doc.data();
@@ -478,44 +504,51 @@
         });
     }
 
-    async function sendMessage(text, stickerUrl = null, imagesArray = null) {
-        if (!text.trim() && !stickerUrl && (!imagesArray || !imagesArray.length)) return;
+    async function sendMessageOptimistic(text, imagesArray) {
+        const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
-        await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
-            text: text,
-            sticker: stickerUrl,
-            images: imagesArray,
-            uid: currentUser.uid,
-            name: userData.name || currentUser.displayName || 'Ученик',
-            createdAt: new Date()
-        });
-    }
-
-    async function sendPendingAndClose() {
-        if (!selectedImages.length) return;
-        const caption = document.getElementById('messageInput').value;
-        const imagesToSend = [...selectedImages];
         
-        // Временное сообщение с индикатором загрузки
-        const tempId = Date.now();
+        // Показываем временное сообщение с размытыми фото
+        const container = document.getElementById('messagesArea');
         const tempDiv = document.createElement('div');
+        tempDiv.id = tempId;
         tempDiv.className = 'message mine';
-        tempDiv.innerHTML = `<div class="msg-avatar">?</div><div class="msg-bubble"><div class="msg-name">${currentUser.displayName || 'Ученик'}</div><div class="msg-text">⏳ Отправка фото <span class="sending-spinner"></span></div><div class="msg-time"></div></div>`;
-        const messagesContainer = document.getElementById('messagesArea');
-        messagesContainer.appendChild(tempDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
         
+        let mediaHtml = '';
+        if (imagesArray && imagesArray.length) {
+            mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
+            for (let img of imagesArray) {
+                mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
+                                <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
+                                <div class="spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border:3px solid rgba(255,255,255,0.3); border-top:3px solid white; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+                            </div>`;
+            }
+            mediaHtml += `</div>`;
+        }
+        
+        tempDiv.innerHTML = `<div class="msg-avatar">${userData.name?.charAt(0) || '?'}</div>
+                            <div class="msg-bubble">
+                                <div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div>
+                                <div class="msg-text">${mediaHtml} ${text || ''}</div>
+                                <div class="msg-time">отправляется...</div>
+                            </div>`;
+        container.appendChild(tempDiv);
+        container.scrollTop = container.scrollHeight;
+        
+        // Отправляем в Firebase
         try {
-            await sendMessage(caption, null, imagesToSend);
+            await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
+                text: text || '',
+                images: imagesArray,
+                uid: currentUser.uid,
+                name: userData.name || currentUser.displayName || 'Ученик',
+                createdAt: new Date()
+            });
+            // Удаляем временное сообщение (оно заменится реальным из snapshot)
             tempDiv.remove();
-            selectedImages = [];
-            document.getElementById('messageInput').value = '';
-            attachScreen = 'main';
-            closeModal('attachModal', 'attachModalContent');
-            alert(`✅ Фото отправлены!`);
         } catch (err) {
-            tempDiv.remove();
-            alert('Ошибка при отправке фото');
+            tempDiv.innerHTML = tempDiv.innerHTML.replace('отправляется...', 'ошибка при отправке');
+            setTimeout(() => tempDiv.remove(), 3000);
         }
     }
 
@@ -528,7 +561,7 @@
         document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
             img.onclick = (e) => {
                 e.stopPropagation();
-                sendMessage('', img.getAttribute('data-sticker-url'));
+                sendMessageOptimistic('', []);
                 closeModal('stickerModal', 'stickerModalContent');
             };
         });
@@ -623,36 +656,8 @@
         const remaining = 8 - selectedImages.length;
         const toAdd = newFiles.slice(0, remaining);
         for (const file of toAdd) {
-            const div = document.createElement('div');
-            div.className = 'photo-item loading';
-            const img = document.createElement('img');
-            div.appendChild(img);
-            const spinner = document.createElement('div');
-            spinner.className = 'loading-spinner';
-            div.appendChild(spinner);
-            const gallery = document.getElementById('photoGallery');
-            gallery.appendChild(div);
-            
             const reader = new FileReader();
-            reader.onload = (e) => {
-                img.src = e.target.result;
-                selectedImages.push(e.target.result);
-                setTimeout(() => {
-                    div.classList.remove('loading');
-                    spinner.remove();
-                    const numberSpan = document.createElement('div');
-                    numberSpan.className = 'photo-number';
-                    numberSpan.textContent = selectedImages.length;
-                    div.appendChild(numberSpan);
-                    div.onclick = () => {
-                        const idx = selectedImages.findIndex(src => src === e.target.result);
-                        if (idx !== -1) {
-                            selectedImages.splice(idx, 1);
-                            renderPhotoGallery();
-                        }
-                    };
-                }, 800);
-            };
+            reader.onload = (e) => { selectedImages.push(e.target.result); renderPhotoGallery(); };
             reader.readAsDataURL(file);
         }
         if (newFiles.length > remaining) alert(`Можно выбрать до 8 фото. Добавлено ${remaining}.`);
@@ -699,32 +704,8 @@
             canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg');
             if (selectedImages.length < 8) {
-                const div = document.createElement('div');
-                div.className = 'photo-item loading';
-                const img = document.createElement('img');
-                div.appendChild(img);
-                const spinner = document.createElement('div');
-                spinner.className = 'loading-spinner';
-                div.appendChild(spinner);
-                const gallery = document.getElementById('photoGallery');
-                gallery.appendChild(div);
-                setTimeout(() => {
-                    img.src = dataUrl;
-                    selectedImages.push(dataUrl);
-                    div.classList.remove('loading');
-                    spinner.remove();
-                    const numberSpan = document.createElement('div');
-                    numberSpan.className = 'photo-number';
-                    numberSpan.textContent = selectedImages.length;
-                    div.appendChild(numberSpan);
-                    div.onclick = () => {
-                        const idx = selectedImages.findIndex(src => src === dataUrl);
-                        if (idx !== -1) {
-                            selectedImages.splice(idx, 1);
-                            renderPhotoGallery();
-                        }
-                    };
-                }, 500);
+                selectedImages.push(dataUrl);
+                renderPhotoGallery();
             } else alert('Максимум 8 фото');
         };
         document.getElementById('cameraCloseBtn').onclick = () => {
@@ -771,9 +752,13 @@
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
-            await sendPendingAndClose();
+            await sendMessageOptimistic(text, [...selectedImages]);
+            selectedImages = [];
+            document.getElementById('messageInput').value = '';
+            attachScreen = 'main';
+            closeModal('attachModal', 'attachModalContent');
         } else if (text.trim()) {
-            await sendMessage(text);
+            await sendMessageOptimistic(text, null);
             document.getElementById('messageInput').value = '';
         }
     };
