@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Проекты | Школа №15</title>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(145deg, #b0dff5 0%, #cceef8 50%, #b8e4fa 100%);
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+        .glass-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.35);
+            backdrop-filter: blur(16px);
+            border-radius: 56px;
+            padding: 1.8rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .header { text-align: center; margin-bottom: 2rem; }
+        .header h1 { font-size: 2.8rem; background: linear-gradient(135deg, #0a3f6f, #1e6a9f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .header p { color: #2c5a7a; font-weight: 500; }
+        .projects-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center; margin: 2rem 0; }
+        .project-card {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s, box-shadow 0.2s;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .project-card:hover { transform: translateY(-6px); box-shadow: 0 25px 35px -12px rgba(0, 0, 0, 0.25); }
+        .card-image { height: 160px; background-size: cover; background-position: center; background-color: #cce8f5; }
+        .card-info { padding: 1rem; text-align: center; }
+        .card-info h3 { font-size: 1.3rem; margin-bottom: 0.3rem; color: #0a3f6f; }
+        .subject-badge { display: inline-block; background: rgba(10, 63, 111, 0.2); padding: 0.2rem 0.8rem; border-radius: 30px; font-size: 0.7rem; font-weight: bold; margin-bottom: 0.5rem; color: #0a3f6f; }
+        .card-info p { font-size: 0.85rem; color: #2c5a7a; margin-top: 0.5rem; }
+        .download-btn {
+            background: #0a3f6f; color: white; border: none; padding: 0.3rem 1rem; border-radius: 40px;
+            cursor: pointer; font-size: 0.7rem; margin-top: 0.5rem;
+        }
+        .empty-msg { text-align: center; padding: 3rem; background: rgba(255, 255, 255, 0.5); border-radius: 40px; width: 100%; color: #0a3f6f; }
+        .back-btn { display: inline-block; margin-top: 1.5rem; background: rgba(255, 255, 255, 0.5); backdrop-filter: blur(8px); padding: 0.6rem 1.5rem; border-radius: 40px; text-decoration: none; color: #0a3f6f; font-weight: bold; transition: 0.2s; border: 1px solid rgba(255,255,255,0.5); }
+        .back-btn:hover { background: #0a3f6f; color: white; }
+        .upload-btn { background: #0a3f6f; color: white; border: none; padding: 0.6rem 1.5rem; border-radius: 40px; font-weight: bold; cursor: pointer; transition: 0.2s; margin-right: 1rem; }
+        .upload-btn:hover { background: #e94560; transform: scale(1.02); }
+        .top-actions { display: flex; justify-content: flex-end; gap: 1rem; margin-bottom: 1rem; }
+        footer { text-align: center; margin-top: 2rem; color: #0a3f6f; font-size: 0.7rem; opacity: 0.7; }
+    </style>
+</head>
+<body>
+<div class="glass-container">
+    <div class="header">
+        <h1>🚀 Проекты учеников</h1>
+        <p>Одобренные работы</p>
+    </div>
+    <div class="top-actions">
+        <button class="upload-btn" id="uploadBtn">➕ Загрузить проект</button>
+    </div>
+    <div class="projects-grid" id="projectsGrid">
+        <div class="empty-msg">📭 Загрузка проектов...</div>
+    </div>
+    <a href="index.html" class="back-btn">← На главную</a>
+    <footer>🏫 Школа №15 | Микрорайон Тырган, Прокопьевск</footer>
+</div>
+<script src="js/project-storage.js"></script>
+<script>
+    let projects = [];
+
+    function loadProjects() {
+        const allProjects = ProjectStorage.getProjects();
+        projects = allProjects.filter(p => p.status === 'approved');
+        renderProjects();
+    }
+
+    function renderProjects() {
+        const grid = document.getElementById('projectsGrid');
+        if (!projects.length) {
+            grid.innerHTML = '<div class="empty-msg">📭 Пока нет одобренных проектов. Стань первым!</div>';
+            return;
+        }
+        grid.innerHTML = projects.map(proj => `
+            <div class="project-card">
+                <div class="card-image" style="background-image: url('${proj.thumb || 'https://placehold.co/300x160/8fc9e8/white?text=Нет+фото'}'); background-size: cover; background-position: center;"></div>
+                <div class="card-info">
+                    <div class="subject-badge">${escapeHtml(proj.subject || 'Проект')}</div>
+                    <h3>${escapeHtml(proj.title)}</h3>
+                    <p>${escapeHtml(proj.description?.substring(0, 70) || '')}${proj.description?.length > 70 ? '...' : ''}</p>
+                    <button class="download-btn" onclick="downloadProject('${proj.id}')">📥 Скачать</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function downloadProject(projectId) {
+        const files = await ProjectStorage.listProjectFiles(projectId);
+        if (files.length === 1) {
+            ProjectStorage.downloadRecord(files[0]);
+        } else if (files.length > 1) {
+            alert(`В проекте несколько файлов. Скачивается первый.`);
+            ProjectStorage.downloadRecord(files[0]);
+        } else {
+            alert('Файлы не найдены');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
+    }
+
+    document.getElementById('uploadBtn').onclick = () => window.location.href = 'upload.html';
+    loadProjects();
+</script>
+</body>
+</html>
