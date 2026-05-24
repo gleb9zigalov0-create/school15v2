@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* весь твой стиль остаётся без изменений */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -142,6 +141,7 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .input-panel {
             padding: 0.8rem 1rem;
@@ -267,6 +267,57 @@
             color: #bbb;
             margin-top: 0.3rem;
         }
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .photo-item {
+            position: relative;
+            cursor: pointer;
+        }
+        .photo-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+        .photo-number {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            background: #e94560;
+            color: white;
+            border-radius: 20px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .back-btn, .camera-btn, .attach-file-btn, .next-btn, .send-btn {
+            background: #0a3f6f;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .camera-btn { background: #2e7d64; }
+        .next-btn, .send-btn { background: #2e7d64; flex: 1; }
+        .attach-file-btn { flex: 1; background: #0a3f6f; }
+        .caption-input {
+            width: calc(100% - 70px);
+            margin-left: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 20px;
+            border: none;
+            background: rgba(255,255,255,0.7);
+        }
     </style>
 </head>
 <body>
@@ -320,6 +371,11 @@
     const CHAT_PATH = 'class5a_chat';
     const usersCache = new Map();
 
+    // Переменные для скрепки
+    let attachScreen = 'main'; // 'main', 'photo', 'caption'
+    let selectedImages = [];
+    let photoDescriptions = [];
+
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) {
             return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -356,9 +412,12 @@
                 const mine = m.uid === currentUser?.uid;
                 const userData = await getUserData(m.uid);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
+                let mediaHtml = '';
+                if (m.image) mediaHtml += `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
+                if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${m.sticker ? `<img src="${m.sticker}" style="max-width:130px">` : (m.text || '')}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
             }
             container.scrollTop = container.scrollHeight;
@@ -378,12 +437,13 @@
         });
     }
 
-    async function sendMessage(text, stickerUrl = null) {
-        if (!text.trim() && !stickerUrl) return;
+    async function sendMessage(text, stickerUrl = null, imageDataUrl = null) {
+        if (!text.trim() && !stickerUrl && !imageDataUrl) return;
         const userData = await getUserData(currentUser.uid);
         await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
             text: text,
             sticker: stickerUrl,
+            image: imageDataUrl,
             uid: currentUser.uid,
             name: userData.name || currentUser.displayName || 'Ученик',
             createdAt: new Date()
@@ -426,42 +486,174 @@
         }
     }
 
-    // ========== СКРЕПКА ==========
+    // ========== СКРЕПКА (с вложенными экранами) ==========
     function renderAttachModal() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
-        container.innerHTML = `
-            <div class="modal-title">📎 Отправить</div>
-            <div class="attach-grid">
-                <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
-                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
-            </div>
-            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
-        `;
         
-        document.querySelectorAll('.attach-item').forEach(el => {
-            el.onclick = (e) => {
-                e.stopPropagation();
-                alert(`📎 Отправка ${el.dataset.type} — в разработке`);
+        if (attachScreen === 'main') {
+            container.innerHTML = `
+                <div class="modal-title">📎 Отправить</div>
+                <div class="attach-grid">
+                    <div class="attach-item" data-type="photo"><div class="attach-icon">📷</div><div class="attach-label">Фото</div></div>
+                    <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                    <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                    <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                    <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                    <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+                </div>
+                <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+            `;
+            
+            document.querySelectorAll('.attach-item').forEach(el => {
+                el.onclick = (e) => {
+                    e.stopPropagation();
+                    const type = el.dataset.type;
+                    if (type === 'photo') {
+                        attachScreen = 'photo';
+                        renderAttachModal();
+                    } else {
+                        alert(`📎 Отправка ${type} — в разработке`);
+                        closeModal('attachModal', 'attachModalContent');
+                        attachScreen = 'main';
+                    }
+                };
+            });
+        } 
+        else if (attachScreen === 'photo') {
+            container.innerHTML = `
+                <div class="modal-title">📸 Выбрать фото (до 8)</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <button class="back-btn" id="photoBackBtn">← Назад</button>
+                    <button class="camera-btn" id="openCameraBtn">📸 Снять фото</button>
+                </div>
+                <div id="photoGallery" class="photo-gallery"></div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
+                    <button class="attach-file-btn" id="selectFromComputerBtn">📁 Выбрать из файлов</button>
+                    <button class="next-btn" id="photoNextBtn">Далее →</button>
+                </div>
+                <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+            `;
+            
+            renderPhotoGallery();
+            
+            document.getElementById('photoBackBtn').onclick = () => {
+                attachScreen = 'main';
+                renderAttachModal();
+            };
+            document.getElementById('openCameraBtn').onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.capture = 'environment';
+                input.onchange = (e) => handleNewPhotos(e.target.files);
+                input.click();
+            };
+            document.getElementById('selectFromComputerBtn').onclick = () => {
+                document.getElementById('photoInput').click();
+            };
+            document.getElementById('photoInput').onchange = (e) => {
+                handleNewPhotos(e.target.files);
+                document.getElementById('photoInput').value = '';
+            };
+            document.getElementById('photoNextBtn').onclick = () => {
+                if (selectedImages.length === 0) {
+                    alert('Выберите хотя бы одно фото');
+                    return;
+                }
+                attachScreen = 'caption';
+                renderAttachModal();
+            };
+        }
+        else if (attachScreen === 'caption') {
+            let captionsHtml = '';
+            for (let i = 0; i < selectedImages.length; i++) {
+                captionsHtml += `
+                    <div style="margin-bottom: 1rem;">
+                        <img src="${selectedImages[i]}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 12px; display: inline-block; vertical-align: middle;">
+                        <input type="text" id="caption_${i}" class="caption-input" placeholder="Подпись к фото ${i+1}">
+                    </div>
+                `;
+            }
+            container.innerHTML = `
+                <div class="modal-title">✏️ Подпиши фото</div>
+                <div style="max-height: 40vh; overflow-y: auto; margin-bottom: 1rem;">
+                    ${captionsHtml}
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="back-btn" id="captionBackBtn">← Назад</button>
+                    <button class="send-btn" id="sendPhotosBtn">📤 Отправить (${selectedImages.length} фото)</button>
+                </div>
+                <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+            `;
+            
+            document.getElementById('captionBackBtn').onclick = () => {
+                attachScreen = 'photo';
+                renderAttachModal();
+            };
+            document.getElementById('sendPhotosBtn').onclick = async () => {
+                for (let i = 0; i < selectedImages.length; i++) {
+                    const inp = document.getElementById(`caption_${i}`);
+                    const text = inp ? inp.value : '';
+                    await sendMessage(text, null, selectedImages[i]);
+                }
+                alert(`✅ Отправлено ${selectedImages.length} фото`);
+                attachScreen = 'main';
+                selectedImages = [];
                 closeModal('attachModal', 'attachModalContent');
             };
-        });
+        }
         
         const closeBtn = document.getElementById('attachModalCloseBtn');
         if (closeBtn) {
             closeBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                attachScreen = 'main';
+                selectedImages = [];
                 closeModal('attachModal', 'attachModalContent');
             };
         }
     }
 
-    // ========== ОБЩИЕ ФУНКЦИИ МОДАЛОК ==========
+    function renderPhotoGallery() {
+        const gallery = document.getElementById('photoGallery');
+        if (!gallery) return;
+        if (selectedImages.length === 0) {
+            gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #ccc;">Нет выбранных фото</div>';
+            return;
+        }
+        gallery.innerHTML = '';
+        for (let i = 0; i < selectedImages.length; i++) {
+            const div = document.createElement('div');
+            div.className = 'photo-item';
+            div.innerHTML = `<img src="${selectedImages[i]}" data-idx="${i}"><div class="photo-number">${i+1}</div>`;
+            div.onclick = () => removePhoto(i);
+            gallery.appendChild(div);
+        }
+    }
+
+    function handleNewPhotos(files) {
+        const newFiles = Array.from(files);
+        const remaining = 8 - selectedImages.length;
+        const toAdd = newFiles.slice(0, remaining);
+        for (const file of toAdd) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                selectedImages.push(e.target.result);
+                if (selectedImages.length <= 8) renderPhotoGallery();
+            };
+            reader.readAsDataURL(file);
+        }
+        if (newFiles.length > remaining) alert(`Можно выбрать максимум 8 фото. Добавлено только ${remaining}.`);
+    }
+
+    function removePhoto(index) {
+        selectedImages.splice(index, 1);
+        renderPhotoGallery();
+    }
+
     function closeModal(modalId, contentId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
@@ -469,6 +661,8 @@
         setTimeout(() => {
             const container = document.getElementById(contentId);
             if (container) container.innerHTML = '';
+            attachScreen = 'main';
+            selectedImages = [];
         }, 300);
     }
 
@@ -495,7 +689,6 @@
             }
             isDragging = true;
         };
-        
         const onTouchMove = (e) => {
             if (!isDragging) return;
             const delta = e.touches[0].clientY - startY;
@@ -504,7 +697,6 @@
                 modal.style.opacity = '0.7';
             }
         };
-        
         const onTouchEnd = (e) => {
             if (!isDragging) return;
             const delta = e.changedTouches[0].clientY - startY;
@@ -526,7 +718,6 @@
             mouseStartY = e.clientY;
             e.preventDefault();
         });
-        
         window.addEventListener('mousemove', (e) => {
             if (!mouseDown) return;
             const delta = e.clientY - mouseStartY;
@@ -535,7 +726,6 @@
                 modal.style.opacity = '0.7';
             }
         });
-        
         window.addEventListener('mouseup', (e) => {
             if (!mouseDown) return;
             const delta = e.clientY - mouseStartY;
@@ -550,7 +740,11 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
 
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
-    document.getElementById('attachBtn').onclick = () => openModal('attachModal', renderAttachModal);
+    document.getElementById('attachBtn').onclick = () => {
+        attachScreen = 'main';
+        selectedImages = [];
+        openModal('attachModal', renderAttachModal);
+    };
     
     document.getElementById('sendBtn').onclick = () => {
         const inp = document.getElementById('messageInput');
@@ -558,7 +752,6 @@
         inp.value = '';
     };
     
-    // 🔥 КНОПКА НАСТРОЕК — ПРАВИЛЬНЫЙ ПУТЬ
     document.getElementById('settingsBtn').onclick = () => {
         window.location.href = 'settings.html';
     };
