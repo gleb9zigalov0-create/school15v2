@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -144,7 +143,7 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .msg-footer {
             display: flex;
@@ -153,13 +152,24 @@
             gap: 8px;
             margin-top: 4px;
         }
-        .status-icons {
-            display: flex;
-            gap: 4px;
-            font-size: 12px;
-        }
+        .status-icons { display: flex; gap: 4px; font-size: 12px; }
         .delivered { color: #4ade80; }
         .sent { color: #9ca3af; }
+        .msg-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #ccc;
+            transition: 0.2s;
+            padding: 0 2px;
+        }
+        .delete-btn:hover { color: #e94560; transform: scale(1.1); }
         .seen-btn {
             background: none;
             border: none;
@@ -310,7 +320,6 @@
         .photo-item {
             position: relative;
             cursor: pointer;
-            transition: all 0.2s;
         }
         .photo-item img {
             width: 100%;
@@ -523,6 +532,28 @@
         });
     }
 
+    async function deleteMessage(msgId, msgUid) {
+        const isMine = msgUid === currentUser.uid;
+        let canDelete = isMine;
+        
+        if (!isMine) {
+            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора для удаления:');
+            if (password !== 'КИКИ99СССР') {
+                alert('Неверный пароль! Удаление отменено.');
+                return false;
+            }
+            canDelete = true;
+        }
+        
+        if (canDelete) {
+            if (confirm('🗑️ Вы действительно хотите удалить это сообщение?')) {
+                await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId).delete();
+                return true;
+            }
+        }
+        return false;
+    }
+
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
@@ -555,8 +586,18 @@
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = doc.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${doc.id}" data-msg-uid="${m.uid}">🗑️</button><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+                
+                const deleteBtn = div.querySelector('.delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        const msgId = deleteBtn.dataset.msgId;
+                        const msgUid = deleteBtn.dataset.msgUid;
+                        await deleteMessage(msgId, msgUid);
+                    };
+                }
                 const seenBtn = div.querySelector('.seen-btn');
                 if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
             }
@@ -600,16 +641,16 @@
         });
     }
 
-    async function sendMessageOptimistic(text, imagesArray) {
+    async function sendMessageOptimistic(text, imagesArray, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
         pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
         loadMessages();
-        
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '',
                 images: imagesArray || [],
+                sticker: stickerUrl,
                 uid: currentUser.uid,
                 name: userData.name || currentUser.displayName || 'Ученик',
                 seenBy: [currentUser.uid],
@@ -655,7 +696,8 @@
         document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
             img.onclick = (e) => {
                 e.stopPropagation();
-                sendMessageOptimistic('', []);
+                const url = img.getAttribute('data-sticker-url');
+                sendMessageOptimistic('', null, url);
                 closeModal('stickerModal', 'stickerModalContent');
             };
         });
