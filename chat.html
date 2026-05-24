@@ -174,7 +174,7 @@
             outline: none;
         }
 
-        /* ========== МОДАЛКИ ========== */
+        /* МОДАЛКИ */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -399,7 +399,6 @@
             <button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>
         `;
         
-        // Загружаем стикеры
         const stickers = ['stickers/okay.gif'];
         const stickerContainer = document.getElementById('stickerList');
         if (stickerContainer) {
@@ -558,7 +557,10 @@
         inp.value = '';
     };
     
-    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
+    // 🔥 ИСПРАВЛЕННАЯ КНОПКА НАСТРОЕК
+    document.getElementById('settingsBtn').onclick = () => {
+        window.location.href = 'settings.html';
+    };
 </script>
 </body>
 </html>
