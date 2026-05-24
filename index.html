@@ -51,5 +51,136 @@
     </footer>
 </div>
 
-</body>
+<!-- Кнопка модерации (появляется по паролю) -->
+<script>
+    (function() {
+        // Стили для кнопки
+        const style = document.createElement('style');
+        style.textContent = `
+            .moderator-btn {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                background: linear-gradient(135deg, #0a3f6f, #1e6a9f);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 40px;
+                text-decoration: none;
+                font-size: 13px;
+                font-weight: bold;
+                letter-spacing: 0.5px;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(10, 63, 111, 0.3);
+                backdrop-filter: blur(4px);
+                border: 1px solid rgba(255,255,255,0.3);
+                transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+                opacity: 0;
+                transform: translateY(20px);
+                pointer-events: none;
+            }
+            .moderator-btn.show {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+            .moderator-btn:hover {
+                transform: translateY(-4px) scale(1.02);
+                box-shadow: 0 12px 25px rgba(10, 63, 111, 0.4);
+                background: linear-gradient(135deg, #0e4a7f, #2a7ab0);
+                border-color: rgba(255,255,255,0.5);
+            }
+            .moderator-btn:active {
+                transform: translateY(-2px) scale(0.98);
+            }
+            .moderator-prompt {
+                position: fixed;
+                bottom: 24px;
+                right: 24px;
+                z-index: 999;
+            }
+            .moderator-login {
+                background: rgba(10, 30, 50, 0.85);
+                backdrop-filter: blur(12px);
+                border-radius: 48px;
+                padding: 8px 16px;
+                display: flex;
+                gap: 8px;
+                align-items: center;
+                border: 1px solid rgba(255,255,255,0.3);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            .moderator-login input {
+                background: rgba(255,255,255,0.9);
+                border: none;
+                padding: 8px 16px;
+                border-radius: 40px;
+                font-size: 12px;
+                outline: none;
+                width: 140px;
+            }
+            .moderator-login button {
+                background: #0a3f6f;
+                border: none;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 40px;
+                cursor: pointer;
+                font-size: 12px;
+                font-weight: bold;
+                transition: 0.2s;
+            }
+            .moderator-login button:hover {
+                background: #e94560;
+                transform: scale(1.02);
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Создаём контейнер для кнопки
+        const container = document.createElement('div');
+        container.className = 'moderator-prompt';
+        
+        // Форма ввода пароля
+        const loginDiv = document.createElement('div');
+        loginDiv.className = 'moderator-login';
+        loginDiv.innerHTML = `
+            <input type="password" id="modPassInput" placeholder="Пароль модератора" autocomplete="off">
+            <button id="modLoginBtn">🔑 Войти</button>
+        `;
+        container.appendChild(loginDiv);
+        
+        // Кнопка модерации (скрыта изначально)
+        const modBtn = document.createElement('a');
+        modBtn.href = 'moderate.html';
+        modBtn.className = 'moderator-btn';
+        modBtn.innerHTML = '🛠 Модерация';
+        container.appendChild(modBtn);
+        
+        document.body.appendChild(container);
+        
+        // Обработчик входа
+        document.getElementById('modLoginBtn').addEventListener('click', () => {
+            const pass = document.getElementById('modPassInput').value;
+            if (pass === 'КИКИ99СССР') {
+                localStorage.setItem('moderator_mode', 'true');
+                loginDiv.style.display = 'none';
+                modBtn.classList.add('show');
+                // Скрываем форму навсегда
+                setTimeout(() => {
+                    loginDiv.style.opacity = '0';
+                    setTimeout(() => loginDiv.style.display = 'none', 300);
+                }, 300);
+            } else {
+                alert('❌ Неверный пароль!');
+                document.getElementById('modPassInput').value = '';
+            }
+        });
+        
+        // Проверяем, не был ли уже введён пароль ранее
+        if (localStorage.getItem('moderator_mode') === 'true') {
+            loginDiv.style.display = 'none';
+            modBtn.classList.add('show');
+        }
+    })();
+</script></body>
 </html>
