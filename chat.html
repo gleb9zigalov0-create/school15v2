@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
+        /* ========== ВЕСЬ ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -490,35 +490,24 @@
         });
     });
 
+    async function markAsSeen(msgId) {
+        const msgRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId);
+        await msgRef.update({
+            seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+        });
+    }
+
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
             const container = document.getElementById('messagesArea');
             
+            // Отмечаем просмотренные сообщения
             snap.docChanges().forEach(change => {
                 const m = change.doc.data();
-                if (change.type === 'added') {
-                    for (let [tempId, pending] of pendingMessages.entries()) {
-                        if (JSON.stringify(pending.images) === JSON.stringify(m.images) && pending.text === (m.text || '')) {
-                            const tempElem = document.getElementById(tempId);
-                            if (tempElem) {
-                                (async () => {
-                                    const userData = await getUserData(m.uid);
-                                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
-                                    let mediaHtml = '';
-                                    if (m.images && m.images.length) {
-                                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
-                                    } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
-                                    if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
-                                    tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${change.doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
-                                    tempElem.id = change.doc.id;
-                                    const btn = tempElem.querySelector('.seen-btn');
-                                    if (btn) btn.onclick = (e) => { showSeenModal(tempElem.id); };
-                                })();
-                            }
-                            pendingMessages.delete(tempId);
-                            break;
-                        }
+                if (change.type === 'added' && m.uid !== currentUser.uid) {
+                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) {
+                        markAsSeen(change.doc.id);
                     }
                 }
             });
@@ -534,37 +523,40 @@
                     mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
                 } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
+                
+                const seenCount = (m.seenBy || []).filter(uid => uid !== m.uid).length;
+                const statusHtml = seenCount > 0 ? '<span class="delivered">✅✅</span>' : '<span class="sent">⌛</span>';
+                
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = doc.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 const seenBtn = div.querySelector('.seen-btn');
-                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id); };
+                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
             }
             
+            // Временные сообщения (оптимистичный интерфейс)
             for (let [tempId, pending] of pendingMessages.entries()) {
                 if (!document.getElementById(tempId)) {
-                    (async () => {
-                        const userData = await getUserData(currentUser.uid);
-                        const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                        let mediaHtml = '';
-                        if (pending.images && pending.images.length) {
-                            mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-                            for (let img of pending.images) {
-                                mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
-                                                <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
-                                                <div class="spinner"></div>
-                                            </div>`;
-                            }
-                            mediaHtml += `</div>`;
+                    const userData = await getUserData(currentUser.uid);
+                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
+                    let mediaHtml = '';
+                    if (pending.images && pending.images.length) {
+                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
+                        for (let img of pending.images) {
+                            mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
+                                            <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
+                                            <div class="spinner"></div>
+                                        </div>`;
                         }
-                        const div = document.createElement('div');
-                        div.className = 'message mine';
-                        div.id = tempId;
-                        div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
-                        container.appendChild(div);
-                    })();
+                        mediaHtml += `</div>`;
+                    }
+                    const div = document.createElement('div');
+                    div.className = 'message mine';
+                    div.id = tempId;
+                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
+                    container.appendChild(div);
                 }
             }
             container.scrollTop = container.scrollHeight;
@@ -589,13 +581,20 @@
         const userData = await getUserData(currentUser.uid);
         pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
         try {
-            await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
+            const docRef = await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '',
                 images: imagesArray || [],
                 uid: currentUser.uid,
                 name: userData.name || currentUser.displayName || 'Ученик',
+                seenBy: [currentUser.uid],
                 createdAt: new Date()
             });
+            // После успешной отправки удаляем временное сообщение, реальное появится из snapshot
+            setTimeout(() => {
+                const tempElem = document.getElementById(tempId);
+                if (tempElem) tempElem.remove();
+                pendingMessages.delete(tempId);
+            }, 500);
         } catch (err) {
             console.error(err);
             const tempElem = document.getElementById(tempId);
@@ -605,15 +604,20 @@
         }
     }
 
-    function showSeenModal(msgId) {
+    async function showSeenModal(msgId, seenByArray) {
         const modal = document.getElementById('seenModal');
         const content = document.getElementById('seenModalContent');
+        const users = [];
+        for (const uid of seenByArray) {
+            if (uid === currentUser?.uid) continue;
+            const userData = await getUserData(uid);
+            users.push(userData.name || 'Ученик');
+        }
+        const usersList = users.length ? users.join(', ') : 'Никто, кроме вас';
         content.innerHTML = `
             <div class="modal-title">👁️ Просмотрено</div>
             <div class="seen-modal-list">
-                <div class="seen-item"><div class="seen-avatar">Г</div><span>Глеб (сегодня 12:34)</span></div>
-                <div class="seen-item"><div class="seen-avatar">А</div><span>Аня (сегодня 12:35)</span></div>
-                <div class="seen-item"><div class="seen-avatar">С</div><span>Саша (сегодня 12:36)</span></div>
+                <div class="seen-item"><div class="seen-avatar">📖</div><span>${usersList}</span></div>
             </div>
             <button class="close-btn" id="seenCloseBtn">Закрыть</button>
         `;
