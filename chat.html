@@ -323,6 +323,17 @@
             0% { transform: translate(-50%, -50%) rotate(0deg); }
             100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
+        .sending-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
         .camera-round-btn {
             background: #2e7d64;
             border: none;
@@ -484,12 +495,28 @@
         if (!selectedImages.length) return;
         const caption = document.getElementById('messageInput').value;
         const imagesToSend = [...selectedImages];
-        selectedImages = [];
-        document.getElementById('messageInput').value = '';
-        await sendMessage(caption, null, imagesToSend);
-        attachScreen = 'main';
-        closeModal('attachModal', 'attachModalContent');
-        alert(`✅ Отправлено ${imagesToSend.length} фото`);
+        
+        // Временное сообщение с индикатором загрузки
+        const tempId = Date.now();
+        const tempDiv = document.createElement('div');
+        tempDiv.className = 'message mine';
+        tempDiv.innerHTML = `<div class="msg-avatar">?</div><div class="msg-bubble"><div class="msg-name">${currentUser.displayName || 'Ученик'}</div><div class="msg-text">⏳ Отправка фото <span class="sending-spinner"></span></div><div class="msg-time"></div></div>`;
+        const messagesContainer = document.getElementById('messagesArea');
+        messagesContainer.appendChild(tempDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        try {
+            await sendMessage(caption, null, imagesToSend);
+            tempDiv.remove();
+            selectedImages = [];
+            document.getElementById('messageInput').value = '';
+            attachScreen = 'main';
+            closeModal('attachModal', 'attachModalContent');
+            alert(`✅ Фото отправлены!`);
+        } catch (err) {
+            tempDiv.remove();
+            alert('Ошибка при отправке фото');
+        }
     }
 
     function renderStickerModal() {
