@@ -110,6 +110,7 @@
             gap: 0.6rem;
             align-items: flex-start;
             max-width: 80%;
+            position: relative;
         }
         .message.mine {
             align-self: flex-end;
@@ -134,6 +135,7 @@
             padding: 0.5rem 1rem;
             border-radius: 20px;
             color: #1e2f3e;
+            position: relative;
         }
         .message.mine .msg-bubble {
             background: #0a3f6f;
@@ -141,32 +143,31 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
-        .loading-photo {
-            filter: brightness(0.5) blur(4px);
-        }
-        .spinner-overlay {
-            position: relative;
-            display: inline-block;
-        }
-        .spinner-overlay .spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            pointer-events: none;
-        }
-        @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
-        }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
+        .msg-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .status-icons {
+            display: flex;
+            gap: 4px;
+            font-size: 12px;
+        }
+        .delivered { color: #4ade80; }
+        .sent { color: #9ca3af; }
+        .seen-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: #ccc;
+            transition: 0.2s;
+        }
+        .seen-btn:hover { color: #fff; transform: scale(1.05); }
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -201,6 +202,7 @@
         }
         .text-input::placeholder { color: #555; }
 
+        /* МОДАЛКИ */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -279,7 +281,13 @@
             flex: 1;
             min-width: 70px;
             cursor: pointer;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            border-radius: 28px;
+            padding: 0.8rem 0.5rem;
+            transition: 0.2s;
         }
+        .attach-item:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
         .attach-icon {
             font-size: 2.2rem;
             filter: grayscale(100%);
@@ -288,9 +296,10 @@
         }
         .attach-icon:hover { opacity: 1; transform: scale(1.05); }
         .attach-label {
-            font-size: 0.65rem;
-            color: #bbb;
+            font-size: 0.7rem;
+            color: #e0e0e0;
             margin-top: 0.3rem;
+            font-weight: 500;
         }
         .photo-gallery {
             display: grid;
@@ -354,6 +363,27 @@
             cursor: pointer;
             font-size: 0.8rem;
         }
+        .seen-modal-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        .seen-item {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .seen-avatar {
+            width: 32px;
+            height: 32px;
+            background: #0a3f6f;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -389,6 +419,13 @@
                 <div class="modal-content-inner" id="attachModalContent"></div>
             </div>
         </div>
+
+        <div class="modal-wrapper" id="seenWrapper">
+            <div class="modal" id="seenModal">
+                <div class="modal-handle" id="seenHandle"></div>
+                <div class="modal-content-inner" id="seenModalContent"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -407,8 +444,7 @@
     let selectedImages = [];
     let attachScreen = 'main';
 
-    // Временные сообщения (оптимистичный интерфейс)
-    let pendingMessages = new Map(); // key = tempId, value = { text, images }
+    let pendingMessages = new Map();
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -439,25 +475,23 @@
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
             const container = document.getElementById('messagesArea');
             
-            // Обрабатываем изменения
             snap.docChanges().forEach(change => {
                 const m = change.doc.data();
                 if (change.type === 'added') {
-                    // Проверяем, есть ли временное сообщение с такими же фото и текстом
                     for (let [tempId, pending] of pendingMessages.entries()) {
                         if (JSON.stringify(pending.images) === JSON.stringify(m.images) && pending.text === (m.text || '')) {
-                            // Заменяем временное сообщение реальным
                             const tempElem = document.getElementById(tempId);
                             if (tempElem) {
-                                const userData = getUserData(m.uid);
+                                const userData = await getUserData(m.uid);
                                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                                 let mediaHtml = '';
                                 if (m.images && m.images.length) {
                                     mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
                                 } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
                                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
-                                tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                                tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${change.doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                                 tempElem.id = change.doc.id;
+                                tempElem.querySelector('.seen-btn').onclick = (e) => { showSeenModal(tempElem.id); };
                             }
                             pendingMessages.delete(tempId);
                             break;
@@ -466,7 +500,6 @@
                 }
             });
             
-            // Отображаем все сообщения (обычные)
             container.innerHTML = '';
             for (const doc of snap.docs) {
                 const m = doc.data();
@@ -481,14 +514,14 @@
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = doc.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+                div.querySelector('.seen-btn').onclick = (e) => { showSeenModal(doc.id); };
             }
             
-            // Добавляем все временные сообщения, которых ещё нет в рендере
             for (let [tempId, pending] of pendingMessages.entries()) {
                 if (!document.getElementById(tempId)) {
-                    const userData = getUserData(currentUser.uid);
+                    const userData = await getUserData(currentUser.uid);
                     const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
                     let mediaHtml = '';
                     if (pending.images && pending.images.length) {
@@ -504,7 +537,7 @@
                     const div = document.createElement('div');
                     div.className = 'message mine';
                     div.id = tempId;
-                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-time">отправляется...</div></div>`;
+                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
                     container.appendChild(div);
                 }
             }
@@ -528,11 +561,7 @@
     async function sendMessageOptimistic(text, imagesArray) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
-        
-        // Сохраняем во временном хранилище
         pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
-        
-        // Добавляем в Firebase
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '',
@@ -546,8 +575,24 @@
             const tempElem = document.getElementById(tempId);
             if (tempElem) tempElem.remove();
             pendingMessages.delete(tempId);
-            alert('Ошибка отправки фото');
+            alert('Ошибка отправки');
         }
+    }
+
+    function showSeenModal(msgId) {
+        const modal = document.getElementById('seenModal');
+        const content = document.getElementById('seenModalContent');
+        content.innerHTML = `
+            <div class="modal-title">👁️ Просмотрено</div>
+            <div class="seen-modal-list">
+                <div class="seen-item"><div class="seen-avatar">Г</div><span>Глеб (сегодня 12:34)</span></div>
+                <div class="seen-item"><div class="seen-avatar">А</div><span>Аня (сегодня 12:35)</span></div>
+                <div class="seen-item"><div class="seen-avatar">С</div><span>Саша (сегодня 12:36)</span></div>
+            </div>
+            <button class="close-btn" id="seenCloseBtn">Закрыть</button>
+        `;
+        modal.classList.add('active');
+        document.getElementById('seenCloseBtn').onclick = () => modal.classList.remove('active');
     }
 
     function renderStickerModal() {
@@ -572,14 +617,10 @@
         container.innerHTML = `
             <div class="modal-title">📎 Отправить</div>
             <div class="attach-grid">
-                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
-                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Снять фото</div></div>
+                <div class="attach-item" data-type="gallery"><div class="attach-icon">🖼️</div><div class="attach-label">Галерея</div></div>
+                <div class="attach-item" data-type="cancel"><div class="attach-icon">❌</div><div class="attach-label">Отмена</div></div>
             </div>
-            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         document.querySelectorAll('.attach-item').forEach(el => {
             el.onclick = (e) => {
@@ -588,14 +629,27 @@
                 if (type === 'camera') {
                     attachScreen = 'camera';
                     renderCameraScreen();
+                } else if (type === 'gallery') {
+                    document.getElementById('photoInput').click();
                 } else {
-                    alert(`📎 Отправка ${type} — в разработке`);
                     closeModal('attachModal', 'attachModalContent');
                     attachScreen = 'main';
                 }
             };
         });
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.multiple = true;
+        fileInput.style.display = 'none';
+        fileInput.id = 'photoInput';
+        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
+        container.appendChild(fileInput);
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Закрыть';
+        closeBtn.className = 'close-btn';
+        closeBtn.onclick = () => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+        container.appendChild(closeBtn);
     }
 
     function renderCameraScreen() {
@@ -604,11 +658,10 @@
         container.innerHTML = `
             <div class="attach-header">
                 <button class="back-btn" id="cameraBackBtn">← Назад</button>
-                <div class="modal-title">Выбрать фото</div>
+                <div class="modal-title">Снять фото</div>
                 <button class="camera-round-btn" id="openCameraBtn">📷</button>
             </div>
             <div id="photoGallery" class="photo-gallery"></div>
-            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
             <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         renderPhotoGallery();
@@ -617,15 +670,6 @@
             renderAttachMain();
         };
         document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-        const fileInput = document.getElementById('photoInput');
-        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
-        const selectBtn = document.createElement('button');
-        selectBtn.textContent = '📁 Выбрать из галереи';
-        selectBtn.className = 'close-btn';
-        selectBtn.style.marginTop = '0.5rem';
-        selectBtn.style.background = '#0a3f6f';
-        selectBtn.onclick = () => fileInput.click();
-        container.appendChild(selectBtn);
         document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
@@ -690,7 +734,6 @@
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-            document.getElementById('photoInput').onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
         };
         document.getElementById('rotateCameraBtn').onclick = () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
         document.getElementById('captureBtn').onclick = () => {
@@ -744,6 +787,7 @@
 
     initSwipeClose('stickerModal', 'stickerHandle', 'stickerModalContent');
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
+    initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
 
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
     document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
