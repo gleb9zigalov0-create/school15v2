@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -869,16 +868,10 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
     initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
 
-    // === ПРИВЯЗКА КНОПОК (ПРОСТО И НАДЁЖНО) ===
-    document.getElementById('stickerBtn').onclick = function() {
-        openModal('stickerModal', renderStickerModal);
-    };
-    document.getElementById('attachBtn').onclick = function() {
-        attachScreen = 'main';
-        selectedImages = [];
-        openModal('attachModal', renderAttachMain);
-    };
-    document.getElementById('sendBtn').onclick = async function() {
+    // === ПРИВЯЗКА КНОПОК ===
+    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
+    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
+    document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessageOptimistic(text, [...selectedImages]);
@@ -891,9 +884,7 @@
             document.getElementById('messageInput').value = '';
         }
     };
-    document.getElementById('settingsBtn').onclick = function() {
-        window.location.href = 'settings.html';
-    };
+    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
 </script>
 </body>
 </html>
