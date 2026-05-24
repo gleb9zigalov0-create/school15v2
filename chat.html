@@ -167,13 +167,15 @@
         .icon-button:hover { background: rgba(255,255,255,0.6); transform: scale(1.02); }
         .text-input {
             flex: 1;
-            background: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.9);
             border: none;
             border-radius: 40px;
             padding: 0.7rem 1rem;
             font-size: 0.9rem;
             outline: none;
+            color: #000 !important;
         }
+        .text-input::placeholder { color: #555; }
 
         /* МОДАЛКИ */
         .modal-wrapper {
@@ -243,6 +245,30 @@
             transition: 0.1s;
         }
         .sticker-img:hover { transform: scale(1.05); }
+        .attach-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .attach-item {
+            text-align: center;
+            flex: 1;
+            min-width: 70px;
+            cursor: pointer;
+        }
+        .attach-icon {
+            font-size: 2.2rem;
+            filter: grayscale(100%);
+            opacity: 0.7;
+            transition: 0.1s;
+        }
+        .attach-icon:hover { opacity: 1; transform: scale(1.05); }
+        .attach-label {
+            font-size: 0.65rem;
+            color: #bbb;
+            margin-top: 0.3rem;
+        }
         .photo-gallery {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -294,7 +320,7 @@
             align-items: center;
             margin-bottom: 1rem;
         }
-        .back-btn, .camera-btn, .attach-file-btn, .next-btn, .send-btn {
+        .back-btn {
             background: #0a3f6f;
             color: white;
             border: none;
@@ -302,15 +328,6 @@
             border-radius: 40px;
             cursor: pointer;
             font-size: 0.8rem;
-        }
-        .caption-input {
-            width: calc(100% - 70px);
-            margin-left: 0.5rem;
-            padding: 0.5rem;
-            border-radius: 20px;
-            border: none;
-            background: rgba(255,255,255,0.9);
-            color: #000;
         }
     </style>
 </head>
@@ -329,7 +346,7 @@
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
             <button class="icon-button" id="stickerBtn">😊</button>
-            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение..." style="color:#fff;">
+            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
             <button class="icon-button" id="attachBtn">📎</button>
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
@@ -364,6 +381,7 @@
     const usersCache = new Map();
     let selectedImages = [];
     let cameraStream = null;
+    let attachScreen = 'main'; // 'main' or 'camera'
 
     function getAvatarHtml(avatarBase64, name) {
         if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
@@ -439,16 +457,18 @@
         });
     }
 
-    async function sendPendingImages() {
+    async function sendPendingAndClose() {
         if (!selectedImages.length) return;
         const caption = document.getElementById('messageInput').value;
         await sendMessage(caption, null, [...selectedImages]);
         selectedImages = [];
         document.getElementById('messageInput').value = '';
+        attachScreen = 'main';
         closeModal('attachModal', 'attachModalContent');
-        alert(`✅ Отправлено фото`);
+        alert('✅ Фото отправлены');
     }
 
+    // ========== СТИКЕРЫ ==========
     function renderStickerModal() {
         const container = document.getElementById('stickerModalContent');
         if (!container) return;
@@ -465,21 +485,60 @@
         document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerModal', 'stickerModalContent'); };
     }
 
-    function renderAttachModal() {
+    // ========== ОСНОВНОЕ МЕНЮ СКРЕПКИ ==========
+    function renderAttachMain() {
+        const container = document.getElementById('attachModalContent');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="modal-title">📎 Отправить</div>
+            <div class="attach-grid">
+                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
+                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+            </div>
+            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+        `;
+        document.querySelectorAll('.attach-item').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const type = el.dataset.type;
+                if (type === 'camera') {
+                    attachScreen = 'camera';
+                    renderCameraScreen();
+                } else {
+                    alert(`📎 Отправка ${type} — в разработке`);
+                    closeModal('attachModal', 'attachModalContent');
+                    attachScreen = 'main';
+                }
+            };
+        });
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+    }
+
+    // ========== ЭКРАН КАМЕРЫ / ВЫБОРА ФОТО ==========
+    function renderCameraScreen() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
         container.innerHTML = `
             <div class="attach-header">
-                <div class="modal-title">📸 Выбрать фото</div>
+                <button class="back-btn" id="cameraBackBtn">← Назад</button>
+                <div class="modal-title">Выбрать фото</div>
                 <button class="camera-round-btn" id="openCameraBtn">📷</button>
             </div>
             <div id="photoGallery" class="photo-gallery"></div>
             <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
-            <button class="close-btn" id="attachModalCloseBtn" style="margin-top:0.5rem;">Закрыть</button>
+            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
         `;
         renderPhotoGallery();
-        const openCamera = document.getElementById('openCameraBtn');
-        openCamera.onclick = () => showCameraModal();
+        
+        document.getElementById('cameraBackBtn').onclick = () => {
+            attachScreen = 'main';
+            renderAttachMain();
+        };
+        document.getElementById('openCameraBtn').onclick = () => showCameraModal();
         const fileInput = document.getElementById('photoInput');
         fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
         const selectBtn = document.createElement('button');
@@ -489,7 +548,7 @@
         selectBtn.style.background = '#0a3f6f';
         selectBtn.onclick = () => fileInput.click();
         container.appendChild(selectBtn);
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
     function renderPhotoGallery() {
@@ -519,8 +578,6 @@
     }
 
     function showCameraModal() {
-        const modal = document.getElementById('attachModal');
-        if (!modal) return;
         const origContent = document.getElementById('attachModalContent').innerHTML;
         document.getElementById('attachModalContent').innerHTML = `
             <div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;">
@@ -528,7 +585,7 @@
                 <span class="modal-title">Снять фото</span>
                 <button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f;">🔄</button>
             </div>
-            <video id="cameraVideo" class="camera-preview" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video>
+            <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video>
             <div class="camera-controls" style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;">
                 <button class="shutter-btn" id="captureBtn" style="background:white; border:none; width:60px; height:60px; border-radius:50%; font-size:1.8rem;">📸</button>
             </div>
@@ -549,8 +606,7 @@
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-            const fileInput = document.getElementById('photoInput');
-            if (fileInput) fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
+            document.getElementById('photoInput').onchange = (e) => { if (e.target.files) addFiles(e.target.files); };
         };
         document.getElementById('rotateCameraBtn').onclick = () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
         document.getElementById('captureBtn').onclick = () => {
@@ -605,13 +661,14 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
 
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
-    document.getElementById('attachBtn').onclick = () => { selectedImages = []; openModal('attachModal', renderAttachModal); };
+    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessage(text, null, [...selectedImages]);
             selectedImages = [];
             document.getElementById('messageInput').value = '';
+            attachScreen = 'main';
             closeModal('attachModal', 'attachModalContent');
             alert('✅ Фото отправлены');
         } else if (text.trim()) {
