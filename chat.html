@@ -482,7 +482,7 @@
         if (!user) { window.location.href = 'login.html'; return; }
         currentUser = user;
         await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
-        loadMessages();   // 🔥 ЭТОТ ВЫЗОВ БЫЛ ПРОПУЩЕН
+        loadMessages();
         loadMembers();
         window.addEventListener('beforeunload', () => {
             db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
@@ -501,16 +501,19 @@
                         if (JSON.stringify(pending.images) === JSON.stringify(m.images) && pending.text === (m.text || '')) {
                             const tempElem = document.getElementById(tempId);
                             if (tempElem) {
-                                const userData = await getUserData(m.uid);
-                                const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
-                                let mediaHtml = '';
-                                if (m.images && m.images.length) {
-                                    mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
-                                } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
-                                if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
-                                tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${change.doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
-                                tempElem.id = change.doc.id;
-                                tempElem.querySelector('.seen-btn').onclick = (e) => { showSeenModal(tempElem.id); };
+                                (async () => {
+                                    const userData = await getUserData(m.uid);
+                                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
+                                    let mediaHtml = '';
+                                    if (m.images && m.images.length) {
+                                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
+                                    } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
+                                    if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
+                                    tempElem.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${change.doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                                    tempElem.id = change.doc.id;
+                                    const btn = tempElem.querySelector('.seen-btn');
+                                    if (btn) btn.onclick = (e) => { showSeenModal(tempElem.id); };
+                                })();
                             }
                             pendingMessages.delete(tempId);
                             break;
@@ -541,24 +544,26 @@
             
             for (let [tempId, pending] of pendingMessages.entries()) {
                 if (!document.getElementById(tempId)) {
-                    const userData = await getUserData(currentUser.uid);
-                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                    let mediaHtml = '';
-                    if (pending.images && pending.images.length) {
-                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-                        for (let img of pending.images) {
-                            mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
-                                            <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
-                                            <div class="spinner"></div>
-                                        </div>`;
+                    (async () => {
+                        const userData = await getUserData(currentUser.uid);
+                        const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
+                        let mediaHtml = '';
+                        if (pending.images && pending.images.length) {
+                            mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
+                            for (let img of pending.images) {
+                                mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
+                                                <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
+                                                <div class="spinner"></div>
+                                            </div>`;
+                            }
+                            mediaHtml += `</div>`;
                         }
-                        mediaHtml += `</div>`;
-                    }
-                    const div = document.createElement('div');
-                    div.className = 'message mine';
-                    div.id = tempId;
-                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
-                    container.appendChild(div);
+                        const div = document.createElement('div');
+                        div.className = 'message mine';
+                        div.id = tempId;
+                        div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
+                        container.appendChild(div);
+                    })();
                 }
             }
             container.scrollTop = container.scrollHeight;
