@@ -363,6 +363,32 @@
             cursor: pointer;
             font-size: 0.8rem;
         }
+        .style-btn {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 40px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .style-btn:hover {
+            background: rgba(255,255,255,0.4);
+            transform: translateY(-2px);
+        }
+        .empty-photo {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 28px;
+            backdrop-filter: blur(8px);
+            color: #ccc;
+            font-size: 0.8rem;
+        }
         .seen-modal-list {
             display: flex;
             flex-direction: column;
@@ -535,7 +561,6 @@
                 if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
             }
             
-            // Временные сообщения (с размытием и спиннером)
             for (let [tempId, pending] of pendingMessages.entries()) {
                 if (!document.getElementById(tempId)) {
                     const userData = await getUserData(currentUser.uid);
@@ -578,10 +603,8 @@
     async function sendMessageOptimistic(text, imagesArray) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
-        // Сохраняем временное сообщение
         pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
-        // Обновляем ленту, чтобы показать размытое сообщение
-        loadMessages(); // перерисовка, чтобы временное появилось
+        loadMessages();
         
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
@@ -592,9 +615,8 @@
                 seenBy: [currentUser.uid],
                 createdAt: new Date()
             });
-            // Удаляем временное сообщение после успешной отправки
             pendingMessages.delete(tempId);
-            loadMessages(); // перерисовка без временного
+            loadMessages();
         } catch (err) {
             console.error(err);
             pendingMessages.delete(tempId);
@@ -683,8 +705,10 @@
                 <button class="camera-round-btn" id="openCameraBtn">📷</button>
             </div>
             <div id="photoGallery" class="photo-gallery"></div>
-            <input type="file" id="photoInput" accept="image/*" multiple style="display:none">
-            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="style-btn" id="selectFromGalleryBtn" style="flex:1;">📁 Выбрать из галереи</button>
+            </div>
+            <button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>
         `;
         renderPhotoGallery();
         document.getElementById('cameraBackBtn').onclick = () => {
@@ -692,22 +716,27 @@
             renderAttachMain();
         };
         document.getElementById('openCameraBtn').onclick = () => showCameraModal();
-        const fileInput = document.getElementById('photoInput');
-        fileInput.onchange = (e) => { if (e.target.files) addFiles(e.target.files); fileInput.value = ''; };
-        const selectBtn = document.createElement('button');
-        selectBtn.textContent = '📁 Выбрать из галереи';
-        selectBtn.className = 'close-btn';
-        selectBtn.style.marginTop = '0.5rem';
-        selectBtn.style.background = '#0a3f6f';
-        selectBtn.onclick = () => fileInput.click();
-        container.appendChild(selectBtn);
+        document.getElementById('selectFromGalleryBtn').onclick = () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.onchange = (e) => {
+                if (e.target.files) addFiles(e.target.files);
+                input.remove();
+            };
+            input.click();
+        };
         document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
     function renderPhotoGallery() {
         const gallery = document.getElementById('photoGallery');
         if (!gallery) return;
-        if (!selectedImages.length) { gallery.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#ccc;">Нет выбранных фото</div>'; return; }
+        if (!selectedImages.length) {
+            gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных фото</div>';
+            return;
+        }
         gallery.innerHTML = '';
         for (let i=0; i<selectedImages.length; i++) {
             const div = document.createElement('div');
@@ -765,6 +794,14 @@
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
+            document.getElementById('selectFromGalleryBtn').onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.multiple = true;
+                input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
+                input.click();
+            };
         };
         document.getElementById('rotateCameraBtn').onclick = () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
         document.getElementById('captureBtn').onclick = () => {
@@ -785,6 +822,14 @@
             document.getElementById('attachModalContent').innerHTML = origContent;
             renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
+            document.getElementById('selectFromGalleryBtn').onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.multiple = true;
+                input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
+                input.click();
+            };
         };
     }
 
