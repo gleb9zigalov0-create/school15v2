@@ -105,10 +105,7 @@
             flex-direction: column;
             gap: 0.8rem;
         }
-        .date-divider {
-            text-align: center;
-            margin: 1rem 0;
-        }
+        .date-divider { text-align: center; margin: 1rem 0; }
         .date-badge {
             display: inline-block;
             background: rgba(100, 100, 120, 0.7);
@@ -169,11 +166,7 @@
         .status-icons { display: flex; gap: 4px; font-size: 12px; }
         .delivered { color: #4ade80; }
         .sent { color: #9ca3af; }
-        .msg-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+        .msg-actions { display: flex; gap: 6px; align-items: center; }
         .delete-btn {
             background: none;
             border: none;
@@ -240,9 +233,7 @@
             background: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
         }
-        .modal-wrapper.active {
-            display: flex;
-        }
+        .modal-wrapper.active { display: flex; }
         .confirm-modal {
             background: rgba(30, 47, 62, 0.96);
             backdrop-filter: blur(20px);
@@ -253,11 +244,7 @@
             border: 1px solid rgba(255,255,255,0.25);
             box-shadow: 0 20px 35px rgba(0,0,0,0.3);
         }
-        .confirm-modal p {
-            color: white;
-            margin-bottom: 1rem;
-            word-break: break-word;
-        }
+        .confirm-modal p { color: white; margin-bottom: 1rem; }
         .confirm-modal .quote {
             background: rgba(255,255,255,0.1);
             padding: 0.5rem;
@@ -265,12 +252,9 @@
             margin-bottom: 1.5rem;
             font-style: italic;
             font-size: 0.9rem;
+            color: #ddd;
         }
-        .confirm-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
+        .confirm-buttons { display: flex; gap: 1rem; justify-content: flex-end; }
         .confirm-buttons button {
             background: #0a3f6f;
             color: white;
@@ -280,15 +264,7 @@
             cursor: pointer;
         }
         .confirm-buttons button.confirm { background: #e94560; }
-        .close-btn {
-            background: #0a3f6f;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 40px;
-            cursor: pointer;
-        }
-        .sticker-grid {
+        .sticker-grid, .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -303,12 +279,6 @@
             transition: 0.1s;
         }
         .sticker-img:hover { transform: scale(1.05); }
-        .attach-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-        }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -534,7 +504,7 @@
     let selectedImages = [];
     let attachScreen = 'main';
     let pendingMessages = new Map();
-    let pendingDelete = { msgId: null, msgUid: null };
+    let pendingDelete = { msgId: null, msgUid: null, messageText: null };
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -573,17 +543,13 @@
 
     async function markAsSeen(msgId) {
         const msgRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId);
-        await msgRef.update({
-            seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-        });
+        await msgRef.update({ seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
     }
 
     function showDeleteConfirm(msgId, msgUid, messageText) {
         pendingDelete = { msgId, msgUid, messageText };
-        const modal = document.getElementById('deleteConfirmModal');
-        const quote = document.getElementById('deleteQuote');
-        quote.textContent = messageText.length > 100 ? messageText.substring(0, 100) + '…' : messageText;
-        modal.classList.add('active');
+        document.getElementById('deleteQuote').textContent = messageText.length > 100 ? messageText.substring(0, 100) + '…' : messageText;
+        document.getElementById('deleteConfirmModal').classList.add('active');
     }
 
     document.getElementById('cancelDeleteBtn').onclick = () => {
@@ -614,24 +580,18 @@
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
-            const container = document.getElementById('messagesArea');
-            
             snap.docChanges().forEach(change => {
                 const m = change.doc.data();
                 if (change.type === 'added' && m.uid !== currentUser.uid) {
-                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) {
-                        markAsSeen(change.doc.id);
-                    }
+                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) markAsSeen(change.doc.id);
                 }
             });
             
             const messages = [];
-            for (const doc of snap.docs) {
-                const m = doc.data();
-                messages.push({ id: doc.id, ...m });
-            }
+            for (const doc of snap.docs) messages.push({ id: doc.id, ...doc.data() });
             
             let lastDate = null;
+            const container = document.getElementById('messagesArea');
             container.innerHTML = '';
             for (const m of messages) {
                 const msgDate = m.createdAt?.toDate();
@@ -649,30 +609,21 @@
                 const userData = await getUserData(m.uid);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 let mediaHtml = '';
-                if (m.images && m.images.length) {
-                    mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
-                } else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
+                if (m.images && m.images.length) mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
+                else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px">`;
-                
                 const seenCount = (m.seenBy || []).filter(uid => uid !== m.uid).length;
                 const statusHtml = seenCount > 0 ? '<span class="delivered">✅✅</span>' : '<span class="sent">⌛</span>';
-                
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = m.id;
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
-                
-                const deleteBtn = div.querySelector('.delete-btn');
-                if (deleteBtn) deleteBtn.onclick = (e) => {
+                div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const msgId = deleteBtn.dataset.msgId;
-                    const msgUid = deleteBtn.dataset.msgUid;
-                    const msgText = deleteBtn.dataset.msgText;
-                    showDeleteConfirm(msgId, msgUid, msgText);
-                };
-                const seenBtn = div.querySelector('.seen-btn');
-                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(m.id, m.seenBy || []); };
+                    showDeleteConfirm(m.id, m.uid, m.text || 'Фото/стикер');
+                });
+                div.querySelector('.seen-btn')?.addEventListener('click', (e) => showSeenModal(m.id, m.seenBy || []));
             }
             
             for (let [tempId, pending] of pendingMessages.entries()) {
@@ -680,14 +631,9 @@
                     const userData = await getUserData(currentUser.uid);
                     const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
                     let mediaHtml = '';
-                    if (pending.images && pending.images.length) {
+                    if (pending.images?.length) {
                         mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-                        for (let img of pending.images) {
-                            mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
-                                            <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
-                                            <div class="spinner"></div>
-                                        </div>`;
-                        }
+                        for (let img of pending.images) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;"><img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);"><div class="spinner"></div></div>`;
                         mediaHtml += `</div>`;
                     }
                     const div = document.createElement('div');
@@ -721,18 +667,13 @@
         loadMessages();
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
-                text: text || '',
-                images: imagesArray || [],
-                sticker: stickerUrl,
-                uid: currentUser.uid,
-                name: userData.name || currentUser.displayName || 'Ученик',
-                seenBy: [currentUser.uid],
-                createdAt: new Date()
+                text: text || '', images: imagesArray || [], sticker: stickerUrl,
+                uid: currentUser.uid, name: userData.name || currentUser.displayName || 'Ученик',
+                seenBy: [currentUser.uid], createdAt: new Date()
             });
             pendingMessages.delete(tempId);
             loadMessages();
         } catch (err) {
-            console.error(err);
             pendingMessages.delete(tempId);
             loadMessages();
             alert('Ошибка отправки');
@@ -743,27 +684,16 @@
         const modal = document.getElementById('seenModal');
         const content = document.getElementById('seenModalContent');
         const users = [];
-        for (const uid of seenByArray) {
-            if (uid === currentUser?.uid) continue;
+        for (const uid of seenByArray) if (uid !== currentUser?.uid) {
             const userData = await getUserData(uid);
             users.push(userData.name || 'Ученик');
         }
-        const usersList = users.length ? users.join(', ') : 'Никто, кроме вас';
-        content.innerHTML = `
-            <div class="modal-title">👁️ Просмотрено</div>
-            <div class="seen-modal-list">
-                <div class="seen-item"><div class="seen-avatar">📖</div><span>${usersList}</span></div>
-            </div>
-            <button class="close-btn" id="seenCloseBtn">Закрыть</button>
-        `;
+        content.innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list"><div class="seen-item"><div class="seen-avatar">📖</div><span>${users.length ? users.join(', ') : 'Никто, кроме вас'}</span></div></div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
         modal.classList.add('active');
         document.getElementById('seenCloseBtn').onclick = () => modal.classList.remove('active');
     }
 
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;');
-    }
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
 
     function renderStickerModal() {
         const container = document.getElementById('stickerModalContent');
@@ -774,8 +704,7 @@
         document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
             img.onclick = (e) => {
                 e.stopPropagation();
-                const url = img.getAttribute('data-sticker-url');
-                sendMessageOptimistic('', null, url);
+                sendMessageOptimistic('', null, img.getAttribute('data-sticker-url'));
                 closeModal('stickerModal', 'stickerModalContent');
             };
         });
@@ -800,73 +729,49 @@
         document.querySelectorAll('.attach-item').forEach(el => {
             el.onclick = (e) => {
                 e.stopPropagation();
-                const type = el.dataset.type;
-                if (type === 'camera') {
+                if (el.dataset.type === 'camera') {
                     attachScreen = 'camera';
                     renderCameraScreen();
                 } else {
-                    alert(`📎 Отправка ${type} — в разработке`);
+                    alert(`📎 Отправка ${el.dataset.type} — в разработке`);
                     closeModal('attachModal', 'attachModalContent');
                     attachScreen = 'main';
                 }
             };
         });
-        const closeBtn = document.getElementById('attachModalCloseBtn');
-        if (closeBtn) closeBtn.onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
     function renderCameraScreen() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
         container.innerHTML = `
-            <div class="attach-header">
-                <button class="back-btn" id="cameraBackBtn">← Назад</button>
-                <div class="modal-title">Снять фото</div>
-                <button class="camera-round-btn" id="openCameraBtn">📷</button>
-            </div>
+            <div class="attach-header"><button class="back-btn" id="cameraBackBtn">← Назад</button><div class="modal-title">Снять фото</div><button class="camera-round-btn" id="openCameraBtn">📷</button></div>
             <div id="photoGallery" class="photo-gallery"></div>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="style-btn" id="selectFromGalleryBtn" style="flex:1;">📁 Выбрать из галереи</button>
-            </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;"><button class="style-btn" id="selectFromGalleryBtn" style="flex:1;">📁 Выбрать из галереи</button></div>
             <button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>
         `;
         renderPhotoGallery();
-        document.getElementById('cameraBackBtn').onclick = () => {
-            attachScreen = 'main';
-            renderAttachMain();
-        };
+        document.getElementById('cameraBackBtn').onclick = () => { attachScreen = 'main'; renderAttachMain(); };
         document.getElementById('openCameraBtn').onclick = () => showCameraModal();
         document.getElementById('selectFromGalleryBtn').onclick = () => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.multiple = true;
-            input.onchange = (e) => {
-                if (e.target.files) addFiles(e.target.files);
-                input.remove();
-            };
+            const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
+            input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
             input.click();
         };
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
     }
 
     function renderPhotoGallery() {
         const gallery = document.getElementById('photoGallery');
         if (!gallery) return;
-        if (!selectedImages.length) {
-            gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных фото</div>';
-            return;
-        }
+        if (!selectedImages.length) { gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных фото</div>'; return; }
         gallery.innerHTML = '';
         for (let i=0; i<selectedImages.length; i++) {
-            const div = document.createElement('div');
-            div.className = 'photo-item';
-            const img = document.createElement('img');
-            img.src = selectedImages[i];
+            const div = document.createElement('div'); div.className = 'photo-item';
+            const img = document.createElement('img'); img.src = selectedImages[i];
             div.appendChild(img);
-            const numberSpan = document.createElement('div');
-            numberSpan.className = 'photo-number';
-            numberSpan.textContent = i+1;
+            const numberSpan = document.createElement('div'); numberSpan.className = 'photo-number'; numberSpan.textContent = i+1;
             div.appendChild(numberSpan);
             div.onclick = () => { selectedImages.splice(i,1); renderPhotoGallery(); };
             gallery.appendChild(div);
@@ -888,37 +793,25 @@
     function showCameraModal() {
         const origContent = document.getElementById('attachModalContent').innerHTML;
         document.getElementById('attachModalContent').innerHTML = `
-            <div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;">
-                <button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f;">← Назад</button>
-                <span class="modal-title">Снять фото</span>
-                <button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f;">🔄</button>
-            </div>
+            <div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;"><button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f;">← Назад</button><span class="modal-title">Снять фото</span><button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f;">🔄</button></div>
             <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video>
-            <div class="camera-controls" style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;">
-                <button class="shutter-btn" id="captureBtn" style="background:white; border:none; width:60px; height:60px; border-radius:50%; font-size:1.8rem;">📸</button>
-            </div>
+            <div class="camera-controls" style="display:flex; justify-content:center; gap:1rem; margin-top:1rem;"><button class="shutter-btn" id="captureBtn" style="background:white; border:none; width:60px; height:60px; border-radius:50%; font-size:1.8rem;">📸</button></div>
             <button class="close-btn" id="cameraCloseBtn">Закрыть</button>
         `;
-        let facingMode = 'environment';
-        let stream = null;
-        async function startCamera() {
+        let facingMode = 'environment', stream = null;
+        const startCamera = async () => {
             if (stream) stream.getTracks().forEach(t => t.stop());
             try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode } } }); }
             catch { try { stream = await navigator.mediaDevices.getUserMedia({ video: true }); } catch(e) { alert('Нет доступа к камере'); return; } }
-            const video = document.getElementById('cameraVideo');
-            if (video) video.srcObject = stream;
-        }
+            document.getElementById('cameraVideo').srcObject = stream;
+        };
         startCamera();
         document.getElementById('cameraBackBtn').onclick = () => {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('attachModalContent').innerHTML = origContent;
-            renderPhotoGallery();
+            document.getElementById('attachModalContent').innerHTML = origContent; renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
             document.getElementById('selectFromGalleryBtn').onclick = () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.multiple = true;
+                const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
                 input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
                 input.click();
             };
@@ -927,26 +820,18 @@
         document.getElementById('captureBtn').onclick = () => {
             const video = document.getElementById('cameraVideo');
             if (!video) return;
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg');
-            if (selectedImages.length < 8) {
-                selectedImages.push(dataUrl);
-                renderPhotoGallery();
-            } else alert('Максимум 8 фото');
+            if (selectedImages.length < 8) { selectedImages.push(dataUrl); renderPhotoGallery(); }
+            else alert('Максимум 8 фото');
         };
         document.getElementById('cameraCloseBtn').onclick = () => {
             if (stream) stream.getTracks().forEach(t => t.stop());
-            document.getElementById('attachModalContent').innerHTML = origContent;
-            renderPhotoGallery();
+            document.getElementById('attachModalContent').innerHTML = origContent; renderPhotoGallery();
             document.getElementById('openCameraBtn').onclick = () => showCameraModal();
             document.getElementById('selectFromGalleryBtn').onclick = () => {
-                const input = document.createElement('input');
-                input.type = 'file';
-                input.accept = 'image/*';
-                input.multiple = true;
+                const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true;
                 input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
                 input.click();
             };
@@ -962,9 +847,7 @@
 
     function openModal(modalId, renderFunction) {
         renderFunction();
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.add('active');
+        document.getElementById(modalId).classList.add('active');
     }
 
     function initSwipeClose(modalId, handleId, contentId) {
@@ -985,6 +868,7 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
     initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
 
+    // === ПРИВЯЗКА КНОПОК (ГЛАВНОЕ) ===
     document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
     document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
     document.getElementById('sendBtn').onclick = async () => {
