@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ВЕСЬ ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
+        /* ========== ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -502,7 +502,6 @@
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
             const container = document.getElementById('messagesArea');
             
-            // Отмечаем просмотренные сообщения
             snap.docChanges().forEach(change => {
                 const m = change.doc.data();
                 if (change.type === 'added' && m.uid !== currentUser.uid) {
@@ -536,7 +535,7 @@
                 if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id, m.seenBy || []); };
             }
             
-            // Временные сообщения (оптимистичный интерфейс)
+            // Временные сообщения (с размытием и спиннером)
             for (let [tempId, pending] of pendingMessages.entries()) {
                 if (!document.getElementById(tempId)) {
                     const userData = await getUserData(currentUser.uid);
@@ -579,9 +578,13 @@
     async function sendMessageOptimistic(text, imagesArray) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
+        // Сохраняем временное сообщение
         pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
+        // Обновляем ленту, чтобы показать размытое сообщение
+        loadMessages(); // перерисовка, чтобы временное появилось
+        
         try {
-            const docRef = await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
+            await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '',
                 images: imagesArray || [],
                 uid: currentUser.uid,
@@ -589,17 +592,13 @@
                 seenBy: [currentUser.uid],
                 createdAt: new Date()
             });
-            // После успешной отправки удаляем временное сообщение, реальное появится из snapshot
-            setTimeout(() => {
-                const tempElem = document.getElementById(tempId);
-                if (tempElem) tempElem.remove();
-                pendingMessages.delete(tempId);
-            }, 500);
+            // Удаляем временное сообщение после успешной отправки
+            pendingMessages.delete(tempId);
+            loadMessages(); // перерисовка без временного
         } catch (err) {
             console.error(err);
-            const tempElem = document.getElementById(tempId);
-            if (tempElem) tempElem.remove();
             pendingMessages.delete(tempId);
+            loadMessages();
             alert('Ошибка отправки');
         }
     }
