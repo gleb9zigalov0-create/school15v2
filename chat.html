@@ -277,12 +277,17 @@
         .photo-item {
             position: relative;
             cursor: pointer;
+            transition: all 0.2s;
         }
         .photo-item img {
             width: 100%;
             aspect-ratio: 1;
             object-fit: cover;
             border-radius: 16px;
+            transition: filter 0.3s ease;
+        }
+        .photo-item.loading img {
+            filter: brightness(0.5) blur(4px);
         }
         .photo-number {
             position: absolute;
@@ -298,6 +303,25 @@
             justify-content: center;
             font-size: 0.7rem;
             font-weight: bold;
+            z-index: 2;
+        }
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            z-index: 3;
+            pointer-events: none;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
         }
         .camera-round-btn {
             background: #2e7d64;
@@ -459,7 +483,7 @@
     async function sendPendingAndClose() {
         if (!selectedImages.length) return;
         const caption = document.getElementById('messageInput').value;
-        const imagesToSend = [...selectedImages]; // копируем
+        const imagesToSend = [...selectedImages];
         selectedImages = [];
         document.getElementById('messageInput').value = '';
         await sendMessage(caption, null, imagesToSend);
@@ -555,7 +579,13 @@
         for (let i=0; i<selectedImages.length; i++) {
             const div = document.createElement('div');
             div.className = 'photo-item';
-            div.innerHTML = `<img src="${selectedImages[i]}"><div class="photo-number">${i+1}</div>`;
+            const img = document.createElement('img');
+            img.src = selectedImages[i];
+            div.appendChild(img);
+            const numberSpan = document.createElement('div');
+            numberSpan.className = 'photo-number';
+            numberSpan.textContent = i+1;
+            div.appendChild(numberSpan);
             div.onclick = () => { selectedImages.splice(i,1); renderPhotoGallery(); };
             gallery.appendChild(div);
         }
@@ -566,8 +596,36 @@
         const remaining = 8 - selectedImages.length;
         const toAdd = newFiles.slice(0, remaining);
         for (const file of toAdd) {
+            const div = document.createElement('div');
+            div.className = 'photo-item loading';
+            const img = document.createElement('img');
+            div.appendChild(img);
+            const spinner = document.createElement('div');
+            spinner.className = 'loading-spinner';
+            div.appendChild(spinner);
+            const gallery = document.getElementById('photoGallery');
+            gallery.appendChild(div);
+            
             const reader = new FileReader();
-            reader.onload = (e) => { selectedImages.push(e.target.result); renderPhotoGallery(); };
+            reader.onload = (e) => {
+                img.src = e.target.result;
+                selectedImages.push(e.target.result);
+                setTimeout(() => {
+                    div.classList.remove('loading');
+                    spinner.remove();
+                    const numberSpan = document.createElement('div');
+                    numberSpan.className = 'photo-number';
+                    numberSpan.textContent = selectedImages.length;
+                    div.appendChild(numberSpan);
+                    div.onclick = () => {
+                        const idx = selectedImages.findIndex(src => src === e.target.result);
+                        if (idx !== -1) {
+                            selectedImages.splice(idx, 1);
+                            renderPhotoGallery();
+                        }
+                    };
+                }, 800);
+            };
             reader.readAsDataURL(file);
         }
         if (newFiles.length > remaining) alert(`Можно выбрать до 8 фото. Добавлено ${remaining}.`);
@@ -613,9 +671,34 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
             const dataUrl = canvas.toDataURL('image/jpeg');
-            if (selectedImages.length < 8) selectedImages.push(dataUrl);
-            else alert('Максимум 8 фото');
-            renderPhotoGallery();
+            if (selectedImages.length < 8) {
+                const div = document.createElement('div');
+                div.className = 'photo-item loading';
+                const img = document.createElement('img');
+                div.appendChild(img);
+                const spinner = document.createElement('div');
+                spinner.className = 'loading-spinner';
+                div.appendChild(spinner);
+                const gallery = document.getElementById('photoGallery');
+                gallery.appendChild(div);
+                setTimeout(() => {
+                    img.src = dataUrl;
+                    selectedImages.push(dataUrl);
+                    div.classList.remove('loading');
+                    spinner.remove();
+                    const numberSpan = document.createElement('div');
+                    numberSpan.className = 'photo-number';
+                    numberSpan.textContent = selectedImages.length;
+                    div.appendChild(numberSpan);
+                    div.onclick = () => {
+                        const idx = selectedImages.findIndex(src => src === dataUrl);
+                        if (idx !== -1) {
+                            selectedImages.splice(idx, 1);
+                            renderPhotoGallery();
+                        }
+                    };
+                }, 500);
+            } else alert('Максимум 8 фото');
         };
         document.getElementById('cameraCloseBtn').onclick = () => {
             if (stream) stream.getTracks().forEach(t => t.stop());
