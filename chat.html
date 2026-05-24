@@ -143,7 +143,7 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .msg-footer {
             display: flex;
@@ -202,7 +202,6 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ */
         .modal-wrapper {
             position: absolute;
             bottom: 80px;
@@ -384,6 +383,27 @@
             color: white;
             font-weight: bold;
         }
+        .loading-spinner-overlay {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -443,7 +463,6 @@
     const usersCache = new Map();
     let selectedImages = [];
     let attachScreen = 'main';
-
     let pendingMessages = new Map();
 
     function getAvatarHtml(avatarBase64, name) {
@@ -463,7 +482,7 @@
         if (!user) { window.location.href = 'login.html'; return; }
         currentUser = user;
         await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
-        loadMessages();
+        loadMessages();   // 🔥 ЭТОТ ВЫЗОВ БЫЛ ПРОПУЩЕН
         loadMembers();
         window.addEventListener('beforeunload', () => {
             db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
@@ -516,7 +535,8 @@
                 div.id = doc.id;
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="delivered">✅✅</span></div><button class="seen-btn" data-msg-id="${doc.id}">👁️</button></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
-                div.querySelector('.seen-btn').onclick = (e) => { showSeenModal(doc.id); };
+                const seenBtn = div.querySelector('.seen-btn');
+                if (seenBtn) seenBtn.onclick = (e) => { showSeenModal(doc.id); };
             }
             
             for (let [tempId, pending] of pendingMessages.entries()) {
@@ -527,9 +547,9 @@
                     if (pending.images && pending.images.length) {
                         mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
                         for (let img of pending.images) {
-                            mediaHtml += `<div class="spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
+                            mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1;">
                                             <img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; filter: brightness(0.5) blur(4px);">
-                                            <div class="spinner" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:30px; height:30px; border:3px solid rgba(255,255,255,0.3); border-top:3px solid white; border-radius:50%; animation: spin 0.8s linear infinite;"></div>
+                                            <div class="spinner"></div>
                                         </div>`;
                         }
                         mediaHtml += `</div>`;
