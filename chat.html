@@ -220,7 +220,7 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ — СДВИНУТЫ ВВЕРХ, ЧТОБЫ НЕ ПЕРЕКРЫВАТЬ ПОЛЕ ВВОДА */
+        /* МОДАЛКИ — ПОЛНОСТЬЮ СКРЫВАЮТСЯ, КОГДА НЕ АКТИВНЫ */
         .modal-sheet {
             position: absolute;
             bottom: 70px;
@@ -235,8 +235,10 @@
             transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             border-top: 1px solid rgba(255,255,255,0.2);
             z-index: 20;
+            display: none;
         }
         .modal-sheet.active {
+            display: block;
             transform: translateY(0);
         }
         .modal-handle {
@@ -434,7 +436,6 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКИ -->
         <div id="stickerSheet" class="modal-sheet">
             <div class="modal-handle" id="stickerHandle"></div>
             <div class="modal-content-inner" id="stickerModalContent"></div>
@@ -450,7 +451,7 @@
             <div class="modal-content-inner" id="seenModalContent"></div>
         </div>
 
-        <div id="deleteConfirmModal" class="modal-sheet" style="border-radius: 28px; max-width: 400px; width: 80%; left: 0; right: 0; margin: 0 auto; bottom: auto; top: 50%; transform: translateY(-50%) scale(0.9); opacity: 0; transition: 0.2s;">
+        <div id="deleteConfirmModal" class="modal-sheet" style="border-radius: 28px; max-width: 400px; width: 80%; left: 0; right: 0; margin: 0 auto; bottom: auto; top: 50%; transform: translateY(-50%) scale(0.9); opacity: 0; transition: 0.2s; display: none;">
             <div class="modal-content-inner" style="padding: 1.5rem;">
                 <p style="color:white;">🗑️ Вы действительно хотите удалить сообщение?</p>
                 <div class="quote" id="deleteQuote" style="background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:16px; margin:1rem 0; color:#ddd;"></div>
@@ -508,7 +509,6 @@
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
         currentUser = user;
-        // Статус онлайн с обновлением каждые 30 секунд
         if (onlineInterval) clearInterval(onlineInterval);
         const updateStatus = async () => {
             await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик', lastSeen: new Date() }, { merge: true });
@@ -532,12 +532,14 @@
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
         sheet.classList.remove('active');
+        setTimeout(() => { sheet.style.display = 'none'; }, 300);
     }
 
     function openModal(sheetId) {
         const sheet = document.getElementById(sheetId);
         if (!sheet) return;
-        sheet.classList.add('active');
+        sheet.style.display = 'block';
+        setTimeout(() => sheet.classList.add('active'), 10);
     }
 
     function initSwipeClose(sheetId, handleId) {
@@ -566,7 +568,6 @@
         handle.addEventListener('touchstart', onTouchStart);
         handle.addEventListener('touchmove', onTouchMove);
         handle.addEventListener('touchend', onTouchEnd);
-        // мышь
         let mouseDown = false, mouseStartY = 0;
         handle.addEventListener('mousedown', (e) => {
             mouseDown = true;
