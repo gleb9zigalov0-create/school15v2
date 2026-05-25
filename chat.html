@@ -193,6 +193,9 @@
         .msg-text { font-size: 0.9rem; }
         .msg-text img, .msg-text video {
             max-width: 200px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
             border-radius: 16px;
             margin-top: 0.3rem;
             cursor: pointer;
@@ -212,6 +215,11 @@
         .status-icons { display: flex; gap: 4px; font-size: 12px; }
         .delivered { color: #4ade80; }
         .sent { color: #9ca3af; }
+        .progress-bar {
+            font-size: 0.6rem;
+            color: #ffaa00;
+            margin-left: 4px;
+        }
         .msg-actions { display: flex; gap: 6px; align-items: center; }
         .delete-btn {
             background: none;
@@ -339,32 +347,37 @@
             transform: scale(0.98);
         }
 
-        /* МЕДИА-ПРОСМОТРЩИК */
+        /* МЕДИА-ПРОСМОТРЩИК С ПЛАВНОЙ АНИМАЦИЕЙ */
         .media-viewer {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
-            backdrop-filter: blur(15px);
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
             z-index: 2000;
             display: none;
             justify-content: center;
             align-items: center;
-            animation: fadeInViewer 0.2s ease;
+            transition: background 0.3s ease, backdrop-filter 0.3s ease;
         }
         .media-viewer.active {
             display: flex;
-        }
-        @keyframes fadeInViewer {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
         }
         .media-viewer-content {
             max-width: 90vw;
             max-height: 90vh;
             position: relative;
+            transform: scale(0.8);
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.25s ease;
+        }
+        .media-viewer.active .media-viewer-content {
+            transform: scale(1);
+            opacity: 1;
         }
         .media-viewer-content img, .media-viewer-content video {
             max-width: 90vw;
@@ -588,8 +601,9 @@
             position: relative;
             display: inline-block;
             width: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0,0,0,0.3);
             border-radius: 16px;
+            overflow: hidden;
         }
         .spinner {
             position: absolute;
@@ -694,7 +708,7 @@
     let messagesUnsub = null;
     const CHAT_PATH = 'class5a_chat';
     const usersCache = new Map();
-    let selectedMedia = []; // { type: 'image' или 'video', data: base64/url }
+    let selectedMedia = [];
     let attachScreen = 'main';
     let pendingMessages = new Map();
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
@@ -818,10 +832,17 @@
         }, 1000);
     }
 
-    function showMediaViewer(url, type) {
+    async function showMediaViewer(url, type, event) {
         const viewer = document.getElementById('mediaViewer');
         const img = document.getElementById('mediaViewerImg');
         const video = document.getElementById('mediaViewerVideo');
+        const content = document.querySelector('.media-viewer-content');
+        
+        // Сохраняем позицию клика для анимации
+        let startRect = null;
+        if (event && event.target) {
+            startRect = event.target.getBoundingClientRect();
+        }
         
         img.style.display = 'none';
         video.style.display = 'none';
@@ -836,16 +857,33 @@
         }
         
         viewer.classList.add('active');
+        
+        // Анимация от места клика
+        if (startRect) {
+            content.style.transform = `translate(${startRect.left + startRect.width/2 - window.innerWidth/2}px, ${startRect.top + startRect.height/2 - window.innerHeight/2}px) scale(${startRect.width / 300})`;
+            content.style.opacity = '0';
+            setTimeout(() => {
+                content.style.transform = '';
+                content.style.opacity = '';
+            }, 10);
+        }
     }
 
     function closeMediaViewer() {
         const viewer = document.getElementById('mediaViewer');
         const video = document.getElementById('mediaViewerVideo');
-        viewer.classList.remove('active');
+        const content = document.querySelector('.media-viewer-content');
+        
+        content.style.transform = 'scale(0.8)';
+        content.style.opacity = '0';
+        
         setTimeout(() => {
+            viewer.classList.remove('active');
             video.pause();
             video.src = '';
-        }, 200);
+            content.style.transform = '';
+            content.style.opacity = '';
+        }, 250);
     }
 
     function showContextMenu(x, y, msgData) {
@@ -983,7 +1021,7 @@
                 if (m.videos && m.videos.length) {
                     mediaHtml = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-width:260px;">`;
                     for (let vid of m.videos) {
-                        mediaHtml += `<div style="position:relative;"><video class="clickable-media" data-type="video" data-url="${vid}" src="${vid}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; cursor:pointer;" preload="metadata"></video><span style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border-radius:20px; padding:2px 6px; font-size:0.6rem;">🎥</span></div>`;
+                        mediaHtml += `<div style="position:relative;"><video class="clickable-media" data-type="video" data-url="${vid}" src="${vid}" style="width:100%; max-height:150px; object-fit:cover; border-radius:12px; cursor:pointer;" preload="metadata"></video><span style="position:absolute; bottom:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border-radius:20px; padding:2px 6px; font-size:0.6rem;">🎥</span></div>`;
                     }
                     mediaHtml += `</div>`;
                 }
@@ -995,16 +1033,16 @@
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = m.id;
                 div.setAttribute('data-msg-id', m.id);
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                // Клик по медиа для просмотра
+                // Клик по медиа для просмотра с анимацией
                 div.querySelectorAll('.clickable-media').forEach(el => {
                     el.addEventListener('click', (e) => {
                         e.stopPropagation();
                         const type = el.getAttribute('data-type');
                         const url = el.getAttribute('data-url');
-                        showMediaViewer(url, type);
+                        showMediaViewer(url, type, e);
                     });
                 });
                 
@@ -1085,13 +1123,14 @@
                     }
                     if (pending.videos?.length) {
                         mediaHtml = `<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:4px; max-width:260px;">`;
-                        for (let vid of pending.videos) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#000;"><div class="spinner"></div><div class="loading-text">Загрузка видео...</div></div>`;
+                        for (let vid of pending.videos) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#000;"><div class="spinner"></div></div>`;
                         mediaHtml += `</div>`;
                     }
+                    const progressPercent = pending.progress || 0;
                     const div = document.createElement('div');
                     div.className = 'message mine';
                     div.id = tempId;
-                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span></div></div><div class="msg-time">отправляется...</div></div>`;
+                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span><span class="progress-bar">${progressPercent > 0 ? progressPercent + '%' : ''}</span></div></div><div class="msg-time">отправляется...</div></div>`;
                     container.appendChild(div);
                 }
             }
@@ -1114,6 +1153,27 @@
         });
     }
 
+    // Симуляция прогресса загрузки
+    function simulateProgress(tempId, duration = 2000) {
+        const interval = 100;
+        const steps = duration / interval;
+        let step = 0;
+        const timer = setInterval(() => {
+            step++;
+            const progress = Math.min(95, Math.floor((step / steps) * 95));
+            const pendingMsg = pendingMessages.get(tempId);
+            if (pendingMsg) {
+                pendingMsg.progress = progress;
+                const msgElement = document.getElementById(tempId);
+                if (msgElement) {
+                    const progressSpan = msgElement.querySelector('.progress-bar');
+                    if (progressSpan) progressSpan.textContent = progress + '%';
+                }
+            }
+        }, interval);
+        return timer;
+    }
+
     async function sendMessageOptimistic(text, imagesArray, videosArray, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
@@ -1124,8 +1184,12 @@
             uid: replyToMsg.uid
         } : null;
         
-        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], videos: videosArray || [] });
+        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], videos: videosArray || [], progress: 0 });
         loadMessages();
+        
+        // Запускаем симуляцию прогресса
+        const progressTimer = simulateProgress(tempId, 2000);
+        
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '', images: imagesArray || [], videos: videosArray || [], sticker: stickerUrl,
@@ -1133,11 +1197,13 @@
                 seenBy: [currentUser.uid], createdAt: new Date(),
                 replyTo: replyData
             });
+            clearInterval(progressTimer);
             pendingMessages.delete(tempId);
             cancelReply();
             loadMessages();
         } catch (err) {
             console.error('Ошибка отправки:', err);
+            clearInterval(progressTimer);
             pendingMessages.delete(tempId);
             loadMessages();
             alert('Ошибка отправки: ' + (err.message || 'неизвестная ошибка'));
