@@ -154,7 +154,7 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .msg-footer {
             display: flex;
@@ -163,10 +163,18 @@
             gap: 8px;
             margin-top: 4px;
         }
-        .status-icons { display: flex; gap: 4px; font-size: 12px; }
+        .status-icons {
+            display: flex;
+            gap: 4px;
+            font-size: 12px;
+        }
         .delivered { color: #4ade80; }
         .sent { color: #9ca3af; }
-        .msg-actions { display: flex; gap: 6px; align-items: center; }
+        .msg-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
         .delete-btn {
             background: none;
             border: none;
@@ -264,7 +272,7 @@
             cursor: pointer;
         }
         .confirm-buttons button.confirm { background: #e94560; }
-        .sticker-grid, .attach-grid {
+        .sticker-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -279,6 +287,12 @@
             transition: 0.1s;
         }
         .sticker-img:hover { transform: scale(1.05); }
+        .attach-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -313,6 +327,7 @@
         .photo-item {
             position: relative;
             cursor: pointer;
+            transition: all 0.2s;
         }
         .photo-item img {
             width: 100%;
@@ -868,18 +883,9 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
     initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
 
-    // === ПРИВЯЗКА КНОПОК (ПРЯМАЯ, БЕЗ ЛИШНИХ СЛОЁВ) ===
-    document.getElementById('stickerBtn').onclick = function() {
-        renderStickerModal();
-        document.getElementById('stickerModal').classList.add('active');
-    };
-    document.getElementById('attachBtn').onclick = function() {
-        attachScreen = 'main';
-        selectedImages = [];
-        renderAttachMain();
-        document.getElementById('attachModal').classList.add('active');
-    };
-    document.getElementById('sendBtn').onclick = async function() {
+    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
+    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
+    document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessageOptimistic(text, [...selectedImages]);
@@ -892,9 +898,7 @@
             document.getElementById('messageInput').value = '';
         }
     };
-    document.getElementById('settingsBtn').onclick = function() {
-        window.location.href = 'settings.html';
-    };
+    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
 </script>
 </body>
 </html>
