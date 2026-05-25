@@ -122,18 +122,10 @@
             align-items: flex-start;
             max-width: 80%;
             position: relative;
-            transition: transform 0.1s ease;
-            touch-action: pan-x pan-y;
         }
         .message.mine {
             align-self: flex-end;
             flex-direction: row-reverse;
-        }
-        .message.swiping-right {
-            transform: translateX(10px);
-        }
-        .message.swiping-left {
-            transform: translateX(-10px);
         }
         .msg-avatar {
             width: 32px;
@@ -278,7 +270,46 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ - ПОДНЯТЫ ВЫШЕ */
+        /* КОНТЕКСТНОЕ МЕНЮ */
+        .context-menu {
+            position: fixed;
+            background: rgba(30, 40, 50, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 1000;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: fadeIn 0.15s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .context-menu button {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .context-menu button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.02);
+        }
+        .context-menu button:active {
+            transform: scale(0.98);
+        }
+
+        /* МОДАЛКИ */
         .modal-sheet {
             position: absolute;
             bottom: 100px;
@@ -549,6 +580,7 @@
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
     let onlineInterval = null;
     let replyToMsg = null;
+    let contextMenu = null;
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -656,6 +688,69 @@
         });
     }
 
+    // Показ контекстного меню
+    function showContextMenu(x, y, msgData) {
+        if (contextMenu) contextMenu.remove();
+        contextMenu = document.createElement('div');
+        contextMenu.className = 'context-menu';
+        contextMenu.style.left = x + 'px';
+        contextMenu.style.top = y + 'px';
+        
+        // Кнопка "Ответить"
+        const replyBtn = document.createElement('button');
+        replyBtn.innerHTML = '💬 Ответить';
+        replyBtn.onclick = () => {
+            showReplyBar(msgData);
+            contextMenu.remove();
+            contextMenu = null;
+        };
+        
+        // Кнопка "Копировать"
+        const copyBtn = document.createElement('button');
+        copyBtn.innerHTML = '📋 Копировать';
+        copyBtn.onclick = () => {
+            let textToCopy = msgData.text || '';
+            if (msgData.images && msgData.images.length) textToCopy = `📷 ${msgData.images.length} фото`;
+            if (msgData.sticker) textToCopy = `😊 Стикер`;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const toast = document.createElement('div');
+                toast.textContent = '✅ Скопировано!';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '100px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.background = 'rgba(0,0,0,0.7)';
+                toast.style.color = 'white';
+                toast.style.padding = '0.5rem 1rem';
+                toast.style.borderRadius = '40px';
+                toast.style.fontSize = '0.8rem';
+                toast.style.zIndex = '1001';
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 1500);
+            });
+            contextMenu.remove();
+            contextMenu = null;
+        };
+        
+        contextMenu.appendChild(replyBtn);
+        contextMenu.appendChild(copyBtn);
+        document.body.appendChild(contextMenu);
+        
+        // Закрыть при клике вне меню
+        const closeHandler = (e) => {
+            if (!contextMenu?.contains(e.target)) {
+                contextMenu?.remove();
+                contextMenu = null;
+                document.removeEventListener('click', closeHandler);
+                document.removeEventListener('contextmenu', closeHandler);
+            }
+        };
+        setTimeout(() => {
+            document.addEventListener('click', closeHandler);
+            document.addEventListener('contextmenu', closeHandler);
+        }, 10);
+    }
+
     function showReplyBar(msg) {
         replyToMsg = msg;
         const replyBar = document.getElementById('replyBar');
@@ -729,42 +824,40 @@
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                // Исправленный свайп для ответа
-                let touchStartX = 0, touchStartY = 0, touchMoved = false;
+                // Правый клик (компьютер)
+                div.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showContextMenu(e.clientX, e.clientY, {
+                        id: m.id,
+                        text: m.text || '',
+                        name: userData.name || m.name,
+                        uid: m.uid,
+                        images: m.images,
+                        sticker: m.sticker
+                    });
+                });
+                
+                // Долгое нажатие (телефон)
+                let pressTimer;
                 div.addEventListener('touchstart', (e) => {
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                    touchMoved = false;
+                    pressTimer = setTimeout(() => {
+                        const touch = e.touches[0];
+                        showContextMenu(touch.clientX, touch.clientY, {
+                            id: m.id,
+                            text: m.text || '',
+                            name: userData.name || m.name,
+                            uid: m.uid,
+                            images: m.images,
+                            sticker: m.sticker
+                        });
+                    }, 500);
                 });
-                div.addEventListener('touchmove', (e) => {
-                    const deltaX = e.touches[0].clientX - touchStartX;
-                    const deltaY = e.touches[0].clientY - touchStartY;
-                    if (Math.abs(deltaX) > 15 && Math.abs(deltaY) < 30) {
-                        touchMoved = true;
-                        if ((mine && deltaX < -15) || (!mine && deltaX > 15)) {
-                            e.preventDefault();
-                            div.style.transform = `translateX(${mine ? deltaX : deltaX * 0.5}px)`;
-                        }
-                    }
+                div.addEventListener('touchend', () => {
+                    clearTimeout(pressTimer);
                 });
-                div.addEventListener('touchend', (e) => {
-                    if (touchMoved) {
-                        const deltaX = e.changedTouches[0].clientX - touchStartX;
-                        if (Math.abs(deltaX) > 50) {
-                            if ((mine && deltaX < -50) || (!mine && deltaX > 50)) {
-                                showReplyBar({
-                                    id: m.id,
-                                    text: m.text || '',
-                                    name: userData.name || m.name,
-                                    uid: m.uid,
-                                    images: m.images,
-                                    sticker: m.sticker
-                                });
-                            }
-                        }
-                    }
-                    div.style.transform = '';
-                    touchMoved = false;
+                div.addEventListener('touchmove', () => {
+                    clearTimeout(pressTimer);
                 });
                 
                 div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
