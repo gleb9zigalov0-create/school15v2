@@ -104,6 +104,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.8rem;
+            scroll-behavior: smooth;
         }
         .date-divider { text-align: center; margin: 1rem 0; }
         .date-badge {
@@ -122,6 +123,13 @@
             align-items: flex-start;
             max-width: 80%;
             position: relative;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 20px;
+            padding: 0.1rem 0;
+        }
+        .message.highlight {
+            background: rgba(233, 69, 96, 0.3);
+            box-shadow: 0 0 0 2px #e94560;
         }
         .message.mine {
             align-self: flex-end;
@@ -160,10 +168,18 @@
             margin-bottom: 0.4rem;
             border-radius: 12px;
             font-size: 0.7rem;
+            cursor: pointer;
+            transition: background 0.1s ease;
+        }
+        .reply-preview:hover {
+            background: rgba(0, 0, 0, 0.15);
         }
         .message.mine .reply-preview {
             background: rgba(255, 255, 255, 0.15);
             border-left-color: #ffaa00;
+        }
+        .message.mine .reply-preview:hover {
+            background: rgba(255, 255, 255, 0.25);
         }
         .reply-author { font-weight: bold; opacity: 0.8; font-size: 0.65rem; }
         .reply-text { opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
@@ -269,7 +285,7 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* КОНТЕКСТНОЕ МЕНЮ - ИСПРАВЛЕНА ПОЗИЦИЯ */
+        /* КОНТЕКСТНОЕ МЕНЮ */
         .context-menu {
             position: fixed;
             background: rgba(30, 40, 50, 0.95);
@@ -308,10 +324,10 @@
             transform: scale(0.98);
         }
 
-        /* МОДАЛКИ */
+        /* МОДАЛКИ - ОПУЩЕНЫ НИЖЕ */
         .modal-sheet {
             position: absolute;
-            bottom: 100px;
+            bottom: 60px;
             left: 0;
             right: 0;
             background: rgba(30, 47, 62, 0.96);
@@ -687,11 +703,22 @@
         });
     }
 
+    function scrollToMessage(msgId) {
+        const messageElement = document.getElementById(msgId);
+        if (!messageElement) return;
+        
+        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        messageElement.classList.add('highlight');
+        setTimeout(() => {
+            messageElement.classList.remove('highlight');
+        }, 1000);
+    }
+
     function showContextMenu(x, y, msgData) {
         if (contextMenu) contextMenu.remove();
         contextMenu = document.createElement('div');
         contextMenu.className = 'context-menu';
-        // Сдвигаем меню вниз на 45px (1.2 см ~ 45px)
         contextMenu.style.left = x + 'px';
         contextMenu.style.top = (y + 45) + 'px';
         
@@ -799,12 +826,14 @@
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
                 
                 let replyHtml = '';
+                let replyToId = null;
                 if (m.replyTo) {
+                    replyToId = m.replyTo.id;
                     const repliedUserName = m.replyTo.name || 'Пользователь';
                     let repliedText = m.replyTo.text || '';
                     if (m.replyTo.images?.length) repliedText = `📷 фото`;
                     if (m.replyTo.sticker) repliedText = `😊 Стикер`;
-                    replyHtml = `<div class="reply-preview"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
+                    replyHtml = `<div class="reply-preview" data-reply-to-id="${replyToId}"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
                 }
                 
                 let mediaHtml = '';
@@ -819,6 +848,15 @@
                 div.setAttribute('data-msg-id', m.id);
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+                
+                // Клик по блоку ответа
+                const replyBlock = div.querySelector('.reply-preview');
+                if (replyBlock && replyToId) {
+                    replyBlock.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        scrollToMessage(replyToId);
+                    });
+                }
                 
                 // Правый клик (компьютер)
                 div.addEventListener('contextmenu', (e) => {
@@ -916,7 +954,6 @@
     async function sendMessageOptimistic(text, imagesArray, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
-        // Исправлено: не отправляем images и sticker в replyTo
         const replyData = replyToMsg ? {
             id: replyToMsg.id,
             text: replyToMsg.text || (replyToMsg.images ? '📷 Фото' : (replyToMsg.sticker ? '😊 Стикер' : '')),
