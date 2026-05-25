@@ -122,12 +122,18 @@
             align-items: flex-start;
             max-width: 80%;
             position: relative;
-            transition: transform 0.2s ease;
+            transition: transform 0.1s ease;
             touch-action: pan-x pan-y;
         }
         .message.mine {
             align-self: flex-end;
             flex-direction: row-reverse;
+        }
+        .message.swiping-right {
+            transform: translateX(10px);
+        }
+        .message.swiping-left {
+            transform: translateX(-10px);
         }
         .msg-avatar {
             width: 32px;
@@ -204,7 +210,7 @@
         }
         .seen-btn:hover { color: #fff; transform: scale(1.05); }
         
-        /* Панель ввода и панель ответа */
+        /* Панель ввода */
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -272,10 +278,10 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* Модалки */
+        /* МОДАЛКИ - ПОДНЯТЫ ВЫШЕ */
         .modal-sheet {
             position: absolute;
-            bottom: 20px;
+            bottom: 100px;
             left: 0;
             right: 0;
             background: rgba(30, 47, 62, 0.96);
@@ -542,7 +548,7 @@
     let pendingMessages = new Map();
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
     let onlineInterval = null;
-    let replyToMsg = null; // { id, text, name, uid, images? }
+    let replyToMsg = null;
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -723,28 +729,42 @@
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                // Свайп для ответа
-                let touchStartX = 0, touchStartY = 0;
+                // Исправленный свайп для ответа
+                let touchStartX = 0, touchStartY = 0, touchMoved = false;
                 div.addEventListener('touchstart', (e) => {
                     touchStartX = e.touches[0].clientX;
                     touchStartY = e.touches[0].clientY;
+                    touchMoved = false;
                 });
-                div.addEventListener('touchend', (e) => {
-                    const deltaX = e.changedTouches[0].clientX - touchStartX;
-                    const deltaY = e.changedTouches[0].clientY - touchStartY;
-                    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 30) {
-                        if ((mine && deltaX < 0) || (!mine && deltaX > 0)) {
+                div.addEventListener('touchmove', (e) => {
+                    const deltaX = e.touches[0].clientX - touchStartX;
+                    const deltaY = e.touches[0].clientY - touchStartY;
+                    if (Math.abs(deltaX) > 15 && Math.abs(deltaY) < 30) {
+                        touchMoved = true;
+                        if ((mine && deltaX < -15) || (!mine && deltaX > 15)) {
                             e.preventDefault();
-                            showReplyBar({
-                                id: m.id,
-                                text: m.text || '',
-                                name: userData.name || m.name,
-                                uid: m.uid,
-                                images: m.images,
-                                sticker: m.sticker
-                            });
+                            div.style.transform = `translateX(${mine ? deltaX : deltaX * 0.5}px)`;
                         }
                     }
+                });
+                div.addEventListener('touchend', (e) => {
+                    if (touchMoved) {
+                        const deltaX = e.changedTouches[0].clientX - touchStartX;
+                        if (Math.abs(deltaX) > 50) {
+                            if ((mine && deltaX < -50) || (!mine && deltaX > 50)) {
+                                showReplyBar({
+                                    id: m.id,
+                                    text: m.text || '',
+                                    name: userData.name || m.name,
+                                    uid: m.uid,
+                                    images: m.images,
+                                    sticker: m.sticker
+                                });
+                            }
+                        }
+                    }
+                    div.style.transform = '';
+                    touchMoved = false;
                 });
                 
                 div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
@@ -797,7 +817,7 @@
                 const status = doc.data();
                 const userData = await getUserData(doc.id);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                const isOnline = status.online && (new Date() - status.lastSeen?.toDate?.() < 60000);
+                const isOnline = status.online && (new Date() - (status.lastSeen?.toDate?.() || 0) < 60000);
                 const statusText = isOnline ? '🟢 Онлайн' : (status.lastSeen ? `⚫ Был(а) ${status.lastSeen.toDate().toLocaleTimeString()}` : '⚫ Офлайн');
                 container.innerHTML += `<li class="member-item"><div class="member-avatar">${avatarHtml}</div><div class="member-info"><div class="member-name">${userData.name || status.name || 'Ученик'}</div><div class="member-status ${isOnline ? 'online-status' : 'offline-status'}">${statusText}</div></div></li>`;
             }
