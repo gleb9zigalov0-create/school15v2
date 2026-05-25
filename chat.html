@@ -220,10 +220,10 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ — БЕЗ ЗАТЕМНЕНИЯ, БЕЗ ПЕРЕКРЫТИЯ ПОЛЯ ВВОДА */
+        /* МОДАЛКИ — СДВИНУТЫ ВВЕРХ, ЧТОБЫ НЕ ПЕРЕКРЫВАТЬ ПОЛЕ ВВОДА */
         .modal-sheet {
             position: absolute;
-            bottom: 0;
+            bottom: 70px;
             left: 0;
             right: 0;
             background: rgba(30, 47, 62, 0.96);
@@ -378,8 +378,8 @@
             color: #ccc;
             font-size: 0.8rem;
         }
-        .seen-modal-list { display: flex; flex-direction: column; gap: 0.8rem; }
-        .seen-item { display: flex; align-items: center; gap: 0.8rem; }
+        .seen-modal-list { display: flex; flex-direction: column; gap: 0.8rem; color: white; }
+        .seen-item { display: flex; align-items: center; gap: 0.8rem; color: white; }
         .seen-avatar {
             width: 32px;
             height: 32px;
@@ -434,7 +434,7 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКИ (ПРОСТО ВЫЕЗЖАЮТ СНИЗУ) -->
+        <!-- МОДАЛКИ -->
         <div id="stickerSheet" class="modal-sheet">
             <div class="modal-handle" id="stickerHandle"></div>
             <div class="modal-content-inner" id="stickerModalContent"></div>
@@ -452,7 +452,7 @@
 
         <div id="deleteConfirmModal" class="modal-sheet" style="border-radius: 28px; max-width: 400px; width: 80%; left: 0; right: 0; margin: 0 auto; bottom: auto; top: 50%; transform: translateY(-50%) scale(0.9); opacity: 0; transition: 0.2s;">
             <div class="modal-content-inner" style="padding: 1.5rem;">
-                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
+                <p style="color:white;">🗑️ Вы действительно хотите удалить сообщение?</p>
                 <div class="quote" id="deleteQuote" style="background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:16px; margin:1rem 0; color:#ddd;"></div>
                 <div style="display:flex; gap:1rem; justify-content:flex-end;">
                     <button id="cancelDeleteBtn" style="background:#0a3f6f; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Отмена</button>
@@ -479,6 +479,7 @@
     let attachScreen = 'main';
     let pendingMessages = new Map();
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
+    let onlineInterval = null;
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -507,11 +508,18 @@
     auth.onAuthStateChanged(async (user) => {
         if (!user) { window.location.href = 'login.html'; return; }
         currentUser = user;
-        await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик' }, { merge: true });
+        // Статус онлайн с обновлением каждые 30 секунд
+        if (onlineInterval) clearInterval(onlineInterval);
+        const updateStatus = async () => {
+            await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик', lastSeen: new Date() }, { merge: true });
+        };
+        await updateStatus();
+        onlineInterval = setInterval(updateStatus, 30000);
         loadMessages();
         loadMembers();
         window.addEventListener('beforeunload', () => {
-            db.collection('status').doc(user.uid).set({ online: false }, { merge: true });
+            clearInterval(onlineInterval);
+            db.collection('status').doc(user.uid).set({ online: false, lastSeen: new Date() }, { merge: true });
         });
     });
 
@@ -537,23 +545,45 @@
         const handle = document.getElementById(handleId);
         if (!sheet || !handle) return;
         let startY = 0, startTransform = 0, dragging = false;
-        handle.addEventListener('touchstart', (e) => {
+        const onTouchStart = (e) => {
             startY = e.touches[0].clientY;
             const transform = sheet.style.transform;
             if (transform && transform.includes('translateY')) startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
             dragging = true;
-        });
-        handle.addEventListener('touchmove', (e) => {
+        };
+        const onTouchMove = (e) => {
             if (!dragging) return;
             const delta = e.touches[0].clientY - startY;
             if (delta > 0) sheet.style.transform = `translateY(${startTransform + delta}px)`;
-        });
-        handle.addEventListener('touchend', (e) => {
+        };
+        const onTouchEnd = (e) => {
             if (!dragging) return;
             const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) closeModal(sheetId);
+            if (delta > 60) closeModal(sheetId);
             sheet.style.transform = '';
             dragging = false;
+        };
+        handle.addEventListener('touchstart', onTouchStart);
+        handle.addEventListener('touchmove', onTouchMove);
+        handle.addEventListener('touchend', onTouchEnd);
+        // мышь
+        let mouseDown = false, mouseStartY = 0;
+        handle.addEventListener('mousedown', (e) => {
+            mouseDown = true;
+            mouseStartY = e.clientY;
+            e.preventDefault();
+        });
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseDown) return;
+            const delta = e.clientY - mouseStartY;
+            if (delta > 0) sheet.style.transform = `translateY(${delta}px)`;
+        });
+        window.addEventListener('mouseup', (e) => {
+            if (!mouseDown) return;
+            const delta = e.clientY - mouseStartY;
+            if (delta > 60) closeModal(sheetId);
+            sheet.style.transform = '';
+            mouseDown = false;
         });
     }
 
@@ -603,14 +633,18 @@
                     e.stopPropagation();
                     pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/стикер' };
                     document.getElementById('deleteQuote').textContent = (m.text || 'Фото/стикер').substring(0, 100);
+                    const delModal = document.getElementById('deleteConfirmModal');
+                    delModal.style.transform = 'translateY(-50%) scale(1)';
+                    delModal.style.opacity = '1';
                     openModal('deleteConfirmModal');
-                    document.getElementById('deleteConfirmModal').style.transform = 'translateY(-50%) scale(1)';
-                    document.getElementById('deleteConfirmModal').style.opacity = '1';
                 });
-                div.querySelector('.seen-btn')?.addEventListener('click', (e) => {
+                div.querySelector('.seen-btn')?.addEventListener('click', async (e) => {
                     const users = [];
-                    for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) users.push(usersCache.get(uid)?.name || 'Ученик');
-                    document.getElementById('seenModalContent').innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list"><div class="seen-item"><div class="seen-avatar">📖</div><span>${users.length ? users.join(', ') : 'Никто, кроме вас'}</span></div></div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
+                    for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) {
+                        const userData = await getUserData(uid);
+                        users.push(userData.name || 'Ученик');
+                    }
+                    document.getElementById('seenModalContent').innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list">${users.map(u => `<div class="seen-item"><div class="seen-avatar">${u.charAt(0)}</div><span>${u}</span></div>`).join('')}</div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
                     document.getElementById('seenCloseBtn').onclick = () => closeModal('seenSheet');
                     openModal('seenSheet');
                 });
@@ -645,7 +679,9 @@
                 const status = doc.data();
                 const userData = await getUserData(doc.id);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                container.innerHTML += `<li class="member-item"><div class="member-avatar">${avatarHtml}</div><div class="member-info"><div class="member-name">${userData.name || status.name || 'Ученик'}</div><div class="member-status ${status.online ? 'online-status' : 'offline-status'}">${status.online ? '🟢 Онлайн' : '⚫ Офлайн'}</div></div></li>`;
+                const isOnline = status.online && (new Date() - status.lastSeen?.toDate?.() < 60000);
+                const statusText = isOnline ? '🟢 Онлайн' : (status.lastSeen ? `⚫ Был(а) ${status.lastSeen.toDate().toLocaleTimeString()}` : '⚫ Офлайн');
+                container.innerHTML += `<li class="member-item"><div class="member-avatar">${avatarHtml}</div><div class="member-info"><div class="member-name">${userData.name || status.name || 'Ученик'}</div><div class="member-status ${isOnline ? 'online-status' : 'offline-status'}">${statusText}</div></div></li>`;
             }
         });
     }
@@ -820,13 +856,15 @@
 
     document.getElementById('cancelDeleteBtn').onclick = () => {
         closeModal('deleteConfirmModal');
-        document.getElementById('deleteConfirmModal').style.transform = '';
-        document.getElementById('deleteConfirmModal').style.opacity = '';
+        const delModal = document.getElementById('deleteConfirmModal');
+        delModal.style.transform = '';
+        delModal.style.opacity = '';
     };
     document.getElementById('confirmDeleteBtn').onclick = async () => {
         closeModal('deleteConfirmModal');
-        document.getElementById('deleteConfirmModal').style.transform = '';
-        document.getElementById('deleteConfirmModal').style.opacity = '';
+        const delModal = document.getElementById('deleteConfirmModal');
+        delModal.style.transform = '';
+        delModal.style.opacity = '';
         if (!pendingDelete.msgId) return;
         const isMine = pendingDelete.msgUid === currentUser.uid;
         if (!isMine) {
