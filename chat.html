@@ -202,7 +202,6 @@
         }
         .seen-btn:hover { color: #fff; transform: scale(1.05); }
         
-        /* Панель ввода */
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
@@ -270,7 +269,7 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* КОНТЕКСТНОЕ МЕНЮ */
+        /* КОНТЕКСТНОЕ МЕНЮ - ИСПРАВЛЕНА ПОЗИЦИЯ */
         .context-menu {
             position: fixed;
             background: rgba(30, 40, 50, 0.95);
@@ -688,15 +687,14 @@
         });
     }
 
-    // Показ контекстного меню
     function showContextMenu(x, y, msgData) {
         if (contextMenu) contextMenu.remove();
         contextMenu = document.createElement('div');
         contextMenu.className = 'context-menu';
+        // Сдвигаем меню вниз на 45px (1.2 см ~ 45px)
         contextMenu.style.left = x + 'px';
-        contextMenu.style.top = y + 'px';
+        contextMenu.style.top = (y + 45) + 'px';
         
-        // Кнопка "Ответить"
         const replyBtn = document.createElement('button');
         replyBtn.innerHTML = '💬 Ответить';
         replyBtn.onclick = () => {
@@ -705,7 +703,6 @@
             contextMenu = null;
         };
         
-        // Кнопка "Копировать"
         const copyBtn = document.createElement('button');
         copyBtn.innerHTML = '📋 Копировать';
         copyBtn.onclick = () => {
@@ -736,7 +733,6 @@
         contextMenu.appendChild(copyBtn);
         document.body.appendChild(contextMenu);
         
-        // Закрыть при клике вне меню
         const closeHandler = (e) => {
             if (!contextMenu?.contains(e.target)) {
                 contextMenu?.remove();
@@ -806,7 +802,7 @@
                 if (m.replyTo) {
                     const repliedUserName = m.replyTo.name || 'Пользователь';
                     let repliedText = m.replyTo.text || '';
-                    if (m.replyTo.images?.length) repliedText = `📷 ${m.replyTo.images.length} фото`;
+                    if (m.replyTo.images?.length) repliedText = `📷 фото`;
                     if (m.replyTo.sticker) repliedText = `😊 Стикер`;
                     replyHtml = `<div class="reply-preview"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
                 }
@@ -920,16 +916,15 @@
     async function sendMessageOptimistic(text, imagesArray, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
+        // Исправлено: не отправляем images и sticker в replyTo
         const replyData = replyToMsg ? {
             id: replyToMsg.id,
-            text: replyToMsg.text || (replyToMsg.images ? `📷 ${replyToMsg.images.length} фото` : (replyToMsg.sticker ? '😊 Стикер' : '')),
+            text: replyToMsg.text || (replyToMsg.images ? '📷 Фото' : (replyToMsg.sticker ? '😊 Стикер' : '')),
             name: replyToMsg.name,
-            uid: replyToMsg.uid,
-            images: replyToMsg.images,
-            sticker: replyToMsg.sticker
+            uid: replyToMsg.uid
         } : null;
         
-        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], replyTo: replyData });
+        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
         loadMessages();
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
@@ -942,9 +937,10 @@
             cancelReply();
             loadMessages();
         } catch (err) {
+            console.error('Ошибка отправки:', err);
             pendingMessages.delete(tempId);
             loadMessages();
-            alert('Ошибка отправки');
+            alert('Ошибка отправки: ' + (err.message || 'неизвестная ошибка'));
         }
     }
 
