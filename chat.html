@@ -220,7 +220,7 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ — ПОЛНОСТЬЮ СКРЫВАЮТСЯ, КОГДА НЕ АКТИВНЫ */
+        /* МОДАЛКИ С ПЛАВНОЙ АНИМАЦИЕЙ */
         .modal-sheet {
             position: absolute;
             bottom: 70px;
@@ -232,14 +232,16 @@
             max-width: 500px;
             margin: 0 auto;
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.2s ease;
             border-top: 1px solid rgba(255,255,255,0.2);
             z-index: 20;
             display: none;
+            opacity: 0;
         }
         .modal-sheet.active {
             display: block;
             transform: translateY(0);
+            opacity: 1;
         }
         .modal-handle {
             width: 50px;
@@ -591,12 +593,15 @@
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
-            snap.docChanges().forEach(change => {
+            // Помечаем все непрочитанные сообщения как просмотренные
+            for (const change of snap.docChanges()) {
                 const m = change.doc.data();
                 if (change.type === 'added' && m.uid !== currentUser.uid) {
-                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) markAsSeen(change.doc.id);
+                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) {
+                        await markAsSeen(change.doc.id);
+                    }
                 }
-            });
+            }
             
             const messages = [];
             for (const doc of snap.docs) messages.push({ id: doc.id, ...doc.data() });
