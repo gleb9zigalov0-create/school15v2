@@ -122,6 +122,8 @@
             align-items: flex-start;
             max-width: 80%;
             position: relative;
+            transition: transform 0.2s ease;
+            touch-action: pan-x pan-y;
         }
         .message.mine {
             align-self: flex-end;
@@ -140,6 +142,7 @@
             overflow: hidden;
             background-size: cover;
             background-position: center;
+            flex-shrink: 0;
         }
         .msg-bubble {
             background: rgba(255, 255, 255, 0.9);
@@ -152,6 +155,20 @@
             background: #0a3f6f;
             color: white;
         }
+        .reply-preview {
+            background: rgba(0, 0, 0, 0.08);
+            border-left: 3px solid #e94560;
+            padding: 0.3rem 0.6rem;
+            margin-bottom: 0.4rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+        }
+        .message.mine .reply-preview {
+            background: rgba(255, 255, 255, 0.15);
+            border-left-color: #ffaa00;
+        }
+        .reply-author { font-weight: bold; opacity: 0.8; font-size: 0.65rem; }
+        .reply-text { opacity: 0.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
         .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
@@ -186,16 +203,51 @@
             transition: 0.2s;
         }
         .seen-btn:hover { color: #fff; transform: scale(1.05); }
+        
+        /* Панель ввода и панель ответа */
         .input-panel {
             padding: 0.8rem 1rem;
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             display: flex;
-            gap: 0.6rem;
-            align-items: center;
+            flex-direction: column;
+            gap: 0.5rem;
             border-top: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
-            z-index: 15;
+            z-index: 30;
+        }
+        .reply-bar {
+            display: none;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 28px;
+            padding: 0.4rem 0.8rem;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #ddd;
+        }
+        .reply-bar.active {
+            display: flex;
+        }
+        .reply-bar .reply-content {
+            flex: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .reply-bar .cancel-reply {
+            background: #e94560;
+            border: none;
+            color: white;
+            border-radius: 40px;
+            padding: 0.2rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.7rem;
+        }
+        .input-row {
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
         }
         .icon-button {
             background: rgba(255, 255, 255, 0.3);
@@ -220,10 +272,10 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ С ПЛАВНОЙ АНИМАЦИЕЙ */
+        /* Модалки */
         .modal-sheet {
             position: absolute;
-            bottom: 70px;
+            bottom: 20px;
             left: 0;
             right: 0;
             background: rgba(30, 47, 62, 0.96);
@@ -234,7 +286,7 @@
             transform: translateY(100%);
             transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1), opacity 0.2s ease;
             border-top: 1px solid rgba(255,255,255,0.2);
-            z-index: 20;
+            z-index: 25;
             display: none;
             opacity: 0;
         }
@@ -432,10 +484,17 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <button class="icon-button" id="stickerBtn">😊</button>
-            <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
-            <button class="icon-button" id="attachBtn">📎</button>
-            <button class="icon-button" id="sendBtn">➤</button>
+            <div class="reply-bar" id="replyBar">
+                <span>💬 Ответ:</span>
+                <div class="reply-content" id="replyContent"></div>
+                <button class="cancel-reply" id="cancelReplyBtn">✖</button>
+            </div>
+            <div class="input-row">
+                <button class="icon-button" id="stickerBtn">😊</button>
+                <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+                <button class="icon-button" id="attachBtn">📎</button>
+                <button class="icon-button" id="sendBtn">➤</button>
+            </div>
         </div>
 
         <div id="stickerSheet" class="modal-sheet">
@@ -483,6 +542,7 @@
     let pendingMessages = new Map();
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
     let onlineInterval = null;
+    let replyToMsg = null; // { id, text, name, uid, images? }
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -590,10 +650,26 @@
         });
     }
 
+    function showReplyBar(msg) {
+        replyToMsg = msg;
+        const replyBar = document.getElementById('replyBar');
+        const replyContent = document.getElementById('replyContent');
+        let previewText = msg.text || '';
+        if (msg.images && msg.images.length) previewText = `📷 ${msg.images.length} фото`;
+        if (msg.sticker) previewText = `😊 Стикер`;
+        replyContent.innerHTML = `<strong>${msg.name || 'Ученик'}</strong>: ${previewText.substring(0, 50)}`;
+        replyBar.classList.add('active');
+        document.getElementById('messageInput').focus();
+    }
+
+    function cancelReply() {
+        replyToMsg = null;
+        document.getElementById('replyBar').classList.remove('active');
+    }
+
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
-            // Помечаем все непрочитанные сообщения как просмотренные
             for (const change of snap.docChanges()) {
                 const m = change.doc.data();
                 if (change.type === 'added' && m.uid !== currentUser.uid) {
@@ -624,6 +700,16 @@
                 const mine = m.uid === currentUser?.uid;
                 const userData = await getUserData(m.uid);
                 const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
+                
+                let replyHtml = '';
+                if (m.replyTo) {
+                    const repliedUserName = m.replyTo.name || 'Пользователь';
+                    let repliedText = m.replyTo.text || '';
+                    if (m.replyTo.images?.length) repliedText = `📷 ${m.replyTo.images.length} фото`;
+                    if (m.replyTo.sticker) repliedText = `😊 Стикер`;
+                    replyHtml = `<div class="reply-preview"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
+                }
+                
                 let mediaHtml = '';
                 if (m.images && m.images.length) mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">${m.images.map(img => `<img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px;">`).join('')}</div>`;
                 else if (m.image) mediaHtml = `<img src="${m.image}" style="max-width:200px; border-radius:16px;">`;
@@ -633,8 +719,34 @@
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = m.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.setAttribute('data-msg-id', m.id);
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+                
+                // Свайп для ответа
+                let touchStartX = 0, touchStartY = 0;
+                div.addEventListener('touchstart', (e) => {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                });
+                div.addEventListener('touchend', (e) => {
+                    const deltaX = e.changedTouches[0].clientX - touchStartX;
+                    const deltaY = e.changedTouches[0].clientY - touchStartY;
+                    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 30) {
+                        if ((mine && deltaX < 0) || (!mine && deltaX > 0)) {
+                            e.preventDefault();
+                            showReplyBar({
+                                id: m.id,
+                                text: m.text || '',
+                                name: userData.name || m.name,
+                                uid: m.uid,
+                                images: m.images,
+                                sticker: m.sticker
+                            });
+                        }
+                    }
+                });
+                
                 div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
                     e.stopPropagation();
                     pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/стикер' };
@@ -695,15 +807,26 @@
     async function sendMessageOptimistic(text, imagesArray, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
-        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [] });
+        const replyData = replyToMsg ? {
+            id: replyToMsg.id,
+            text: replyToMsg.text || (replyToMsg.images ? `📷 ${replyToMsg.images.length} фото` : (replyToMsg.sticker ? '😊 Стикер' : '')),
+            name: replyToMsg.name,
+            uid: replyToMsg.uid,
+            images: replyToMsg.images,
+            sticker: replyToMsg.sticker
+        } : null;
+        
+        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], replyTo: replyData });
         loadMessages();
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
                 text: text || '', images: imagesArray || [], sticker: stickerUrl,
                 uid: currentUser.uid, name: userData.name || currentUser.displayName || 'Ученик',
-                seenBy: [currentUser.uid], createdAt: new Date()
+                seenBy: [currentUser.uid], createdAt: new Date(),
+                replyTo: replyData
             });
             pendingMessages.delete(tempId);
+            cancelReply();
             loadMessages();
         } catch (err) {
             pendingMessages.delete(tempId);
@@ -881,6 +1004,7 @@
         pendingDelete = {};
     };
 
+    document.getElementById('cancelReplyBtn').onclick = cancelReply;
     document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerSheet'); };
     document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; renderAttachMain(); openModal('attachSheet'); };
     document.getElementById('sendBtn').onclick = async () => {
