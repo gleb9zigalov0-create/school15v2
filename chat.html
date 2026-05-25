@@ -220,22 +220,8 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* МОДАЛКИ — ПРАВИЛЬНОЕ ПОЗИЦИОНИРОВАНИЕ */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-bottom-sheet {
+        /* МОДАЛКИ — БЕЗ ЗАТЕМНЕНИЯ, БЕЗ ПЕРЕКРЫТИЯ ПОЛЯ ВВОДА */
+        .modal-sheet {
             position: absolute;
             bottom: 0;
             left: 0;
@@ -246,21 +232,12 @@
             max-width: 500px;
             margin: 0 auto;
             transform: translateY(100%);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
             border-top: 1px solid rgba(255,255,255,0.2);
+            z-index: 20;
         }
-        .modal-overlay.active .modal-bottom-sheet {
+        .modal-sheet.active {
             transform: translateY(0);
-        }
-        .modal-center {
-            background: rgba(30, 47, 62, 0.96);
-            backdrop-filter: blur(20px);
-            border-radius: 28px;
-            max-width: 400px;
-            width: 80%;
-            padding: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.25);
-            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
         }
         .modal-handle {
             width: 50px;
@@ -270,6 +247,7 @@
             margin: 12px auto 8px;
             cursor: grab;
         }
+        .modal-handle:active { cursor: grabbing; }
         .modal-content-inner { padding: 0 1rem 1.5rem; max-height: 55vh; overflow-y: auto; }
         .modal-title { text-align: center; color: #e0e0e0; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem; }
         .close-btn {
@@ -456,36 +434,30 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <!-- МОДАЛКИ -->
-        <div id="stickerModal" class="modal-overlay">
-            <div class="modal-bottom-sheet">
-                <div class="modal-handle" id="stickerHandle"></div>
-                <div class="modal-content-inner" id="stickerModalContent"></div>
-            </div>
+        <!-- МОДАЛКИ (ПРОСТО ВЫЕЗЖАЮТ СНИЗУ) -->
+        <div id="stickerSheet" class="modal-sheet">
+            <div class="modal-handle" id="stickerHandle"></div>
+            <div class="modal-content-inner" id="stickerModalContent"></div>
         </div>
 
-        <div id="attachModal" class="modal-overlay">
-            <div class="modal-bottom-sheet">
-                <div class="modal-handle" id="attachHandle"></div>
-                <div class="modal-content-inner" id="attachModalContent"></div>
-            </div>
+        <div id="attachSheet" class="modal-sheet">
+            <div class="modal-handle" id="attachHandle"></div>
+            <div class="modal-content-inner" id="attachModalContent"></div>
         </div>
 
-        <div id="deleteConfirmModal" class="modal-overlay">
-            <div class="modal-center">
+        <div id="seenSheet" class="modal-sheet">
+            <div class="modal-handle" id="seenHandle"></div>
+            <div class="modal-content-inner" id="seenModalContent"></div>
+        </div>
+
+        <div id="deleteConfirmModal" class="modal-sheet" style="border-radius: 28px; max-width: 400px; width: 80%; left: 0; right: 0; margin: 0 auto; bottom: auto; top: 50%; transform: translateY(-50%) scale(0.9); opacity: 0; transition: 0.2s;">
+            <div class="modal-content-inner" style="padding: 1.5rem;">
                 <p>🗑️ Вы действительно хотите удалить сообщение?</p>
                 <div class="quote" id="deleteQuote" style="background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:16px; margin:1rem 0; color:#ddd;"></div>
-                <div class="confirm-buttons" style="display:flex; gap:1rem; justify-content:flex-end;">
+                <div style="display:flex; gap:1rem; justify-content:flex-end;">
                     <button id="cancelDeleteBtn" style="background:#0a3f6f; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Отмена</button>
-                    <button id="confirmDeleteBtn" class="confirm" style="background:#e94560; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Удалить</button>
+                    <button id="confirmDeleteBtn" style="background:#e94560; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Удалить</button>
                 </div>
-            </div>
-        </div>
-
-        <div id="seenModal" class="modal-overlay">
-            <div class="modal-bottom-sheet">
-                <div class="modal-handle" id="seenHandle"></div>
-                <div class="modal-content-inner" id="seenModalContent"></div>
             </div>
         </div>
     </div>
@@ -548,29 +520,23 @@
         await msgRef.update({ seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
     }
 
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.remove('active');
-        setTimeout(() => {
-            const contentId = modalId === 'stickerModal' ? 'stickerModalContent' : (modalId === 'attachModal' ? 'attachModalContent' : 'seenModalContent');
-            const container = document.getElementById(contentId);
-            if (container) container.innerHTML = '';
-        }, 300);
+    function closeModal(sheetId) {
+        const sheet = document.getElementById(sheetId);
+        if (!sheet) return;
+        sheet.classList.remove('active');
     }
 
-    function openModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.add('active');
+    function openModal(sheetId) {
+        const sheet = document.getElementById(sheetId);
+        if (!sheet) return;
+        sheet.classList.add('active');
     }
 
-    function initSwipeClose(modalId, handleId) {
-        const modal = document.getElementById(modalId);
+    function initSwipeClose(sheetId, handleId) {
+        const sheet = document.getElementById(sheetId);
         const handle = document.getElementById(handleId);
-        if (!modal || !handle) return;
-        let startY=0, startTransform=0, dragging=false;
-        const sheet = modal.querySelector('.modal-bottom-sheet');
+        if (!sheet || !handle) return;
+        let startY = 0, startTransform = 0, dragging = false;
         handle.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
             const transform = sheet.style.transform;
@@ -585,7 +551,7 @@
         handle.addEventListener('touchend', (e) => {
             if (!dragging) return;
             const delta = e.changedTouches[0].clientY - startY;
-            if (delta > 80) closeModal(modalId);
+            if (delta > 80) closeModal(sheetId);
             sheet.style.transform = '';
             dragging = false;
         });
@@ -638,13 +604,15 @@
                     pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/стикер' };
                     document.getElementById('deleteQuote').textContent = (m.text || 'Фото/стикер').substring(0, 100);
                     openModal('deleteConfirmModal');
+                    document.getElementById('deleteConfirmModal').style.transform = 'translateY(-50%) scale(1)';
+                    document.getElementById('deleteConfirmModal').style.opacity = '1';
                 });
                 div.querySelector('.seen-btn')?.addEventListener('click', (e) => {
                     const users = [];
                     for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) users.push(usersCache.get(uid)?.name || 'Ученик');
                     document.getElementById('seenModalContent').innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list"><div class="seen-item"><div class="seen-avatar">📖</div><span>${users.length ? users.join(', ') : 'Никто, кроме вас'}</span></div></div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
-                    document.getElementById('seenCloseBtn').onclick = () => closeModal('seenModal');
-                    openModal('seenModal');
+                    document.getElementById('seenCloseBtn').onclick = () => closeModal('seenSheet');
+                    openModal('seenSheet');
                 });
             }
             
@@ -714,10 +682,10 @@
             img.onclick = (e) => {
                 e.stopPropagation();
                 sendMessageOptimistic('', null, img.getAttribute('data-sticker-url'));
-                closeModal('stickerModal');
+                closeModal('stickerSheet');
             };
         });
-        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerModal'); };
+        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerSheet'); };
     }
 
     function renderAttachMain() {
@@ -743,11 +711,11 @@
                     renderCameraScreen();
                 } else {
                     alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-                    closeModal('attachModal');
+                    closeModal('attachSheet');
                 }
             };
         });
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal'); };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
     }
 
     function renderCameraScreen() {
@@ -767,7 +735,7 @@
             input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
             input.click();
         };
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal'); };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
     }
 
     function renderPhotoGallery() {
@@ -846,13 +814,19 @@
         };
     }
 
-    initSwipeClose('stickerModal', 'stickerHandle');
-    initSwipeClose('attachModal', 'attachHandle');
-    initSwipeClose('seenModal', 'seenHandle');
+    initSwipeClose('stickerSheet', 'stickerHandle');
+    initSwipeClose('attachSheet', 'attachHandle');
+    initSwipeClose('seenSheet', 'seenHandle');
 
-    document.getElementById('cancelDeleteBtn').onclick = () => closeModal('deleteConfirmModal');
+    document.getElementById('cancelDeleteBtn').onclick = () => {
+        closeModal('deleteConfirmModal');
+        document.getElementById('deleteConfirmModal').style.transform = '';
+        document.getElementById('deleteConfirmModal').style.opacity = '';
+    };
     document.getElementById('confirmDeleteBtn').onclick = async () => {
         closeModal('deleteConfirmModal');
+        document.getElementById('deleteConfirmModal').style.transform = '';
+        document.getElementById('deleteConfirmModal').style.opacity = '';
         if (!pendingDelete.msgId) return;
         const isMine = pendingDelete.msgUid === currentUser.uid;
         if (!isMine) {
@@ -863,15 +837,15 @@
         pendingDelete = {};
     };
 
-    document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerModal'); };
-    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; renderAttachMain(); openModal('attachModal'); };
+    document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerSheet'); };
+    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; renderAttachMain(); openModal('attachSheet'); };
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessageOptimistic(text, [...selectedImages]);
             selectedImages = [];
             document.getElementById('messageInput').value = '';
-            closeModal('attachModal');
+            closeModal('attachSheet');
         } else if (text.trim()) {
             await sendMessageOptimistic(text, null);
             document.getElementById('messageInput').value = '';
