@@ -6,7 +6,6 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ========== ТВОЙ СТИЛЬ (БЕЗ ИЗМЕНЕНИЙ) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -155,7 +154,7 @@
         }
         .msg-name { font-size: 0.65rem; font-weight: bold; margin-bottom: 0.2rem; }
         .msg-text { font-size: 0.9rem; }
-        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; transition: all 0.3s ease; }
+        .msg-text img { max-width: 200px; border-radius: 16px; margin-top: 0.3rem; }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .msg-footer {
             display: flex;
@@ -164,18 +163,10 @@
             gap: 8px;
             margin-top: 4px;
         }
-        .status-icons {
-            display: flex;
-            gap: 4px;
-            font-size: 12px;
-        }
+        .status-icons { display: flex; gap: 4px; font-size: 12px; }
         .delivered { color: #4ade80; }
         .sent { color: #9ca3af; }
-        .msg-actions {
-            display: flex;
-            gap: 6px;
-            align-items: center;
-        }
+        .msg-actions { display: flex; gap: 6px; align-items: center; }
         .delete-btn {
             background: none;
             border: none;
@@ -229,21 +220,39 @@
         }
         .text-input::placeholder { color: #555; }
 
-        .modal-wrapper {
+        /* МОДАЛКИ — ПРАВИЛЬНОЕ ПОЗИЦИОНИРОВАНИЕ */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 1000;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(8px);
         }
-        .modal-wrapper.active { display: flex; }
-        .confirm-modal {
+        .modal-overlay.active { display: flex; }
+        .modal-bottom-sheet {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 47, 62, 0.96);
+            backdrop-filter: blur(20px);
+            border-radius: 28px 28px 0 0;
+            max-width: 500px;
+            margin: 0 auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        .modal-overlay.active .modal-bottom-sheet {
+            transform: translateY(0);
+        }
+        .modal-center {
             background: rgba(30, 47, 62, 0.96);
             backdrop-filter: blur(20px);
             border-radius: 28px;
@@ -253,27 +262,27 @@
             border: 1px solid rgba(255,255,255,0.25);
             box-shadow: 0 20px 35px rgba(0,0,0,0.3);
         }
-        .confirm-modal p { color: white; margin-bottom: 1rem; }
-        .confirm-modal .quote {
-            background: rgba(255,255,255,0.1);
-            padding: 0.5rem;
-            border-radius: 16px;
-            margin-bottom: 1.5rem;
-            font-style: italic;
-            font-size: 0.9rem;
-            color: #ddd;
+        .modal-handle {
+            width: 50px;
+            height: 5px;
+            background: #7f8c8d;
+            border-radius: 10px;
+            margin: 12px auto 8px;
+            cursor: grab;
         }
-        .confirm-buttons { display: flex; gap: 1rem; justify-content: flex-end; }
-        .confirm-buttons button {
+        .modal-content-inner { padding: 0 1rem 1.5rem; max-height: 55vh; overflow-y: auto; }
+        .modal-title { text-align: center; color: #e0e0e0; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem; }
+        .close-btn {
             background: #0a3f6f;
             color: white;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 40px;
+            margin-top: 1rem;
             cursor: pointer;
+            width: 100%;
         }
-        .confirm-buttons button.confirm { background: #e94560; }
-        .sticker-grid {
+        .sticker-grid, .attach-grid {
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
@@ -288,12 +297,6 @@
             transition: 0.1s;
         }
         .sticker-img:hover { transform: scale(1.05); }
-        .attach-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-        }
         .attach-item {
             text-align: center;
             flex: 1;
@@ -328,7 +331,6 @@
         .photo-item {
             position: relative;
             cursor: pointer;
-            transition: all 0.2s;
         }
         .photo-item img {
             width: 100%;
@@ -366,12 +368,6 @@
             transition: 0.2s;
         }
         .camera-round-btn:hover { transform: scale(1.05); background: #3e9a7a; }
-        .attach-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
         .back-btn {
             background: #0a3f6f;
             color: white;
@@ -394,10 +390,7 @@
             transition: all 0.2s;
             text-align: center;
         }
-        .style-btn:hover {
-            background: rgba(255,255,255,0.4);
-            transform: translateY(-2px);
-        }
+        .style-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-2px); }
         .empty-photo {
             text-align: center;
             padding: 1rem;
@@ -407,16 +400,8 @@
             color: #ccc;
             font-size: 0.8rem;
         }
-        .seen-modal-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
-        .seen-item {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-        }
+        .seen-modal-list { display: flex; flex-direction: column; gap: 0.8rem; }
+        .seen-item { display: flex; align-items: center; gap: 0.8rem; }
         .seen-avatar {
             width: 32px;
             height: 32px;
@@ -471,33 +456,34 @@
             <button class="icon-button" id="sendBtn">➤</button>
         </div>
 
-        <div class="modal-wrapper" id="deleteConfirmModal">
-            <div class="confirm-modal">
-                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
-                <div class="quote" id="deleteQuote"></div>
-                <div class="confirm-buttons">
-                    <button id="cancelDeleteBtn">Отмена</button>
-                    <button id="confirmDeleteBtn" class="confirm">Удалить</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="modal-wrapper" id="stickerWrapper">
-            <div class="modal" id="stickerModal">
+        <!-- МОДАЛКИ -->
+        <div id="stickerModal" class="modal-overlay">
+            <div class="modal-bottom-sheet">
                 <div class="modal-handle" id="stickerHandle"></div>
                 <div class="modal-content-inner" id="stickerModalContent"></div>
             </div>
         </div>
 
-        <div class="modal-wrapper" id="attachWrapper">
-            <div class="modal" id="attachModal">
+        <div id="attachModal" class="modal-overlay">
+            <div class="modal-bottom-sheet">
                 <div class="modal-handle" id="attachHandle"></div>
                 <div class="modal-content-inner" id="attachModalContent"></div>
             </div>
         </div>
 
-        <div class="modal-wrapper" id="seenWrapper">
-            <div class="modal" id="seenModal">
+        <div id="deleteConfirmModal" class="modal-overlay">
+            <div class="modal-center">
+                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
+                <div class="quote" id="deleteQuote" style="background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:16px; margin:1rem 0; color:#ddd;"></div>
+                <div class="confirm-buttons" style="display:flex; gap:1rem; justify-content:flex-end;">
+                    <button id="cancelDeleteBtn" style="background:#0a3f6f; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Отмена</button>
+                    <button id="confirmDeleteBtn" class="confirm" style="background:#e94560; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Удалить</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="seenModal" class="modal-overlay">
+            <div class="modal-bottom-sheet">
                 <div class="modal-handle" id="seenHandle"></div>
                 <div class="modal-content-inner" id="seenModalContent"></div>
             </div>
@@ -521,14 +507,6 @@
     let attachScreen = 'main';
     let pendingMessages = new Map();
     let pendingDelete = { msgId: null, msgUid: null, messageText: null };
-
-    console.log('✅ Чат инициализирован');
-    console.log('🔍 Ищем кнопки:', {
-        sticker: document.getElementById('stickerBtn'),
-        attach: document.getElementById('attachBtn'),
-        send: document.getElementById('sendBtn'),
-        settings: document.getElementById('settingsBtn')
-    });
 
     function formatDateLabel(date) {
         const now = new Date();
@@ -570,36 +548,48 @@
         await msgRef.update({ seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
     }
 
-    function showDeleteConfirm(msgId, msgUid, messageText) {
-        pendingDelete = { msgId, msgUid, messageText };
-        document.getElementById('deleteQuote').textContent = messageText.length > 100 ? messageText.substring(0, 100) + '…' : messageText;
-        document.getElementById('deleteConfirmModal').classList.add('active');
+    function closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.remove('active');
+        setTimeout(() => {
+            const contentId = modalId === 'stickerModal' ? 'stickerModalContent' : (modalId === 'attachModal' ? 'attachModalContent' : 'seenModalContent');
+            const container = document.getElementById(contentId);
+            if (container) container.innerHTML = '';
+        }, 300);
     }
 
-    document.getElementById('cancelDeleteBtn').onclick = () => {
-        document.getElementById('deleteConfirmModal').classList.remove('active');
-        pendingDelete = { msgId: null, msgUid: null, messageText: null };
-    };
-    document.getElementById('confirmDeleteBtn').onclick = async () => {
-        const modal = document.getElementById('deleteConfirmModal');
-        modal.classList.remove('active');
-        if (!pendingDelete.msgId) return;
-        const isMine = pendingDelete.msgUid === currentUser.uid;
-        let canDelete = isMine;
-        if (!isMine) {
-            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
-            if (password !== 'КИКИ99СССР') {
-                alert('Неверный пароль! Удаление отменено.');
-                pendingDelete = { msgId: null, msgUid: null, messageText: null };
-                return;
-            }
-            canDelete = true;
-        }
-        if (canDelete) {
-            await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDelete.msgId).delete();
-        }
-        pendingDelete = { msgId: null, msgUid: null, messageText: null };
-    };
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.classList.add('active');
+    }
+
+    function initSwipeClose(modalId, handleId) {
+        const modal = document.getElementById(modalId);
+        const handle = document.getElementById(handleId);
+        if (!modal || !handle) return;
+        let startY=0, startTransform=0, dragging=false;
+        const sheet = modal.querySelector('.modal-bottom-sheet');
+        handle.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            const transform = sheet.style.transform;
+            if (transform && transform.includes('translateY')) startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0);
+            dragging = true;
+        });
+        handle.addEventListener('touchmove', (e) => {
+            if (!dragging) return;
+            const delta = e.touches[0].clientY - startY;
+            if (delta > 0) sheet.style.transform = `translateY(${startTransform + delta}px)`;
+        });
+        handle.addEventListener('touchend', (e) => {
+            if (!dragging) return;
+            const delta = e.changedTouches[0].clientY - startY;
+            if (delta > 80) closeModal(modalId);
+            sheet.style.transform = '';
+            dragging = false;
+        });
+    }
 
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
@@ -645,9 +635,17 @@
                 container.appendChild(div);
                 div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    showDeleteConfirm(m.id, m.uid, m.text || 'Фото/стикер');
+                    pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/стикер' };
+                    document.getElementById('deleteQuote').textContent = (m.text || 'Фото/стикер').substring(0, 100);
+                    openModal('deleteConfirmModal');
                 });
-                div.querySelector('.seen-btn')?.addEventListener('click', (e) => showSeenModal(m.id, m.seenBy || []));
+                div.querySelector('.seen-btn')?.addEventListener('click', (e) => {
+                    const users = [];
+                    for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) users.push(usersCache.get(uid)?.name || 'Ученик');
+                    document.getElementById('seenModalContent').innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list"><div class="seen-item"><div class="seen-avatar">📖</div><span>${users.length ? users.join(', ') : 'Никто, кроме вас'}</span></div></div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
+                    document.getElementById('seenCloseBtn').onclick = () => closeModal('seenModal');
+                    openModal('seenModal');
+                });
             }
             
             for (let [tempId, pending] of pendingMessages.entries()) {
@@ -704,81 +702,52 @@
         }
     }
 
-    async function showSeenModal(msgId, seenByArray) {
-        const modal = document.getElementById('seenModal');
-        const content = document.getElementById('seenModalContent');
-        const users = [];
-        for (const uid of seenByArray) if (uid !== currentUser?.uid) {
-            const userData = await getUserData(uid);
-            users.push(userData.name || 'Ученик');
-        }
-        content.innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list"><div class="seen-item"><div class="seen-avatar">📖</div><span>${users.length ? users.join(', ') : 'Никто, кроме вас'}</span></div></div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
-        modal.classList.add('active');
-        document.getElementById('seenCloseBtn').onclick = () => modal.classList.remove('active');
-    }
-
     function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
 
     function renderStickerModal() {
-        console.log('🎨 renderStickerModal вызван');
-        try {
-            const container = document.getElementById('stickerModalContent');
-            if (!container) { console.error('❌ Контейнер stickerModalContent не найден'); return; }
-            container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
-            const stickers = ['stickers/okay.gif'];
-            const stickerContainer = document.getElementById('stickerList');
-            if (stickerContainer) {
-                stickerContainer.innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-                document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-                    img.onclick = (e) => {
-                        e.stopPropagation();
-                        const url = img.getAttribute('data-sticker-url');
-                        console.log('📤 Отправка стикера:', url);
-                        sendMessageOptimistic('', null, url);
-                        closeModal('stickerModal', 'stickerModalContent');
-                    };
-                });
-            }
-            const closeBtn = document.getElementById('stickerModalCloseBtn');
-            if (closeBtn) closeBtn.onclick = (e) => { e.preventDefault(); closeModal('stickerModal', 'stickerModalContent'); };
-            console.log('✅ Стикеры отрендерены');
-        } catch (err) { console.error('🔥 Ошибка в renderStickerModal:', err); }
+        const container = document.getElementById('stickerModalContent');
+        if (!container) return;
+        container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
+        const stickers = ['stickers/okay.gif'];
+        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+            img.onclick = (e) => {
+                e.stopPropagation();
+                sendMessageOptimistic('', null, img.getAttribute('data-sticker-url'));
+                closeModal('stickerModal');
+            };
+        });
+        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerModal'); };
     }
 
     function renderAttachMain() {
-        console.log('📎 renderAttachMain вызван');
-        try {
-            const container = document.getElementById('attachModalContent');
-            if (!container) { console.error('❌ Контейнер attachModalContent не найден'); return; }
-            container.innerHTML = `
-                <div class="modal-title">📎 Отправить</div>
-                <div class="attach-grid">
-                    <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
-                    <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                    <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                    <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                    <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                    <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
-                </div>
-                <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
-            `;
-            document.querySelectorAll('.attach-item').forEach(el => {
-                el.onclick = (e) => {
-                    e.stopPropagation();
-                    if (el.dataset.type === 'camera') {
-                        attachScreen = 'camera';
-                        renderCameraScreen();
-                    } else {
-                        alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-                        closeModal('attachModal', 'attachModalContent');
-                        attachScreen = 'main';
-                    }
-                };
-            });
-            const closeBtn = document.getElementById('attachModalCloseBtn');
-            if (closeBtn) closeBtn.onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
-            console.log('✅ Меню скрепки отрендерено');
-        } catch (err) { console.error('🔥 Ошибка в renderAttachMain:', err); }
+        const container = document.getElementById('attachModalContent');
+        if (!container) return;
+        container.innerHTML = `
+            <div class="modal-title">📎 Отправить</div>
+            <div class="attach-grid">
+                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
+                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
+                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
+                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
+                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
+                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
+            </div>
+            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
+        `;
+        document.querySelectorAll('.attach-item').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                if (el.dataset.type === 'camera') {
+                    attachScreen = 'camera';
+                    renderCameraScreen();
+                } else {
+                    alert(`📎 Отправка ${el.dataset.type} — в разработке`);
+                    closeModal('attachModal');
+                }
+            };
+        });
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal'); };
     }
 
     function renderCameraScreen() {
@@ -798,16 +767,13 @@
             input.onchange = (e) => { if (e.target.files) addFiles(e.target.files); input.remove(); };
             input.click();
         };
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal', 'attachModalContent'); attachScreen = 'main'; };
+        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachModal'); };
     }
 
     function renderPhotoGallery() {
         const gallery = document.getElementById('photoGallery');
         if (!gallery) return;
-        if (!selectedImages.length) {
-            gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных фото</div>';
-            return;
-        }
+        if (!selectedImages.length) { gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных фото</div>'; return; }
         gallery.innerHTML = '';
         for (let i=0; i<selectedImages.length; i++) {
             const div = document.createElement('div'); div.className = 'photo-item';
@@ -880,84 +846,32 @@
         };
     }
 
-    function closeModal(modalId, contentId) {
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.remove('active');
-        setTimeout(() => { const container = document.getElementById(contentId); if (container) container.innerHTML = ''; }, 300);
-    }
+    initSwipeClose('stickerModal', 'stickerHandle');
+    initSwipeClose('attachModal', 'attachHandle');
+    initSwipeClose('seenModal', 'seenHandle');
 
-    function initSwipeClose(modalId, handleId, contentId) {
-        const modal = document.getElementById(modalId);
-        const handle = document.getElementById(handleId);
-        if (!modal || !handle) return;
-        let startY=0, startTransform=0, dragging=false;
-        handle.addEventListener('touchstart', (e) => { startY=e.touches[0].clientY; const t=modal.style.transform; if(t && t.includes('translateY')) startTransform=parseFloat(t.match(/translateY\(([-\d]+)px\)/)?.[1]||0); dragging=true; });
-        handle.addEventListener('touchmove', (e) => { if(!dragging) return; const delta=e.touches[0].clientY-startY; if(delta>0){ modal.style.transform=`translateY(${startTransform+delta}px)`; modal.style.opacity='0.7'; } });
-        handle.addEventListener('touchend', (e) => { if(!dragging) return; const delta=e.changedTouches[0].clientY-startY; if(delta>80) closeModal(modalId, contentId); modal.style.transform=''; modal.style.opacity=''; dragging=false; });
-        let mouseDown=false, mouseStartY=0;
-        handle.addEventListener('mousedown', (e) => { mouseDown=true; mouseStartY=e.clientY; e.preventDefault(); });
-        window.addEventListener('mousemove', (e) => { if(!mouseDown) return; const delta=e.clientY-mouseStartY; if(delta>0){ modal.style.transform=`translateY(${delta}px)`; modal.style.opacity='0.7'; } });
-        window.addEventListener('mouseup', (e) => { if(!mouseDown) return; const delta=e.clientY-mouseStartY; if(delta>80) closeModal(modalId, contentId); modal.style.transform=''; modal.style.opacity=''; mouseDown=false; });
-    }
+    document.getElementById('cancelDeleteBtn').onclick = () => closeModal('deleteConfirmModal');
+    document.getElementById('confirmDeleteBtn').onclick = async () => {
+        closeModal('deleteConfirmModal');
+        if (!pendingDelete.msgId) return;
+        const isMine = pendingDelete.msgUid === currentUser.uid;
+        if (!isMine) {
+            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
+            if (password !== 'КИКИ99СССР') { alert('Неверный пароль!'); pendingDelete = {}; return; }
+        }
+        await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDelete.msgId).delete();
+        pendingDelete = {};
+    };
 
-    initSwipeClose('stickerModal', 'stickerHandle', 'stickerModalContent');
-    initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
-    initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
-
-    // === ПРИВЯЗКА КНОПОК С ЛОГАМИ ===
-    const stickerBtn = document.getElementById('stickerBtn');
-    if (stickerBtn) {
-        stickerBtn.onclick = () => {
-            console.log('😊 Нажата кнопка стикеров');
-            try {
-                renderStickerModal();
-                const modal = document.getElementById('stickerModal');
-                if (modal) {
-                    modal.classList.add('active');
-                    console.log('✅ Модалка стикеров открыта');
-                } else {
-                    console.error('❌ Модалка стикеров не найдена');
-                }
-            } catch (err) {
-                console.error('🔥 Ошибка при открытии стикеров:', err);
-            }
-        };
-    } else {
-        console.error('❌ Кнопка stickerBtn не найдена в DOM');
-    }
-
-    const attachBtn = document.getElementById('attachBtn');
-    if (attachBtn) {
-        attachBtn.onclick = () => {
-            console.log('📎 Нажата кнопка скрепки');
-            try {
-                attachScreen = 'main';
-                selectedImages = [];
-                renderAttachMain();
-                const modal = document.getElementById('attachModal');
-                if (modal) {
-                    modal.classList.add('active');
-                    console.log('✅ Модалка скрепки открыта');
-                } else {
-                    console.error('❌ Модалка скрепки не найдена');
-                }
-            } catch (err) {
-                console.error('🔥 Ошибка при открытии скрепки:', err);
-            }
-        };
-    } else {
-        console.error('❌ Кнопка attachBtn не найдена в DOM');
-    }
-
+    document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerModal'); };
+    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; renderAttachMain(); openModal('attachModal'); };
     document.getElementById('sendBtn').onclick = async () => {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessageOptimistic(text, [...selectedImages]);
             selectedImages = [];
             document.getElementById('messageInput').value = '';
-            attachScreen = 'main';
-            closeModal('attachModal', 'attachModalContent');
+            closeModal('attachModal');
         } else if (text.trim()) {
             await sendMessageOptimistic(text, null);
             document.getElementById('messageInput').value = '';
