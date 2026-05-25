@@ -868,10 +868,18 @@
     initSwipeClose('attachModal', 'attachHandle', 'attachModalContent');
     initSwipeClose('seenModal', 'seenHandle', 'seenModalContent');
 
-    // === ПРИВЯЗКА КНОПОК ===
-    document.getElementById('stickerBtn').onclick = () => openModal('stickerModal', renderStickerModal);
-    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedImages = []; openModal('attachModal', renderAttachMain); };
-    document.getElementById('sendBtn').onclick = async () => {
+    // === ПРИВЯЗКА КНОПОК (ПРЯМАЯ, БЕЗ ЛИШНИХ СЛОЁВ) ===
+    document.getElementById('stickerBtn').onclick = function() {
+        renderStickerModal();
+        document.getElementById('stickerModal').classList.add('active');
+    };
+    document.getElementById('attachBtn').onclick = function() {
+        attachScreen = 'main';
+        selectedImages = [];
+        renderAttachMain();
+        document.getElementById('attachModal').classList.add('active');
+    };
+    document.getElementById('sendBtn').onclick = async function() {
         const text = document.getElementById('messageInput').value;
         if (selectedImages.length) {
             await sendMessageOptimistic(text, [...selectedImages]);
@@ -884,7 +892,9 @@
             document.getElementById('messageInput').value = '';
         }
     };
-    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
+    document.getElementById('settingsBtn').onclick = function() {
+        window.location.href = 'settings.html';
+    };
 </script>
 </body>
 </html>
