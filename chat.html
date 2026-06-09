@@ -244,7 +244,6 @@
             color: #ccc;
             margin-left: 0.5rem;
         }
-        /* ОПРОСЫ */
         .poll-container {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 20px;
@@ -370,7 +369,6 @@
         }
         .text-input::placeholder { color: #555; }
 
-        /* АУДИО ЗАПИСЬ */
         .audio-recorder-overlay {
             position: fixed;
             top: 0;
@@ -445,7 +443,6 @@
             font-family: monospace;
             letter-spacing: 2px;
         }
-
         .audio-preview {
             display: none;
             align-items: center;
@@ -483,7 +480,6 @@
             cursor: pointer;
             font-size: 1rem;
         }
-
         .context-menu {
             position: fixed;
             background: rgba(30, 40, 50, 0.95);
@@ -506,7 +502,6 @@
             cursor: pointer;
         }
         .context-menu button:hover { background: rgba(255,255,255,0.3); }
-
         .media-viewer {
             position: fixed;
             top: 0;
@@ -560,8 +555,6 @@
             align-items: center;
             justify-content: center;
         }
-
-        /* МОДАЛКА УДАЛЕНИЯ (отдельная, по центру) */
         .delete-modal-overlay {
             position: fixed;
             top: 0;
@@ -635,7 +628,6 @@
         .delete-buttons button:hover { background: rgba(255,255,255,0.3); transform: scale(1.02); }
         .delete-buttons button.confirm { background: #e94560; }
         .delete-buttons button.confirm:hover { background: #ff5a7a; }
-
         .modal-sheet {
             position: absolute;
             bottom: 60px;
@@ -814,7 +806,6 @@
     </style>
 </head>
 <body>
-
 <div class="chat-main-container">
     <div class="members-panel">
         <div class="members-header">👥 Участники 5А</div>
@@ -827,11 +818,7 @@
         </div>
         <div class="messages-area" id="messagesArea"></div>
         <div class="input-panel">
-            <div class="reply-bar" id="replyBar">
-                <span>💬 Ответ:</span>
-                <div class="reply-content" id="replyContent"></div>
-                <button class="cancel-reply" id="cancelReplyBtn">✖</button>
-            </div>
+            <div class="reply-bar" id="replyBar"><span>💬 Ответ:</span><div class="reply-content" id="replyContent"></div><button class="cancel-reply" id="cancelReplyBtn">✖</button></div>
             <div class="input-row">
                 <div class="audio-preview" id="audioPreview">
                     <button class="audio-preview-play" id="audioPreviewPlay">▶️</button>
@@ -844,52 +831,14 @@
                 <button class="icon-button" id="sendBtn">➤</button>
             </div>
         </div>
-
-        <div id="audioRecorderOverlay" class="audio-recorder-overlay">
-            <div class="recorder-container">
-                <div class="waveform" id="waveform"></div>
-                <div class="recorder-timer" id="recorderTimer">0:00</div>
-                <button class="recorder-btn" id="recorderBtn">🎤 Удерживайте для записи</button>
-            </div>
-        </div>
-
-        <div id="stickerSheet" class="modal-sheet">
-            <div class="modal-handle" id="stickerHandle"></div>
-            <div class="modal-content-inner" id="stickerModalContent"></div>
-        </div>
-
-        <div id="attachSheet" class="modal-sheet">
-            <div class="modal-handle" id="attachHandle"></div>
-            <div class="modal-content-inner" id="attachModalContent"></div>
-        </div>
-
-        <div id="seenSheet" class="modal-sheet">
-            <div class="modal-handle" id="seenHandle"></div>
-            <div class="modal-content-inner" id="seenModalContent"></div>
-        </div>
-
-        <!-- НОВАЯ МОДАЛКА УДАЛЕНИЯ -->
-        <div id="deleteModalOverlay" class="delete-modal-overlay">
-            <div class="delete-modal">
-                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
-                <div class="delete-content-preview" id="deletePreview"></div>
-                <div class="delete-buttons">
-                    <button id="cancelDeleteModalBtn">Отмена</button>
-                    <button id="confirmDeleteModalBtn" class="confirm">Удалить</button>
-                </div>
-            </div>
-        </div>
+        <div id="audioRecorderOverlay" class="audio-recorder-overlay"><div class="recorder-container"><div class="waveform" id="waveform"></div><div class="recorder-timer" id="recorderTimer">0:00</div><button class="recorder-btn" id="recorderBtn">🎤 Удерживайте для записи</button></div></div>
+        <div id="stickerSheet" class="modal-sheet"><div class="modal-handle" id="stickerHandle"></div><div class="modal-content-inner" id="stickerModalContent"></div></div>
+        <div id="attachSheet" class="modal-sheet"><div class="modal-handle" id="attachHandle"></div><div class="modal-content-inner" id="attachModalContent"></div></div>
+        <div id="seenSheet" class="modal-sheet"><div class="modal-handle" id="seenHandle"></div><div class="modal-content-inner" id="seenModalContent"></div></div>
+        <div id="deleteModalOverlay" class="delete-modal-overlay"><div class="delete-modal"><p>🗑️ Вы действительно хотите удалить сообщение?</p><div class="delete-content-preview" id="deletePreview"></div><div class="delete-buttons"><button id="cancelDeleteModalBtn">Отмена</button><button id="confirmDeleteModalBtn" class="confirm">Удалить</button></div></div></div>
     </div>
 </div>
-
-<div id="mediaViewer" class="media-viewer">
-    <div class="media-viewer-content">
-        <button class="media-viewer-close" id="mediaViewerClose">✕</button>
-        <img id="mediaViewerImg" src="" style="display: none;">
-        <video id="mediaViewerVideo" src="" controls style="display: none;"></video>
-    </div>
-</div>
-
+<div id="mediaViewer" class="media-viewer"><div class="media-viewer-content"><button class="media-viewer-close" id="mediaViewerClose">✕</button><img id="mediaViewerImg" src="" style="display: none;"><video id="mediaViewerVideo" src="" controls style="display: none;"></video></div></div>
 <script src="js/firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -898,832 +847,59 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    let currentUser = null;
-    let messagesUnsub = null;
-    const CHAT_PATH = 'class5a_chat';
-    const usersCache = new Map();
-    let selectedMedia = [];
-    let attachScreen = 'main';
-    let pendingMessages = new Map();
-    let pendingDeleteId = null;
-    let pendingDeleteContent = '';
-    let onlineInterval = null;
-    let replyToMsg = null;
-    let contextMenu = null;
-    
-    // АУДИО ЗАПИСЬ
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let isRecording = false;
-    let recordingStartTime = null;
-    let audioTimer = null;
-    let audioData = null;
-    let audioWaveInterval = null;
-    let audioContext = null;
-    let audioSource = null;
-    let audioAnalyser = null;
-    
-    // ОПРОСЫ
+    let currentUser = null, messagesUnsub = null, CHAT_PATH = 'class5a_chat', usersCache = new Map();
+    let selectedMedia = [], attachScreen = 'main', pendingMessages = new Map(), pendingDeleteId = null;
+    let onlineInterval = null, replyToMsg = null, contextMenu = null;
+    let mediaRecorder = null, audioChunks = [], isRecording = false, recordingStartTime = null, audioTimer = null, audioData = null, audioWaveInterval = null, audioContext = null, audioSource = null, audioAnalyser = null;
     let pollData = { title: '', options: [''], correctOption: null };
     
-    // УДАЛЕНИЕ
-    function showDeleteModal(msgId, contentPreview) {
-        pendingDeleteId = msgId;
-        document.getElementById('deletePreview').innerHTML = contentPreview;
-        document.getElementById('deleteModalOverlay').classList.add('active');
-    }
-    
-    function closeDeleteModal() {
-        document.getElementById('deleteModalOverlay').classList.remove('active');
-        pendingDeleteId = null;
-    }
-    
-    async function confirmDelete() {
-        if (!pendingDeleteId) return;
-        const docRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDeleteId);
-        const doc = await docRef.get();
-        if (!doc.exists) return;
-        const msg = doc.data();
-        const isMine = msg.uid === currentUser.uid;
-        let canDelete = isMine;
-        if (!isMine) {
-            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
-            if (password === 'КИКИ99СССР') canDelete = true;
-            else alert('Неверный пароль!');
-        }
-        if (canDelete) {
-            await docRef.delete();
-        }
-        closeDeleteModal();
-    }
-    
-    function startRecordingFromSheet() {
-        if (isRecording) return;
-        navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(stream => {
-                audioContext = new AudioContext();
-                audioSource = audioContext.createMediaStreamSource(stream);
-                audioAnalyser = audioContext.createAnalyser();
-                audioAnalyser.fftSize = 256;
-                audioSource.connect(audioAnalyser);
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
-                mediaRecorder.onstop = () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        audioData = reader.result;
-                        showAudioPreview();
-                    };
-                    reader.readAsDataURL(audioBlob);
-                    stream.getTracks().forEach(track => track.stop());
-                    if (audioContext) audioContext.close();
-                };
-                mediaRecorder.start(100);
-                isRecording = true;
-                recordingStartTime = Date.now();
-                const overlay = document.getElementById('audioRecorderOverlay');
-                const recorderBtn = document.getElementById('recorderBtn');
-                const timerDiv = document.getElementById('recorderTimer');
-                const waveformDiv = document.getElementById('waveform');
-                overlay.classList.add('active');
-                recorderBtn.classList.add('recording');
-                recorderBtn.innerHTML = '⏹ Отпустите для отправки';
-                if (audioTimer) clearInterval(audioTimer);
-                audioTimer = setInterval(() => {
-                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
-                    const minutes = Math.floor(elapsed / 60);
-                    const seconds = elapsed % 60;
-                    timerDiv.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                }, 100);
-                if (audioWaveInterval) clearInterval(audioWaveInterval);
-                audioWaveInterval = setInterval(() => {
-                    if (!audioAnalyser || !isRecording) return;
-                    const dataArray = new Uint8Array(audioAnalyser.frequencyBinCount);
-                    audioAnalyser.getByteFrequencyData(dataArray);
-                    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-                    waveformDiv.innerHTML = '';
-                    for (let i = 0; i < 40; i++) {
-                        const bar = document.createElement('div');
-                        bar.className = 'waveform-bar';
-                        const randomHeight = Math.max(10, Math.min(80, 15 + (average / 4) + Math.random() * 15));
-                        bar.style.height = randomHeight + 'px';
-                        bar.style.opacity = 0.6 + (average / 255) * 0.4;
-                        waveformDiv.appendChild(bar);
-                    }
-                }, 50);
-            })
-            .catch(err => { console.error(err); alert('Нет доступа к микрофону'); });
-    }
-    
-    function stopRecordingFromSheet() {
-        if (!isRecording || !mediaRecorder) return;
-        mediaRecorder.stop();
-        isRecording = false;
-        if (audioTimer) clearInterval(audioTimer);
-        if (audioWaveInterval) clearInterval(audioWaveInterval);
-        const overlay = document.getElementById('audioRecorderOverlay');
-        const recorderBtn = document.getElementById('recorderBtn');
-        overlay.classList.remove('active');
-        recorderBtn.classList.remove('recording');
-        recorderBtn.innerHTML = '🎤 Удерживайте для записи';
-        document.getElementById('recorderTimer').textContent = '0:00';
-        document.getElementById('waveform').innerHTML = '';
-    }
-    
-    function showAudioPreview() {
-        const preview = document.getElementById('audioPreview');
-        const waveContainer = document.getElementById('audioPreviewWave');
-        waveContainer.innerHTML = '';
-        for (let i = 0; i < 25; i++) {
-            const bar = document.createElement('div');
-            bar.className = 'audio-preview-wave-bar';
-            bar.style.height = (5 + Math.random() * 18) + 'px';
-            waveContainer.appendChild(bar);
-        }
-        preview.classList.add('active');
-        let isPlaying = false, audio = null;
-        const playBtn = document.getElementById('audioPreviewPlay');
-        playBtn.onclick = () => {
-            if (isPlaying && audio) { audio.pause(); isPlaying = false; playBtn.textContent = '▶️'; }
-            else {
-                if (audio) audio.play();
-                else {
-                    audio = new Audio(audioData);
-                    audio.onended = () => { isPlaying = false; playBtn.textContent = '▶️'; };
-                    audio.play();
-                }
-                isPlaying = true;
-                playBtn.textContent = '⏸';
-            }
-        };
-        document.getElementById('audioPreviewDelete').onclick = () => {
-            if (audio) audio.pause();
-            audioData = null;
-            preview.classList.remove('active');
-        };
-    }
-    
-    function getAudioPreviewData() { return audioData; }
-    function clearAudioPreview() { audioData = null; document.getElementById('audioPreview').classList.remove('active'); }
-    
-    // СОЗДАНИЕ ОПРОСА
-    function createPoll() {
-        pollData = { title: '', options: [''], correctOption: null };
-        renderPollCreator();
-    }
-    
-    function renderPollCreator() {
-        const container = document.getElementById('attachModalContent');
-        if (!container) return;
-        let optionsHtml = '';
-        for (let i = 0; i < pollData.options.length; i++) {
-            optionsHtml += `<div style="margin-bottom:0.5rem;"><input type="text" class="poll-option-input" data-index="${i}" value="${escapeHtml(pollData.options[i])}" placeholder="Вариант ответа ${i+1}" style="width:100%; padding:0.5rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>`;
-        }
-        container.innerHTML = `
-            <div class="modal-title">📊 Создать опрос</div>
-            <div style="margin-bottom:1rem;"><input type="text" id="pollTitle" value="${escapeHtml(pollData.title)}" placeholder="Заголовок опроса..." style="width:100%; padding:0.7rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>
-            <div id="pollOptionsContainer">${optionsHtml}</div>
-            <button id="addPollOptionBtn" class="full-width-btn" style="margin-bottom:0.5rem;">➕ Добавить вариант ответа</button>
-            <button id="setCorrectPollBtn" class="full-width-btn" style="margin-bottom:0.5rem; ${pollData.correctOption !== null ? 'background:#4ade80; color:#000;' : ''}">🎯 ${pollData.correctOption !== null ? 'Правильный ответ выбран' : 'Выбрать правильный ответ'}</button>
-            <div style="display:flex; gap:0.5rem; margin-top:1rem;"><button id="backFromPollBtn" class="close-btn" style="background:#555;">← Назад</button><button id="sendPollBtn" class="close-btn">📤 Отправить опрос</button></div>
-        `;
-        document.querySelectorAll('.poll-option-input').forEach(inp => {
-            inp.addEventListener('change', (e) => { pollData.options[parseInt(inp.dataset.index)] = inp.value; });
-        });
-        document.getElementById('pollTitle').addEventListener('change', (e) => { pollData.title = e.target.value; });
-        document.getElementById('addPollOptionBtn').onclick = () => { pollData.options.push(''); renderPollCreator(); };
-        document.getElementById('setCorrectPollBtn').onclick = () => {
-            if (pollData.correctOption !== null) { pollData.correctOption = null; renderPollCreator(); return; }
-            container.innerHTML = `<div class="modal-title">🎯 Выберите правильный ответ</div>${pollData.options.map((opt, idx) => `<div class="poll-option" data-opt-index="${idx}" style="background:rgba(255,255,255,0.1); margin:0.5rem 0; padding:0.7rem; border-radius:40px; cursor:pointer;">${escapeHtml(opt)}</div>`).join('')}<button id="cancelCorrectBtn" class="close-btn" style="background:#555; margin-top:1rem;">Отмена</button>`;
-            document.querySelectorAll('[data-opt-index]').forEach(opt => { opt.onclick = () => { pollData.correctOption = parseInt(opt.dataset.optIndex); renderPollCreator(); }; });
-            document.getElementById('cancelCorrectBtn').onclick = () => renderPollCreator();
-        };
-        document.getElementById('backFromPollBtn').onclick = () => { attachScreen = 'main'; renderAttachMain(); };
-        document.getElementById('sendPollBtn').onclick = async () => {
-            if (!pollData.title.trim()) { alert('Введите заголовок опроса'); return; }
-            const validOptions = pollData.options.filter(opt => opt.trim());
-            if (validOptions.length < 2) { alert('Добавьте минимум 2 варианта ответа'); return; }
-            pollData.options = validOptions;
-            await sendMessageOptimistic('', null, null, null, null, null, {
-                type: 'poll',
-                title: pollData.title,
-                options: pollData.options,
-                correctOption: pollData.correctOption,
-                votes: {}
-            });
-            closeModal('attachSheet');
-            pollData = { title: '', options: [''], correctOption: null };
-        };
-    }
-    
-    async function votePoll(pollId, optionIndex) {
-        const pollRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pollId);
-        const doc = await pollRef.get();
-        const poll = doc.data();
-        if (!poll || poll.type !== 'poll') return;
-        let votes = poll.votes || {};
-        let userVote = null;
-        for (let [uid, optIdx] of Object.entries(votes)) if (uid === currentUser.uid) userVote = optIdx;
-        if (userVote === optionIndex) return;
-        if (userVote !== null) delete votes[currentUser.uid];
-        votes[currentUser.uid] = optionIndex;
-        await pollRef.update({ votes: votes });
-    }
-    
-    function showPollVoters(poll, optionIndex) {
-        const votes = poll.votes || {};
-        const voters = [];
-        for (let [uid, optIdx] of Object.entries(votes)) if (optIdx === optionIndex) voters.push(uid);
-        const container = document.getElementById('seenModalContent');
-        if (!container) return;
-        Promise.all(voters.map(uid => getUserData(uid))).then(users => {
-            container.innerHTML = `<div class="modal-title">👥 Проголосовали (${voters.length})</div><div class="seen-modal-list">${users.map(u => `<div class="seen-item"><div class="seen-avatar">${getAvatarHtml(u.avatarBase64, u.name)}</div><span>${u.name || 'Ученик'}</span></div>`).join('')}</div><button class="close-btn" id="pollVotersCloseBtn">Закрыть</button>`;
-            document.getElementById('pollVotersCloseBtn').onclick = () => closeModal('seenSheet');
-            openModal('seenSheet');
-        });
-    }
-    
-    // ОСНОВНЫЕ ФУНКЦИИ ЧАТА
-    function formatDateLabel(date) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        if (msgDate.getTime() === today.getTime()) return 'Сегодня';
-        if (msgDate.getTime() === yesterday.getTime()) return 'Вчера';
-        return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
-    }
-    
-    function getAvatarHtml(avatarBase64, name) {
-        if (avatarBase64 && avatarBase64.startsWith('data:image')) return `<img src="${avatarBase64}" style="width:100%; height:100%; object-fit:cover;">`;
-        return (name?.charAt(0) || '?').toUpperCase();
-    }
-    
-    async function getUserData(uid) {
-        if (usersCache.has(uid)) return usersCache.get(uid);
-        const doc = await db.collection('users').doc(uid).get();
-        const data = doc.data() || { name: 'Ученик', avatarBase64: null };
-        usersCache.set(uid, data);
-        return data;
-    }
-    
-    auth.onAuthStateChanged(async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
-        currentUser = user;
-        if (onlineInterval) clearInterval(onlineInterval);
-        const updateStatus = async () => { await db.collection('status').doc(user.uid).set({ online: true, name: user.displayName || 'Ученик', lastSeen: new Date() }, { merge: true }); };
-        await updateStatus();
-        onlineInterval = setInterval(updateStatus, 30000);
-        loadMessages();
-        loadMembers();
-        window.addEventListener('beforeunload', () => { clearInterval(onlineInterval); db.collection('status').doc(user.uid).set({ online: false, lastSeen: new Date() }, { merge: true }); });
-    });
-    
-    async function markAsSeen(msgId) {
-        const msgRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId);
-        await msgRef.update({ seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-    }
-    
-    function closeModal(sheetId) {
-        const sheet = document.getElementById(sheetId);
-        if (!sheet) return;
-        sheet.classList.remove('active');
-        setTimeout(() => { sheet.style.display = 'none'; }, 300);
-    }
-    
-    function openModal(sheetId) {
-        const sheet = document.getElementById(sheetId);
-        if (!sheet) return;
-        sheet.style.display = 'block';
-        setTimeout(() => sheet.classList.add('active'), 10);
-    }
-    
-    function initSwipeClose(sheetId, handleId) {
-        const sheet = document.getElementById(sheetId);
-        const handle = document.getElementById(handleId);
-        if (!sheet || !handle) return;
-        let startY = 0, startTransform = 0, dragging = false;
-        const onTouchStart = (e) => { startY = e.touches[0].clientY; const transform = sheet.style.transform; if (transform && transform.includes('translateY')) startTransform = parseFloat(transform.match(/translateY\(([-\d]+)px\)/)?.[1] || 0); dragging = true; };
-        const onTouchMove = (e) => { if (!dragging) return; const delta = e.touches[0].clientY - startY; if (delta > 0) sheet.style.transform = `translateY(${startTransform + delta}px)`; };
-        const onTouchEnd = (e) => { if (!dragging) return; const delta = e.changedTouches[0].clientY - startY; if (delta > 60) closeModal(sheetId); sheet.style.transform = ''; dragging = false; };
-        handle.addEventListener('touchstart', onTouchStart);
-        handle.addEventListener('touchmove', onTouchMove);
-        handle.addEventListener('touchend', onTouchEnd);
-        let mouseDown = false, mouseStartY = 0;
-        handle.addEventListener('mousedown', (e) => { mouseDown = true; mouseStartY = e.clientY; e.preventDefault(); });
-        window.addEventListener('mousemove', (e) => { if (!mouseDown) return; const delta = e.clientY - mouseStartY; if (delta > 0) sheet.style.transform = `translateY(${delta}px)`; });
-        window.addEventListener('mouseup', (e) => { if (!mouseDown) return; const delta = e.clientY - mouseStartY; if (delta > 60) closeModal(sheetId); sheet.style.transform = ''; mouseDown = false; });
-    }
-    
-    function scrollToMessage(msgId) {
-        const messageElement = document.getElementById(msgId);
-        if (!messageElement) return;
-        messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        messageElement.classList.add('highlight');
-        setTimeout(() => messageElement.classList.remove('highlight'), 1000);
-    }
-    
-    function showMediaViewer(url, type, event) {
-        const viewer = document.getElementById('mediaViewer');
-        const img = document.getElementById('mediaViewerImg');
-        const video = document.getElementById('mediaViewerVideo');
-        const content = document.querySelector('.media-viewer-content');
-        let startRect = null;
-        if (event && event.target) startRect = event.target.getBoundingClientRect();
-        img.style.display = 'none';
-        video.style.display = 'none';
-        if (type === 'image') { img.src = url; img.style.display = 'block'; }
-        else { video.src = url; video.style.display = 'block'; video.load(); }
-        viewer.classList.add('active');
-        if (startRect) { content.style.transform = `translate(${startRect.left + startRect.width/2 - window.innerWidth/2}px, ${startRect.top + startRect.height/2 - window.innerHeight/2}px) scale(${startRect.width / 300})`; content.style.opacity = '0'; setTimeout(() => { content.style.transform = ''; content.style.opacity = ''; }, 10); }
-    }
-    
-    function closeMediaViewer() {
-        const viewer = document.getElementById('mediaViewer');
-        const video = document.getElementById('mediaViewerVideo');
-        const content = document.querySelector('.media-viewer-content');
-        content.style.transform = 'scale(0.8)';
-        content.style.opacity = '0';
-        setTimeout(() => { viewer.classList.remove('active'); video.pause(); video.src = ''; content.style.transform = ''; content.style.opacity = ''; }, 250);
-    }
-    
-    function showContextMenu(x, y, msgData) {
-        if (contextMenu) contextMenu.remove();
-        contextMenu = document.createElement('div');
-        contextMenu.className = 'context-menu';
-        contextMenu.style.left = x + 'px';
-        contextMenu.style.top = (y + 45) + 'px';
-        const replyBtn = document.createElement('button');
-        replyBtn.innerHTML = '💬 Ответить';
-        replyBtn.onclick = () => { showReplyBar(msgData); contextMenu.remove(); contextMenu = null; };
-        const copyBtn = document.createElement('button');
-        copyBtn.innerHTML = '📋 Копировать';
-        copyBtn.onclick = () => {
-            let textToCopy = msgData.text || '';
-            if (msgData.images?.length) textToCopy = `📷 ${msgData.images.length} фото`;
-            if (msgData.videos?.length) textToCopy = `🎥 ${msgData.videos.length} видео`;
-            if (msgData.audio) textToCopy = `🎤 Голосовое сообщение`;
-            if (msgData.sticker) textToCopy = `😊 Стикер`;
-            if (msgData.type === 'poll') textToCopy = `📊 Опрос: ${msgData.title}`;
-            navigator.clipboard.writeText(textToCopy);
-            const toast = document.createElement('div');
-            toast.textContent = '✅ Скопировано!';
-            toast.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:0.5rem 1rem; border-radius:40px; font-size:0.8rem; z-index:1001;';
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 1500);
-            contextMenu.remove(); contextMenu = null;
-        };
-        contextMenu.appendChild(replyBtn);
-        contextMenu.appendChild(copyBtn);
-        document.body.appendChild(contextMenu);
-        const closeHandler = (e) => { if (!contextMenu?.contains(e.target)) { contextMenu?.remove(); contextMenu = null; document.removeEventListener('click', closeHandler); document.removeEventListener('contextmenu', closeHandler); } };
-        setTimeout(() => { document.addEventListener('click', closeHandler); document.addEventListener('contextmenu', closeHandler); }, 10);
-    }
-    
-    function showReplyBar(msg) {
-        replyToMsg = msg;
-        const replyBar = document.getElementById('replyBar');
-        const replyContent = document.getElementById('replyContent');
-        let previewText = msg.text || '';
-        if (msg.images?.length) previewText = `📷 ${msg.images.length} фото`;
-        if (msg.videos?.length) previewText = `🎥 ${msg.videos.length} видео`;
-        if (msg.audio) previewText = `🎤 Голосовое`;
-        if (msg.sticker) previewText = `😊 Стикер`;
-        if (msg.type === 'poll') previewText = `📊 Опрос: ${msg.title}`;
-        replyContent.innerHTML = `<strong>${msg.name || 'Ученик'}</strong>: ${previewText.substring(0, 50)}`;
-        replyBar.classList.add('active');
-        document.getElementById('messageInput').focus();
-    }
-    
-    function cancelReply() { replyToMsg = null; document.getElementById('replyBar').classList.remove('active'); }
-    
-    function loadMessages() {
-        if (messagesUnsub) messagesUnsub();
-        messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
-            const messages = [];
-            for (const doc of snap.docs) messages.push({ id: doc.id, ...doc.data() });
-            let lastDate = null;
-            const container = document.getElementById('messagesArea');
-            container.innerHTML = '';
-            for (const m of messages) {
-                const msgDate = m.createdAt?.toDate();
-                if (msgDate) {
-                    const dateLabel = formatDateLabel(msgDate);
-                    if (dateLabel !== lastDate) {
-                        const divider = document.createElement('div');
-                        divider.className = 'date-divider';
-                        divider.innerHTML = `<div class="date-badge">${dateLabel}</div>`;
-                        container.appendChild(divider);
-                        lastDate = dateLabel;
-                    }
-                }
-                const mine = m.uid === currentUser?.uid;
-                const userData = await getUserData(m.uid);
-                const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name || m.name);
-                
-                let replyHtml = '';
-                let replyToId = null;
-                if (m.replyTo) {
-                    replyToId = m.replyTo.id;
-                    const repliedUserName = m.replyTo.name || 'Пользователь';
-                    let repliedText = m.replyTo.text || '';
-                    if (m.replyTo.images?.length) repliedText = `📷 фото`;
-                    if (m.replyTo.videos?.length) repliedText = `🎥 видео`;
-                    if (m.replyTo.audio) repliedText = `🎤 голосовое`;
-                    if (m.replyTo.sticker) repliedText = `😊 Стикер`;
-                    if (m.replyTo.type === 'poll') repliedText = `📊 опрос`;
-                    replyHtml = `<div class="reply-preview" data-reply-to-id="${replyToId}"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
-                }
-                
-                let mediaHtml = '';
-                // Фото
-                if (m.images?.length) {
-                    mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-                    for (let img of m.images) mediaHtml += `<img src="${img}" class="clickable-media" data-type="image" data-url="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; cursor:pointer;">`;
-                    mediaHtml += `</div>`;
-                }
-                // Видео (ссылки YouTube/Rutube)
-                const videoUrlMatch = m.text?.match(/(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|rutube\.ru)\/[\w\/\-?=&]+/);
-                if (videoUrlMatch) {
-                    let embedUrl = '';
-                    if (videoUrlMatch[0].includes('youtube') || videoUrlMatch[0].includes('youtu.be')) {
-                        let videoId = videoUrlMatch[0].split('v=')[1]?.split('&')[0] || videoUrlMatch[0].split('/').pop();
-                        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-                    } else if (videoUrlMatch[0].includes('rutube')) {
-                        embedUrl = videoUrlMatch[0];
-                    }
-                    mediaHtml = `<div style="margin-top:8px;"><iframe src="${embedUrl}" style="width:280px; max-width:100%; height:180px; border-radius:16px; border:none;" allowfullscreen></iframe></div>`;
-                }
-                // Голосовые
-                if (m.audio) {
-                    mediaHtml += `<div class="audio-player" data-audio-url="${m.audio}"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${m.audioDuration || '0:00'}</span></div>`;
-                }
-                // Стикеры
-                if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px; cursor:pointer;" class="clickable-media" data-type="image" data-url="${m.sticker}">`;
-                // Опросы
-                if (m.type === 'poll') {
-                    const votes = m.votes || {};
-                    const totalVotes = Object.keys(votes).length;
-                    const userVote = votes[currentUser.uid];
-                    const hasCorrect = m.correctOption !== null && m.correctOption !== undefined;
-                    let optionsHtml = '';
-                    for (let i = 0; i < m.options.length; i++) {
-                        const opt = m.options[i];
-                        const count = Object.values(votes).filter(v => v === i).length;
-                        const percent = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                        let optClass = 'poll-option';
-                        if (hasCorrect) {
-                            if (i === m.correctOption) optClass += ' correct';
-                            if (userVote === i && i !== m.correctOption) optClass += ' wrong-selected';
-                        } else if (userVote === i) optClass += ' selected';
-                        optionsHtml += `<div class="${optClass}" data-poll-id="${m.id}" data-poll-opt="${i}"><div style="display:flex; align-items:center; gap:0.5rem; flex:1;"><span class="poll-icon">${userVote === i ? (hasCorrect && i === m.correctOption ? '✅' : '🔘') : '◯'}</span><span>${escapeHtml(opt)}</span></div><div style="display:flex; align-items:center; gap:0.5rem;"><span class="poll-option-count">${count} (${percent}%)</span><button class="poll-voters-btn" data-poll-id="${m.id}" data-poll-opt="${i}" style="background:none; border:none; color:#aaa; cursor:pointer;">👥</button></div></div>`;
-                    }
-                    mediaHtml = `<div class="poll-container"><div class="poll-title">📊 ${escapeHtml(m.title)}</div>${optionsHtml}<div class="poll-total">Всего голосов: ${totalVotes}</div></div>`;
-                }
-                
-                const seenCount = (m.seenBy || []).filter(uid => uid !== m.uid).length;
-                const statusHtml = seenCount > 0 ? '<span class="delivered">✅✅</span>' : '<span class="sent">⌛</span>';
-                const div = document.createElement('div');
-                div.className = `message ${mine ? 'mine' : ''}`;
-                div.id = m.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
-                container.appendChild(div);
-                
-                // Обработчики
-                div.querySelectorAll('.audio-player').forEach(player => {
-                    const audioUrl = player.getAttribute('data-audio-url');
-                    const playBtn = player.querySelector('.audio-play-btn');
-                    const waveContainer = player.querySelector('.audio-wave');
-                    let isPlaying = false, audio = null;
-                    for (let i = 0; i < 20; i++) { const bar = document.createElement('div'); bar.className = 'audio-wave-bar'; bar.style.height = (5 + Math.random() * 15) + 'px'; waveContainer.appendChild(bar); }
-                    playBtn.addEventListener('click', () => {
-                        if (isPlaying && audio) { audio.pause(); isPlaying = false; playBtn.textContent = '▶️'; }
-                        else {
-                            if (audio) audio.play();
-                            else { audio = new Audio(audioUrl); audio.onended = () => { isPlaying = false; playBtn.textContent = '▶️'; }; audio.play(); }
-                            isPlaying = true; playBtn.textContent = '⏸';
-                        }
-                    });
-                });
-                div.querySelectorAll('.clickable-media').forEach(el => {
-                    el.addEventListener('click', (e) => { e.stopPropagation(); const type = el.getAttribute('data-type'); const url = el.getAttribute('data-url'); showMediaViewer(url, type, e); });
-                });
-                // Опросы
-                div.querySelectorAll(`.poll-option[data-poll-id="${m.id}"]`).forEach(opt => {
-                    opt.addEventListener('click', (e) => { if (e.target.classList.contains('poll-voters-btn')) return; votePoll(m.id, parseInt(opt.dataset.pollOpt)); });
-                });
-                div.querySelectorAll(`.poll-voters-btn[data-poll-id="${m.id}"]`).forEach(btn => {
-                    btn.addEventListener('click', (e) => { e.stopPropagation(); showPollVoters(m, parseInt(btn.dataset.pollOpt)); });
-                });
-                const replyBlock = div.querySelector('.reply-preview');
-                if (replyBlock && replyToId) replyBlock.addEventListener('click', (e) => { e.stopPropagation(); scrollToMessage(replyToId); });
-                div.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); showContextMenu(e.clientX, e.clientY, { id: m.id, text: m.text || '', name: userData.name || m.name, uid: m.uid, images: m.images, videos: m.videos, audio: m.audio, sticker: m.sticker, type: m.type, title: m.title }); });
-                let pressTimer;
-                div.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { const touch = e.touches[0]; showContextMenu(touch.clientX, touch.clientY, { id: m.id, text: m.text || '', name: userData.name || m.name, uid: m.uid, images: m.images, videos: m.videos, audio: m.audio, sticker: m.sticker, type: m.type, title: m.title }); }, 500); });
-                div.addEventListener('touchend', () => clearTimeout(pressTimer));
-                div.addEventListener('touchmove', () => clearTimeout(pressTimer));
-                
-                // КНОПКА УДАЛЕНИЯ
-                const deleteBtn = div.querySelector('.delete-btn');
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const msgId = deleteBtn.getAttribute('data-msg-id');
-                        const msgText = deleteBtn.getAttribute('data-msg-text');
-                        let previewHtml = `<div>${escapeHtml(msgText)}</div>`;
-                        if (m.images && m.images.length) {
-                            previewHtml = `<div><img src="${m.images[0]}" style="max-width:120px; border-radius:12px;"><br>${m.images.length} фото</div>`;
-                        }
-                        if (m.videos && m.videos.length) {
-                            previewHtml = `<div>🎥 Видео (${m.videos.length})</div>`;
-                        }
-                        if (m.audio) {
-                            previewHtml = `<div>🎤 Голосовое сообщение</div>`;
-                        }
-                        if (m.sticker) {
-                            previewHtml = `<div>😊 Стикер</div>`;
-                        }
-                        if (m.type === 'poll') {
-                            previewHtml = `<div>📊 Опрос: ${escapeHtml(m.title)}</div>`;
-                        }
-                        showDeleteModal(m.id, previewHtml);
-                    });
-                }
-                
-                div.querySelector('.seen-btn')?.addEventListener('click', async (e) => {
-                    const users = [];
-                    for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) { const userData = await getUserData(uid); users.push(userData.name || 'Ученик'); }
-                    document.getElementById('seenModalContent').innerHTML = `<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list">${users.map(u => `<div class="seen-item"><div class="seen-avatar">${u.charAt(0)}</div><span>${u}</span></div>`).join('')}</div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`;
-                    document.getElementById('seenCloseBtn').onclick = () => closeModal('seenSheet');
-                    openModal('seenSheet');
-                });
-            }
-            
-            for (let [tempId, pending] of pendingMessages.entries()) {
-                if (!document.getElementById(tempId)) {
-                    const userData = await getUserData(currentUser.uid);
-                    const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                    let mediaHtml = '';
-                    if (pending.images?.length) {
-                        mediaHtml = `<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">`;
-                        for (let img of pending.images) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden;"><img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; filter: brightness(0.5) blur(4px);"><div class="spinner"></div></div>`;
-                        mediaHtml += `</div>`;
-                    }
-                    if (pending.videos?.length) {
-                        for (let i = 0; i < pending.videos.length; i++) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:280px; max-width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; margin-top:8px;"><div class="spinner"></div></div>`;
-                    }
-                    if (pending.audio) mediaHtml += `<div class="audio-player"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${pending.audioDuration || '0:00'}</span></div>`;
-                    const div = document.createElement('div');
-                    div.className = 'message mine';
-                    div.id = tempId;
-                    div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble"><div class="msg-name">${userData.name || currentUser.displayName || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${pending.text || ''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span>${pending.progress ? `<span class="progress-bar">${pending.progress}%</span>` : ''}</div></div><div class="msg-time">отправляется...</div></div>`;
-                    container.appendChild(div);
-                }
-            }
-            container.scrollTop = container.scrollHeight;
-            
-            for (const change of snap.docChanges()) {
-                const m = change.doc.data();
-                if (change.type === 'added' && m.uid !== currentUser.uid) {
-                    if (!m.seenBy || !m.seenBy.includes(currentUser.uid)) await markAsSeen(change.doc.id);
-                }
-            }
-        });
-    }
-    
-    async function loadMembers() {
-        db.collection('status').onSnapshot(async (snap) => {
-            const container = document.getElementById('membersList');
-            container.innerHTML = '';
-            for (const doc of snap.docs) {
-                const status = doc.data();
-                const userData = await getUserData(doc.id);
-                const avatarHtml = getAvatarHtml(userData.avatarBase64, userData.name);
-                const isOnline = status.online && (new Date() - (status.lastSeen?.toDate?.() || 0) < 60000);
-                const statusText = isOnline ? '🟢 Онлайн' : (status.lastSeen ? `⚫ Был(а) ${status.lastSeen.toDate().toLocaleTimeString()}` : '⚫ Офлайн');
-                container.innerHTML += `<li class="member-item"><div class="member-avatar">${avatarHtml}</div><div class="member-info"><div class="member-name">${userData.name || status.name || 'Ученик'}</div><div class="member-status ${isOnline ? 'online-status' : 'offline-status'}">${statusText}</div></div></li>`;
-            }
-        });
-    }
-    
-    async function sendMessageOptimistic(text, imagesArray, videosArray, audioDataUrl = null, audioDuration = null, stickerUrl = null, pollObject = null) {
-        const tempId = 'temp_' + Date.now() + '_' + Math.random();
-        const userData = await getUserData(currentUser.uid);
-        const replyData = replyToMsg ? {
-            id: replyToMsg.id,
-            text: replyToMsg.text || (replyToMsg.images ? '📷 Фото' : (replyToMsg.videos ? '🎥 Видео' : (replyToMsg.audio ? '🎤 Голосовое' : (replyToMsg.sticker ? '😊 Стикер' : (replyToMsg.type === 'poll' ? '📊 Опрос' : ''))))),
-            name: replyToMsg.name,
-            uid: replyToMsg.uid,
-            type: replyToMsg.type,
-            title: replyToMsg.title
-        } : null;
-        
-        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], videos: videosArray || [], audio: audioDataUrl, audioDuration: audioDuration, progress: 0 });
-        loadMessages();
-        
-        let progressInterval = null;
-        if (audioDataUrl || videosArray?.length || imagesArray?.length) {
-            let progress = 0;
-            progressInterval = setInterval(() => { if (progress < 95) { progress += 5; const pending = pendingMessages.get(tempId); if (pending) pending.progress = progress; } }, 100);
-        }
-        
-        try {
-            const msgData = {
-                text: text || '', images: imagesArray || [], videos: videosArray || [], audio: audioDataUrl, audioDuration: audioDuration, sticker: stickerUrl,
-                uid: currentUser.uid, name: userData.name || currentUser.displayName || 'Ученик',
-                seenBy: [currentUser.uid], createdAt: new Date(),
-                replyTo: replyData
-            };
-            if (pollObject) Object.assign(msgData, pollObject);
-            await db.collection('rooms').doc(CHAT_PATH).collection('messages').add(msgData);
-            if (progressInterval) clearInterval(progressInterval);
-            pendingMessages.delete(tempId);
-            cancelReply();
-            loadMessages();
-        } catch (err) {
-            console.error('Ошибка:', err);
-            if (progressInterval) clearInterval(progressInterval);
-            pendingMessages.delete(tempId);
-            loadMessages();
-            alert('Ошибка отправки: ' + (err.message || 'неизвестная ошибка'));
-        }
-    }
-    
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
-    
-    function renderStickerModal() {
-        const container = document.getElementById('stickerModalContent');
-        if (!container) return;
-        container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
-        const stickers = ['stickers/okay.gif'];
-        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-            img.onclick = (e) => { e.stopPropagation(); sendMessageOptimistic('', null, null, null, null, img.getAttribute('data-sticker-url')); closeModal('stickerSheet'); };
-        });
-        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerSheet'); };
-    }
-    
-    function renderAttachMain() {
-        const container = document.getElementById('attachModalContent');
-        if (!container) return;
-        container.innerHTML = `
-            <div class="modal-title">📎 Отправить</div>
-            <div class="attach-grid">
-                <div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div>
-                <div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div>
-                <div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div>
-                <div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div>
-                <div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div>
-                <div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div>
-            </div>
-            <button class="close-btn" id="attachModalCloseBtn">Закрыть</button>
-        `;
-        document.querySelectorAll('.attach-item').forEach(el => {
-            el.onclick = (e) => {
-                e.stopPropagation();
-                if (el.dataset.type === 'camera') { attachScreen = 'camera'; renderCameraScreen(); }
-                else if (el.dataset.type === 'video') { attachScreen = 'video'; renderVideoScreen(); }
-                else if (el.dataset.type === 'poll') { createPoll(); }
-                else if (el.dataset.type === 'voice') {
-                    startRecordingFromSheet();
-                    const overlay = document.getElementById('audioRecorderOverlay');
-                    const recorderBtn = document.getElementById('recorderBtn');
-                    const stopHandler = () => { stopRecordingFromSheet(); recorderBtn.removeEventListener('mouseup', stopHandler); recorderBtn.removeEventListener('touchend', stopHandler); overlay.removeEventListener('mouseleave', stopHandler); };
-                    recorderBtn.addEventListener('mouseup', stopHandler);
-                    recorderBtn.addEventListener('touchend', stopHandler);
-                    overlay.addEventListener('mouseleave', stopHandler);
-                } else alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-                closeModal('attachSheet');
-            };
-        });
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
-    }
-    
-    function renderCameraScreen() {
-        const container = document.getElementById('attachModalContent');
-        if (!container) return;
-        container.innerHTML = `<div class="attach-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><button class="back-btn" id="cameraBackBtn">← Назад</button><span class="modal-title">Снять фото</span><div style="width:50px;"></div></div><div id="photoGallery" class="photo-gallery"></div><div class="camera-actions"><button class="full-width-btn" id="openCameraBtn">📷 Сфотографировать</button><button class="full-width-btn" id="selectFromGalleryBtn">📁 Выбрать из галереи</button></div><button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>`;
-        renderMediaGallery();
-        document.getElementById('cameraBackBtn').onclick = () => { attachScreen = 'main'; renderAttachMain(); };
-        document.getElementById('openCameraBtn').onclick = () => showCameraModal('image');
-        document.getElementById('selectFromGalleryBtn').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'image/*'; input.multiple = true; input.onchange = (e) => { if (e.target.files) addFiles(e.target.files, 'image'); input.remove(); }; input.click(); };
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
-    }
-    
-    function renderVideoScreen() {
-        const container = document.getElementById('attachModalContent');
-        if (!container) return;
-        container.innerHTML = `<div class="attach-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><button class="back-btn" id="videoBackBtn">← Назад</button><span class="modal-title">Записать видео</span><div style="width:50px;"></div></div><div id="videoGallery" class="photo-gallery"></div><div class="camera-actions"><button class="full-width-btn" id="recordVideoBtn">🎥 Записать видео</button><button class="full-width-btn" id="selectVideoFromGalleryBtn">📁 Выбрать из галереи</button></div><button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>`;
-        renderMediaGallery();
-        document.getElementById('videoBackBtn').onclick = () => { attachScreen = 'main'; renderAttachMain(); };
-        document.getElementById('recordVideoBtn').onclick = () => showCameraModal('video');
-        document.getElementById('selectVideoFromGalleryBtn').onclick = () => { const input = document.createElement('input'); input.type = 'file'; input.accept = 'video/*'; input.multiple = true; input.onchange = (e) => { if (e.target.files) addFiles(e.target.files, 'video'); input.remove(); }; input.click(); };
-        document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
-    }
-    
-    function renderMediaGallery() {
-        const gallery = document.getElementById('photoGallery') || document.getElementById('videoGallery');
-        if (!gallery) return;
-        if (!selectedMedia.length) { gallery.innerHTML = '<div class="empty-photo">😕 Нет выбранных медиа</div>'; return; }
-        gallery.innerHTML = '';
-        for (let i = 0; i < selectedMedia.length; i++) {
-            const media = selectedMedia[i];
-            const div = document.createElement('div'); div.className = 'photo-item';
-            if (media.type === 'image') { const img = document.createElement('img'); img.src = media.data; div.appendChild(img); }
-            else { const video = document.createElement('video'); video.src = media.data; video.preload = 'metadata'; video.style.cssText = 'width:100%; aspect-ratio:1; object-fit:cover; border-radius:16px;'; div.appendChild(video); const badge = document.createElement('div'); badge.className = 'video-badge'; badge.textContent = '🎥'; div.appendChild(badge); }
-            const numberSpan = document.createElement('div'); numberSpan.className = 'photo-number'; numberSpan.textContent = i + 1;
-            div.appendChild(numberSpan);
-            div.onclick = () => { selectedMedia.splice(i, 1); renderMediaGallery(); };
-            gallery.appendChild(div);
-        }
-    }
-    
-    function addFiles(files, type) {
-        const newFiles = Array.from(files);
-        const remaining = 8 - selectedMedia.length;
-        const toAdd = newFiles.slice(0, remaining);
-        for (const file of toAdd) {
-            const reader = new FileReader();
-            reader.onload = (e) => { selectedMedia.push({ type: type, data: e.target.result }); renderMediaGallery(); };
-            reader.readAsDataURL(file);
-        }
-        if (newFiles.length > remaining) alert(`Можно выбрать до 8 медиафайлов. Добавлено ${remaining}.`);
-    }
-    
-    function showCameraModal(mediaType) {
-        const isVideo = mediaType === 'video';
-        const origContent = document.getElementById('attachModalContent').innerHTML;
-        document.getElementById('attachModalContent').innerHTML = `<div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;"><button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f;">← Назад</button><span class="modal-title">${isVideo ? 'Запись видео' : 'Снять фото'}</span><button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f; border:none; border-radius:40px; padding:0.3rem 0.8rem; color:white; cursor:pointer;">🔄</button></div><video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video><div class="camera-actions" style="margin-top:1rem;"><button class="full-width-btn" id="captureBtn">${isVideo ? '⏺ Начать запись' : '📸 Сделать снимок'}</button>${isVideo ? '<button class="full-width-btn" id="stopRecordBtn" style="display:none;">⏹ Остановить запись</button>' : ''}</div><button class="close-btn" id="cameraCloseBtn">Закрыть</button>`;
-        let facingMode = 'environment', stream = null;
-        let mediaRecorder = null;
-        let recordedChunks = [];
-        const startCamera = async () => {
-            if (stream) stream.getTracks().forEach(t => t.stop());
-            try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: facingMode } }, audio: isVideo }); }
-            catch { try { stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: isVideo }); } catch(e) { alert('Нет доступа к камере'); return; } }
-            document.getElementById('cameraVideo').srcObject = stream;
-        };
-        startCamera();
-        document.getElementById('cameraBackBtn').onclick = () => { if (stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('attachModalContent').innerHTML = origContent; renderMediaGallery(); if (isVideo) renderVideoScreen(); else renderCameraScreen(); };
-        document.getElementById('rotateCameraBtn').onclick = () => { facingMode = facingMode === 'environment' ? 'user' : 'environment'; startCamera(); };
-        if (!isVideo) {
-            document.getElementById('captureBtn').onclick = () => {
-                const video = document.getElementById('cameraVideo');
-                if (!video) return;
-                const canvas = document.createElement('canvas'); canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                if (selectedMedia.length < 8) { selectedMedia.push({ type: 'image', data: dataUrl }); renderMediaGallery(); } else alert('Максимум 8 медиафайлов');
-            };
-        } else {
-            const captureBtn = document.getElementById('captureBtn');
-            const stopBtn = document.getElementById('stopRecordBtn');
-            captureBtn.onclick = () => {
-                recordedChunks = [];
-                mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-                    const reader = new FileReader();
-                    reader.onload = (e) => { if (selectedMedia.length < 8) { selectedMedia.push({ type: 'video', data: e.target.result }); renderMediaGallery(); } else alert('Максимум 8 медиафайлов'); };
-                    reader.readAsDataURL(blob);
-                    captureBtn.style.display = 'block';
-                    stopBtn.style.display = 'none';
-                };
-                mediaRecorder.start();
-                captureBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-            };
-            stopBtn.onclick = () => { if (mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop(); };
-        }
-        document.getElementById('cameraCloseBtn').onclick = () => { if (stream) stream.getTracks().forEach(t => t.stop()); document.getElementById('attachModalContent').innerHTML = origContent; renderMediaGallery(); if (isVideo) renderVideoScreen(); else renderCameraScreen(); };
-    }
-    
-    initSwipeClose('stickerSheet', 'stickerHandle');
-    initSwipeClose('attachSheet', 'attachHandle');
-    initSwipeClose('seenSheet', 'seenHandle');
-    
-    document.getElementById('cancelDeleteModalBtn').onclick = closeDeleteModal;
-    document.getElementById('confirmDeleteModalBtn').onclick = confirmDelete;
-    document.getElementById('mediaViewerClose').onclick = closeMediaViewer;
-    document.getElementById('mediaViewer').addEventListener('click', (e) => { if (e.target === document.getElementById('mediaViewer')) closeMediaViewer(); });
-    document.getElementById('cancelReplyBtn').onclick = cancelReply;
-    document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerSheet'); };
-    document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedMedia = []; renderAttachMain(); openModal('attachSheet'); };
-    document.getElementById('sendBtn').onclick = async () => {
-        const text = document.getElementById('messageInput').value;
-        const images = selectedMedia.filter(m => m.type === 'image').map(m => m.data);
-        const videos = selectedMedia.filter(m => m.type === 'video').map(m => m.data);
-        const audio = getAudioPreviewData();
-        const audioDuration = document.getElementById('recorderTimer')?.textContent || null;
-        if (audio) { await sendMessageOptimistic(text, images, videos, audio, audioDuration); clearAudioPreview(); selectedMedia = []; document.getElementById('messageInput').value = ''; closeModal('attachSheet'); }
-        else if (selectedMedia.length) { await sendMessageOptimistic(text, images, videos); selectedMedia = []; document.getElementById('messageInput').value = ''; closeModal('attachSheet'); }
-        else if (text.trim()) { await sendMessageOptimistic(text, null, null); document.getElementById('messageInput').value = ''; }
-    };
-    document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
+    function formatDateLabel(d) { const n=new Date(), t=new Date(n.getFullYear(),n.getMonth(),n.getDate()), y=new Date(t); y.setDate(y.getDate()-1); const m=new Date(d.getFullYear(),d.getMonth(),d.getDate()); if(m.getTime()===t.getTime()) return'Сегодня'; if(m.getTime()===y.getTime()) return'Вчера'; return d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+    function getAvatarHtml(a,n){ if(a&&a.startsWith('data:image')) return`<img src="${a}" style="width:100%; height:100%; object-fit:cover;">`; return (n?.charAt(0)||'?').toUpperCase(); }
+    async function getUserData(uid){ if(usersCache.has(uid)) return usersCache.get(uid); const doc=await db.collection('users').doc(uid).get(); const data=doc.data()||{name:'Ученик',avatarBase64:null}; usersCache.set(uid,data); return data; }
+    auth.onAuthStateChanged(async(user)=>{ if(!user){ window.location.href='login.html'; return; } currentUser=user; if(onlineInterval) clearInterval(onlineInterval); const updateStatus=async()=>{ await db.collection('status').doc(user.uid).set({online:true,name:user.displayName||'Ученик',lastSeen:newDate()},{merge:true}); }; await updateStatus(); onlineInterval=setInterval(updateStatus,30000); loadMessages(); loadMembers(); window.addEventListener('beforeunload',()=>{ clearInterval(onlineInterval); db.collection('status').doc(user.uid).set({online:false,lastSeen:newDate()},{merge:true}); }); });
+    async function markAsSeen(msgId){ await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId).update({seenBy:firebase.firestore.FieldValue.arrayUnion(currentUser.uid)}); }
+    function closeModal(sId){ let s=document.getElementById(sId); if(!s) return; s.classList.remove('active'); setTimeout(()=>{ s.style.display='none'; },300); }
+    function openModal(sId){ let s=document.getElementById(sId); if(!s) return; s.style.display='block'; setTimeout(()=>s.classList.add('active'),10); }
+    function initSwipeClose(sId,hId){ let s=document.getElementById(sId),h=document.getElementById(hId); if(!s||!h) return; let sy=0,st=0,drag=false; h.addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; const tr=s.style.transform; if(tr&&tr.includes('translateY')) st=parseFloat(tr.match(/translateY\(([-\d]+)px\)/)?.[1]||0); drag=true; }); h.addEventListener('touchmove',e=>{ if(!drag) return; const d=e.touches[0].clientY-sy; if(d>0) s.style.transform=`translateY(${st+d}px)`; }); h.addEventListener('touchend',e=>{ if(!drag) return; const d=e.changedTouches[0].clientY-sy; if(d>60) closeModal(sId); s.style.transform=''; drag=false; }); let md=false,msy=0; h.addEventListener('mousedown',e=>{ md=true; msy=e.clientY; e.preventDefault(); }); window.addEventListener('mousemove',e=>{ if(!md) return; const d=e.clientY-msy; if(d>0) s.style.transform=`translateY(${d}px)`; }); window.addEventListener('mouseup',e=>{ if(!md) return; const d=e.clientY-msy; if(d>60) closeModal(sId); s.style.transform=''; md=false; }); }
+    function scrollToMessage(msgId){ let el=document.getElementById(msgId); if(!el) return; el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('highlight'); setTimeout(()=>el.classList.remove('highlight'),1000); }
+    function showMediaViewer(url,type,ev){ let v=document.getElementById('mediaViewer'),img=document.getElementById('mediaViewerImg'),vid=document.getElementById('mediaViewerVideo'),c=document.querySelector('.media-viewer-content'); let rect=ev&&ev.target?ev.target.getBoundingClientRect():null; img.style.display='none'; vid.style.display='none'; if(type==='image'){ img.src=url; img.style.display='block'; }else{ vid.src=url; vid.style.display='block'; vid.load(); } v.classList.add('active'); if(rect){ c.style.transform=`translate(${rect.left+rect.width/2-window.innerWidth/2}px, ${rect.top+rect.height/2-window.innerHeight/2}px) scale(${rect.width/300})`; c.style.opacity='0'; setTimeout(()=>{ c.style.transform=''; c.style.opacity=''; },10); } }
+    function closeMediaViewer(){ let v=document.getElementById('mediaViewer'),vid=document.getElementById('mediaViewerVideo'),c=document.querySelector('.media-viewer-content'); c.style.transform='scale(0.8)'; c.style.opacity='0'; setTimeout(()=>{ v.classList.remove('active'); vid.pause(); vid.src=''; c.style.transform=''; c.style.opacity=''; },250); }
+    function showContextMenu(x,y,d){ if(contextMenu) contextMenu.remove(); contextMenu=document.createElement('div'); contextMenu.className='context-menu'; contextMenu.style.left=x+'px'; contextMenu.style.top=(y+45)+'px'; let rb=document.createElement('button'); rb.innerHTML='💬 Ответить'; rb.onclick=()=>{ showReplyBar(d); contextMenu.remove(); contextMenu=null; }; let cb=document.createElement('button'); cb.innerHTML='📋 Копировать'; cb.onclick=()=>{ let txt=d.text||''; if(d.images?.length) txt=`📷 ${d.images.length} фото`; if(d.videos?.length) txt=`🎥 ${d.videos.length} видео`; if(d.audio) txt='🎤 Голосовое'; if(d.sticker) txt='😊 Стикер'; if(d.type==='poll') txt=`📊 Опрос: ${d.title}`; navigator.clipboard.writeText(txt); let t=document.createElement('div'); t.textContent='✅ Скопировано!'; t.style.cssText='position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:0.5rem 1rem; border-radius:40px; font-size:0.8rem; z-index:1001;'; document.body.appendChild(t); setTimeout(()=>t.remove(),1500); contextMenu.remove(); contextMenu=null; }; contextMenu.appendChild(rb); contextMenu.appendChild(cb); document.body.appendChild(contextMenu); let ch=()=>{ if(!contextMenu?.contains(e.target)){ contextMenu?.remove(); contextMenu=null; document.removeEventListener('click',ch); document.removeEventListener('contextmenu',ch); } }; setTimeout(()=>{ document.addEventListener('click',ch); document.addEventListener('contextmenu',ch); },10); }
+    function showReplyBar(msg){ replyToMsg=msg; let rb=document.getElementById('replyBar'),rc=document.getElementById('replyContent'); let pt=msg.text||''; if(msg.images?.length) pt=`📷 ${msg.images.length} фото`; if(msg.videos?.length) pt=`🎥 ${msg.videos.length} видео`; if(msg.audio) pt='🎤 Голосовое'; if(msg.sticker) pt='😊 Стикер'; if(msg.type==='poll') pt=`📊 Опрос: ${msg.title}`; rc.innerHTML=`<strong>${msg.name||'Ученик'}</strong>: ${pt.substring(0,50)}`; rb.classList.add('active'); document.getElementById('messageInput').focus(); }
+    function cancelReply(){ replyToMsg=null; document.getElementById('replyBar').classList.remove('active'); }
+    function escapeHtml(str){ if(!str) return ''; return str.replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;'); }
+    function showDeleteModal(id,html){ pendingDeleteId=id; document.getElementById('deletePreview').innerHTML=html; document.getElementById('deleteModalOverlay').classList.add('active'); }
+    function closeDeleteModal(){ document.getElementById('deleteModalOverlay').classList.remove('active'); pendingDeleteId=null; }
+    async function confirmDelete(){ if(!pendingDeleteId) return; let docRef=db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDeleteId); let doc=await docRef.get(); if(!doc.exists) return; let msg=doc.data(); let isMine=msg.uid===currentUser.uid; let can=isMine; if(!isMine){ let pwd=prompt('🔐 Это чужое сообщение. Введите пароль модератора:'); if(pwd==='КИКИ99СССР') can=true; else alert('Неверный пароль!'); } if(can) await docRef.delete(); closeDeleteModal(); }
+    function startRecordingFromSheet(){ if(isRecording) return; navigator.mediaDevices.getUserMedia({audio:true}).then(stream=>{ audioContext=new AudioContext(); audioSource=audioContext.createMediaStreamSource(stream); audioAnalyser=audioContext.createAnalyser(); audioAnalyser.fftSize=256; audioSource.connect(audioAnalyser); mediaRecorder=new MediaRecorder(stream); audioChunks=[]; mediaRecorder.ondataavailable=e=>{ audioChunks.push(e.data); }; mediaRecorder.onstop=()=>{ let ab=new Blob(audioChunks,{type:'audio/webm'}); let r=new FileReader(); r.onload=()=>{ audioData=r.result; showAudioPreview(); }; r.readAsDataURL(ab); stream.getTracks().forEach(t=>t.stop()); if(audioContext) audioContext.close(); }; mediaRecorder.start(100); isRecording=true; recordingStartTime=Date.now(); let ov=document.getElementById('audioRecorderOverlay'),rb=document.getElementById('recorderBtn'),td=document.getElementById('recorderTimer'),wf=document.getElementById('waveform'); ov.classList.add('active'); rb.classList.add('recording'); rb.innerHTML='⏹ Отпустите для отправки'; if(audioTimer) clearInterval(audioTimer); audioTimer=setInterval(()=>{ let e=Math.floor((Date.now()-recordingStartTime)/1000),m=Math.floor(e/60),s=e%60; td.textContent=`${m}:${s.toString().padStart(2,'0')}`; },100); if(audioWaveInterval) clearInterval(audioWaveInterval); audioWaveInterval=setInterval(()=>{ if(!audioAnalyser||!isRecording) return; let da=new Uint8Array(audioAnalyser.frequencyBinCount); audioAnalyser.getByteFrequencyData(da); let avg=da.reduce((a,b)=>a+b,0)/da.length; wf.innerHTML=''; for(let i=0;i<40;i++){ let b=document.createElement('div'); b.className='waveform-bar'; let h=Math.max(10,Math.min(80,15+(avg/4)+Math.random()*15)); b.style.height=h+'px'; b.style.opacity=0.6+(avg/255)*0.4; wf.appendChild(b); } },50); }).catch(e=>{ console.error(e); alert('Нет доступа к микрофону'); }); }
+    function stopRecordingFromSheet(){ if(!isRecording||!mediaRecorder) return; mediaRecorder.stop(); isRecording=false; if(audioTimer) clearInterval(audioTimer); if(audioWaveInterval) clearInterval(audioWaveInterval); let ov=document.getElementById('audioRecorderOverlay'),rb=document.getElementById('recorderBtn'); ov.classList.remove('active'); rb.classList.remove('recording'); rb.innerHTML='🎤 Удерживайте для записи'; document.getElementById('recorderTimer').textContent='0:00'; document.getElementById('waveform').innerHTML=''; if(attachScreen==='voice'){ attachScreen='main'; renderAttachMain(); } }
+    function showAudioPreview(){ let pr=document.getElementById('audioPreview'),wc=document.getElementById('audioPreviewWave'); wc.innerHTML=''; for(let i=0;i<25;i++){ let b=document.createElement('div'); b.className='audio-preview-wave-bar'; b.style.height=(5+Math.random()*18)+'px'; wc.appendChild(b); } pr.classList.add('active'); let isPlaying=false,audio=null,pb=document.getElementById('audioPreviewPlay'); pb.onclick=()=>{ if(isPlaying&&audio){ audio.pause(); isPlaying=false; pb.textContent='▶️'; }else{ if(audio) audio.play(); else{ audio=new Audio(audioData); audio.onended=()=>{ isPlaying=false; pb.textContent='▶️'; }; audio.play(); } isPlaying=true; pb.textContent='⏸'; } }; document.getElementById('audioPreviewDelete').onclick=()=>{ if(audio) audio.pause(); audioData=null; pr.classList.remove('active'); }; }
+    function getAudioPreviewData(){ return audioData; }
+    function clearAudioPreview(){ audioData=null; document.getElementById('audioPreview').classList.remove('active'); }
+    function createPoll(){ pollData={title:'',options:[''],correctOption:null}; renderPollCreator(); }
+    function renderPollCreator(){ let c=document.getElementById('attachModalContent'); if(!c) return; let oh=''; for(let i=0;i<pollData.options.length;i++) oh+=`<div style="margin-bottom:0.5rem;"><input type="text" class="poll-option-input" data-index="${i}" value="${escapeHtml(pollData.options[i])}" placeholder="Вариант ответа ${i+1}" style="width:100%; padding:0.5rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>`; c.innerHTML=`<div class="modal-title">📊 Создать опрос</div><div style="margin-bottom:1rem;"><input type="text" id="pollTitle" value="${escapeHtml(pollData.title)}" placeholder="Заголовок опроса..." style="width:100%; padding:0.7rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div><div id="pollOptionsContainer">${oh}</div><button id="addPollOptionBtn" class="full-width-btn" style="margin-bottom:0.5rem;">➕ Добавить вариант ответа</button><button id="setCorrectPollBtn" class="full-width-btn" style="margin-bottom:0.5rem; ${pollData.correctOption!==null?'background:#4ade80; color:#000;':''}">🎯 ${pollData.correctOption!==null?'Правильный ответ выбран':'Выбрать правильный ответ'}</button><div style="display:flex; gap:0.5rem; margin-top:1rem;"><button id="backFromPollBtn" class="close-btn" style="background:#555;">← Назад</button><button id="sendPollBtn" class="close-btn">📤 Отправить опрос</button></div>`; document.querySelectorAll('.poll-option-input').forEach(inp=>{ inp.addEventListener('change',()=>{ pollData.options[parseInt(inp.dataset.index)]=inp.value; }); }); document.getElementById('pollTitle').addEventListener('change',e=>{ pollData.title=e.target.value; }); document.getElementById('addPollOptionBtn').onclick=()=>{ pollData.options.push(''); renderPollCreator(); }; document.getElementById('setCorrectPollBtn').onclick=()=>{ if(pollData.correctOption!==null){ pollData.correctOption=null; renderPollCreator(); return; } c.innerHTML=`<div class="modal-title">🎯 Выберите правильный ответ</div>${pollData.options.map((opt,idx)=>`<div class="poll-option" data-opt-index="${idx}" style="background:rgba(255,255,255,0.1); margin:0.5rem 0; padding:0.7rem; border-radius:40px; cursor:pointer;">${escapeHtml(opt)}</div>`).join('')}<button id="cancelCorrectBtn" class="close-btn" style="background:#555; margin-top:1rem;">Отмена</button>`; document.querySelectorAll('[data-opt-index]').forEach(opt=>{ opt.onclick=()=>{ pollData.correctOption=parseInt(opt.dataset.optIndex); renderPollCreator(); }; }); document.getElementById('cancelCorrectBtn').onclick=()=>renderPollCreator(); }; document.getElementById('backFromPollBtn').onclick=()=>{ attachScreen='main'; renderAttachMain(); }; document.getElementById('sendPollBtn').onclick=async()=>{ if(!pollData.title.trim()){ alert('Введите заголовок опроса'); return; } let vo=pollData.options.filter(o=>o.trim()); if(vo.length<2){ alert('Добавьте минимум 2 варианта ответа'); return; } pollData.options=vo; await sendMessageOptimistic('',null,null,null,null,null,{type:'poll',title:pollData.title,options:pollData.options,correctOption:pollData.correctOption,votes:{}}); closeModal('attachSheet'); pollData={title:'',options:[''],correctOption:null}; }; }
+    async function votePoll(pid,opt){ let pr=db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pid); let doc=await pr.get(); let p=doc.data(); if(!p||p.type!=='poll') return; let v=p.votes||{},uv=null; for(let [uid,oi] of Object.entries(v)) if(uid===currentUser.uid) uv=oi; if(uv===opt) return; if(uv!==null) delete v[currentUser.uid]; v[currentUser.uid]=opt; await pr.update({votes:v}); }
+    function showPollVoters(p,opt){ let v=p.votes||{},vt=[]; for(let [uid,oi] of Object.entries(v)) if(oi===opt) vt.push(uid); let c=document.getElementById('seenModalContent'); if(!c) return; Promise.all(vt.map(uid=>getUserData(uid))).then(us=>{ c.innerHTML=`<div class="modal-title">👥 Проголосовали (${vt.length})</div><div class="seen-modal-list">${us.map(u=>`<div class="seen-item"><div class="seen-avatar">${getAvatarHtml(u.avatarBase64,u.name)}</div><span>${u.name||'Ученик'}</span></div>`).join('')}</div><button class="close-btn" id="pollVotersCloseBtn">Закрыть</button>`; document.getElementById('pollVotersCloseBtn').onclick=()=>closeModal('seenSheet'); openModal('seenSheet'); }); }
+    function loadMessages(){ if(messagesUnsub) messagesUnsub(); messagesUnsub=db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async snap=>{ let msgs=[]; for(let doc of snap.docs) msgs.push({id:doc.id,...doc.data()}); let lastDate=null,cont=document.getElementById('messagesArea'); cont.innerHTML=''; for(let m of msgs){ let md=m.createdAt?.toDate(); if(md){ let dl=formatDateLabel(md); if(dl!==lastDate){ let ddiv=document.createElement('div'); ddiv.className='date-divider'; ddiv.innerHTML=`<div class="date-badge">${dl}</div>`; cont.appendChild(ddiv); lastDate=dl; } } let mine=m.uid===currentUser?.uid,userData=await getUserData(m.uid),avatarHtml=getAvatarHtml(userData.avatarBase64,userData.name||m.name); let replyHtml='',replyToId=null; if(m.replyTo){ replyToId=m.replyTo.id; let rn=m.replyTo.name||'Пользователь',rt=m.replyTo.text||''; if(m.replyTo.images?.length) rt='📷 фото'; if(m.replyTo.videos?.length) rt='🎥 видео'; if(m.replyTo.audio) rt='🎤 голосовое'; if(m.replyTo.sticker) rt='😊 Стикер'; if(m.replyTo.type==='poll') rt='📊 опрос'; replyHtml=`<div class="reply-preview" data-reply-to-id="${replyToId}"><div class="reply-author">→ ${rn}</div><div class="reply-text">${rt.substring(0,50)}</div></div>`; } let mediaHtml=''; if(m.images?.length){ mediaHtml='<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">'; for(let img of m.images) mediaHtml+=`<img src="${img}" class="clickable-media" data-type="image" data-url="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:12px; cursor:pointer;">`; mediaHtml+='</div>'; } let vm=m.text?.match(/(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|rutube\.ru)\/[\w\/\-?=&]+/); if(vm){ let eu=''; if(vm[0].includes('youtube')||vm[0].includes('youtu.be')){ let vid=vm[0].split('v=')[1]?.split('&')[0]||vm[0].split('/').pop(); eu=`https://www.youtube.com/embed/${vid}`; }else if(vm[0].includes('rutube')) eu=vm[0]; mediaHtml+=`<div style="margin-top:8px;"><iframe src="${eu}" style="width:280px; max-width:100%; height:180px; border-radius:16px; border:none;" allowfullscreen></iframe></div>`; } if(m.audio) mediaHtml+=`<div class="audio-player" data-audio-url="${m.audio}"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${m.audioDuration||'0:00'}</span></div>`; if(m.sticker) mediaHtml+=`<img src="${m.sticker}" style="max-width:130px; cursor:pointer;" class="clickable-media" data-type="image" data-url="${m.sticker}">`; if(m.type==='poll'){ let v=m.votes||{},tv=Object.keys(v).length,uv=v[currentUser.uid],hc=m.correctOption!==null&&m.correctOption!==undefined,oh=''; for(let i=0;i<m.options.length;i++){ let opt=m.options[i],cnt=Object.values(v).filter(o=>o===i).length,pct=tv>0?Math.round((cnt/tv)*100):0,oc='poll-option'; if(hc){ if(i===m.correctOption) oc+=' correct'; if(uv===i&&i!==m.correctOption) oc+=' wrong-selected'; }else if(uv===i) oc+=' selected'; oh+=`<div class="${oc}" data-poll-id="${m.id}" data-poll-opt="${i}"><div style="display:flex; align-items:center; gap:0.5rem; flex:1;"><span class="poll-icon">${uv===i?(hc&&i===m.correctOption?'✅':'🔘'):'◯'}</span><span>${escapeHtml(opt)}</span></div><div style="display:flex; align-items:center; gap:0.5rem;"><span class="poll-option-count">${cnt} (${pct}%)</span><button class="poll-voters-btn" data-poll-id="${m.id}" data-poll-opt="${i}" style="background:none; border:none; color:#aaa; cursor:pointer;">👥</button></div></div>`; } mediaHtml=`<div class="poll-container"><div class="poll-title">📊 ${escapeHtml(m.title)}</div>${oh}<div class="poll-total">Всего голосов: ${tv}</div></div>`; } let sc=(m.seenBy||[]).filter(u=>u!==m.uid).length,sh=sc>0?'<span class="delivered">✅✅</span>':'<span class="sent">⌛</span>'; let div=document.createElement('div'); div.className=`message ${mine?'mine':''}`; div.id=m.id; div.innerHTML=`<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name||m.name||'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text&&!vm?m.text:''}</div><div class="msg-footer"><div class="status-icons">${sh}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text||'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString()||''}</div></div>`; cont.appendChild(div); div.querySelectorAll('.audio-player').forEach(p=>{ let au=p.getAttribute('data-audio-url'),pb=p.querySelector('.audio-play-btn'),wc=p.querySelector('.audio-wave'),isPl=false,aud=null; for(let i=0;i<20;i++){ let b=document.createElement('div'); b.className='audio-wave-bar'; b.style.height=(5+Math.random()*15)+'px'; wc.appendChild(b); } pb.addEventListener('click',()=>{ if(isPl&&aud){ aud.pause(); isPl=false; pb.textContent='▶️'; }else{ if(aud) aud.play(); else{ aud=new Audio(au); aud.onended=()=>{ isPl=false; pb.textContent='▶️'; }; aud.play(); } isPl=true; pb.textContent='⏸'; } }); }); div.querySelectorAll('.clickable-media').forEach(el=>{ el.addEventListener('click',e=>{ e.stopPropagation(); let t=el.getAttribute('data-type'),u=el.getAttribute('data-url'); showMediaViewer(u,t,e); }); }); div.querySelectorAll(`.poll-option[data-poll-id="${m.id}"]`).forEach(opt=>{ opt.addEventListener('click',e=>{ if(e.target.classList.contains('poll-voters-btn')) return; votePoll(m.id,parseInt(opt.dataset.pollOpt)); }); }); div.querySelectorAll(`.poll-voters-btn[data-poll-id="${m.id}"]`).forEach(btn=>{ btn.addEventListener('click',e=>{ e.stopPropagation(); showPollVoters(m,parseInt(btn.dataset.pollOpt)); }); }); let rb=div.querySelector('.reply-preview'); if(rb&&replyToId) rb.addEventListener('click',e=>{ e.stopPropagation(); scrollToMessage(replyToId); }); div.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); showContextMenu(e.clientX,e.clientY,{id:m.id,text:m.text||'',name:userData.name||m.name,uid:m.uid,images:m.images,videos:m.videos,audio:m.audio,sticker:m.sticker,type:m.type,title:m.title}); }); let pt; div.addEventListener('touchstart',e=>{ pt=setTimeout(()=>{ let t=e.touches[0]; showContextMenu(t.clientX,t.clientY,{id:m.id,text:m.text||'',name:userData.name||m.name,uid:m.uid,images:m.images,videos:m.videos,audio:m.audio,sticker:m.sticker,type:m.type,title:m.title}); },500); }); div.addEventListener('touchend',()=>clearTimeout(pt)); div.addEventListener('touchmove',()=>clearTimeout(pt)); let db=div.querySelector('.delete-btn'); if(db){ db.addEventListener('click',e=>{ e.stopPropagation(); let ph=''; if(m.text&&m.text.trim()) ph+=`<div>📝 ${escapeHtml(m.text.substring(0,150))}${m.text.length>150?'…':''}</div>`; if(m.images&&m.images.length) ph+=`<div style="margin-top:8px;"><img src="${m.images[0]}" style="max-width:100px; border-radius:12px;"><br>📷 ${m.images.length} фото</div>`; if(m.videos&&m.videos.length) ph+=`<div style="margin-top:8px;">🎥 Видео (${m.videos.length})</div>`; if(m.audio) ph+=`<div style="margin-top:8px;">🎤 Голосовое сообщение</div>`; if(m.sticker) ph+=`<div style="margin-top:8px;"><img src="${m.sticker}" style="max-width:80px; border-radius:12px;"><br>😊 Стикер</div>`; if(m.type==='poll') ph+=`<div style="margin-top:8px;">📊 Опрос: ${escapeHtml(m.title)}<br>📌 ${m.options.length} вариантов</div>`; if(!ph) ph='<div>Сообщение</div>'; showDeleteModal(m.id,ph); }); } div.querySelector('.seen-btn')?.addEventListener('click',async e=>{ let us=[]; for(let uid of(m.seenBy||[])) if(uid!==currentUser?.uid){ let ud=await getUserData(uid); us.push(ud.name||'Ученик'); } document.getElementById('seenModalContent').innerHTML=`<div class="modal-title">👁️ Просмотрено</div><div class="seen-modal-list">${us.map(u=>`<div class="seen-item"><div class="seen-avatar">${u.charAt(0)}</div><span>${u}</span></div>`).join('')}</div><button class="close-btn" id="seenCloseBtn">Закрыть</button>`; document.getElementById('seenCloseBtn').onclick=()=>closeModal('seenSheet'); openModal('seenSheet'); }); } for(let [tid,pend] of pendingMessages.entries()){ if(!document.getElementById(tid)){ let ud=await getUserData(currentUser.uid),ah=getAvatarHtml(ud.avatarBase64,ud.name),mh=''; if(pend.images?.length){ mh='<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:4px; max-width:260px;">'; for(let img of pend.images) mh+=`<div class="loading-spinner-overlay" style="position:relative; display:block; width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden;"><img src="${img}" style="width:100%; aspect-ratio:1; object-fit:cover; filter: brightness(0.5) blur(4px);"><div class="spinner"></div></div>`; mh+='</div>'; } if(pend.videos?.length) for(let i=0;i<pend.videos.length;i++) mh+=`<div class="loading-spinner-overlay" style="position:relative; display:block; width:280px; max-width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; margin-top:8px;"><div class="spinner"></div></div>`; if(pend.audio) mh+=`<div class="audio-player"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${pend.audioDuration||'0:00'}</span></div>`; let div=document.createElement('div'); div.className='message mine'; div.id=tid; div.innerHTML=`<div class="msg-avatar">${ah}</div><div class="msg-bubble"><div class="msg-name">${ud.name||currentUser.displayName||'Ученик'}</div><div class="msg-text">${mh} ${pend.text||''}</div><div class="msg-footer"><div class="status-icons"><span class="sent">⌛</span>${pend.progress?`<span class="progress-bar">${pend.progress}%</span>`:''}</div></div><div class="msg-time">отправляется...</div></div>`; cont.appendChild(div); } } cont.scrollTop=cont.scrollHeight; for(let ch of snap.docChanges()){ let m=ch.doc.data(); if(ch.type==='added'&&m.uid!==currentUser.uid){ if(!m.seenBy||!m.seenBy.includes(currentUser.uid)) await markAsSeen(ch.doc.id); } } }); }
+    async function loadMembers(){ db.collection('status').onSnapshot(async snap=>{ let c=document.getElementById('membersList'); c.innerHTML=''; for(let doc of snap.docs){ let st=doc.data(),ud=await getUserData(doc.id),ah=getAvatarHtml(ud.avatarBase64,ud.name),isOn=st.online&&(new Date()-(st.lastSeen?.toDate?.()||0)<60000),stxt=isOn?'🟢 Онлайн':(st.lastSeen?`⚫ Был(а) ${st.lastSeen.toDate().toLocaleTimeString()}`:'⚫ Офлайн'); c.innerHTML+=`<li class="member-item"><div class="member-avatar">${ah}</div><div class="member-info"><div class="member-name">${ud.name||st.name||'Ученик'}</div><div class="member-status ${isOn?'online-status':'offline-status'}">${stxt}</div></div></li>`; } }); }
+    async function sendMessageOptimistic(txt,imgs,vids,aud=null,dur=null,stkr=null,pol=null){ let tid='temp_'+Date.now()+'_'+Math.random(),ud=await getUserData(currentUser.uid),rd=replyToMsg?{id:replyToMsg.id,text:replyToMsg.text||(replyToMsg.images?'📷 Фото':(replyToMsg.videos?'🎥 Видео':(replyToMsg.audio?'🎤 Голосовое':(replyToMsg.sticker?'😊 Стикер':(replyToMsg.type==='poll'?'📊 Опрос':''))))),name:replyToMsg.name,uid:replyToMsg.uid,type:replyToMsg.type,title:replyToMsg.title}:null; pendingMessages.set(tid,{text:txt||'',images:imgs||[],videos:vids||[],audio:aud,audioDuration:dur,progress:0}); loadMessages(); let progInt=null; if(aud||vids?.length||imgs?.length){ let p=0; progInt=setInterval(()=>{ if(p<95){ p+=5; let pe=pendingMessages.get(tid); if(pe) pe.progress=p; } },100); } try{ let md={text:txt||'',images:imgs||[],videos:vids||[],audio:aud,audioDuration:dur,sticker:stkr,uid:currentUser.uid,name:ud.name||currentUser.displayName||'Ученик',seenBy:[currentUser.uid],createdAt:new Date(),replyTo:rd}; if(pol) Object.assign(md,pol); await db.collection('rooms').doc(CHAT_PATH).collection('messages').add(md); if(progInt) clearInterval(progInt); pendingMessages.delete(tid); cancelReply(); loadMessages(); }catch(err){ console.error(err); if(progInt) clearInterval(progInt); pendingMessages.delete(tid); loadMessages(); alert('Ошибка отправки: '+(err.message||'неизвестная ошибка')); } }
+    function renderStickerModal(){ let c=document.getElementById('stickerModalContent'); if(!c) return; c.innerHTML=`<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`; let stickers=['stickers/okay.gif']; document.getElementById('stickerList').innerHTML=stickers.map(s=>`<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join(''); document.querySelectorAll('#stickerList .sticker-img').forEach(img=>{ img.onclick=e=>{ e.stopPropagation(); sendMessageOptimistic('',null,null,null,null,img.getAttribute('data-sticker-url')); closeModal('stickerSheet'); }; }); document.getElementById('stickerModalCloseBtn').onclick=e=>{ e.preventDefault(); closeModal('stickerSheet'); }; }
+    function renderAttachMain(){ let c=document.getElementById('attachModalContent'); if(!c) return; c.innerHTML=`<div class="modal-title">📎 Отправить</div><div class="attach-grid"><div class="attach-item" data-type="camera"><div class="attach-icon">📷</div><div class="attach-label">Камера</div></div><div class="attach-item" data-type="video"><div class="attach-icon">🎥</div><div class="attach-label">Видео</div></div><div class="attach-item" data-type="file"><div class="attach-icon">📄</div><div class="attach-label">Файл</div></div><div class="attach-item" data-type="poll"><div class="attach-icon">📊</div><div class="attach-label">Опрос</div></div><div class="attach-item" data-type="voice"><div class="attach-icon">🎤</div><div class="attach-label">Голос</div></div><div class="attach-item" data-type="link"><div class="attach-icon">🔗</div><div class="attach-label">Ссылка</div></div></div><button class="close-btn" id="attachModalCloseBtn">Закрыть</button>`; document.querySelectorAll('.attach-item').forEach(el=>{ el.onclick=e=>{ e.stopPropagation(); if(el.dataset.type==='camera'){ attachScreen='camera'; renderCameraScreen(); }else if(el.dataset.type==='video'){ attachScreen='video'; renderVideoScreen(); }else if(el.dataset.type==='poll'){ createPoll(); }else if(el.dataset.type==='voice'){ startRecordingFromSheet(); attachScreen='voice'; let ov=document.getElementById('audioRecorderOverlay'),rb=document.getElementById('recorderBtn'); let sh=()=>{ stopRecordingFromSheet(); rb.removeEventListener('mouseup',sh); rb.removeEventListener('touchend',sh); ov.removeEventListener('mouseleave',sh); }; rb.addEventListener('mouseup',sh); rb.addEventListener('touchend',sh); ov.addEventListener('mouseleave',sh); }else alert(`📎 Отправка ${el.dataset.type} — в разработке`); }; }); document.getElementById('attachModalCloseBtn').onclick=e=>{ closeModal('attachSheet'); }; }
+    function renderCameraScreen(){ let c=document.getElementById('attachModalContent'); if(!c) return; c.innerHTML=`<div class="attach-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><button class="back-btn" id="cameraBackBtn">← Назад</button><span class="modal-title">Снять фото</span><div style="width:50px;"></div></div><div id="photoGallery" class="photo-gallery"></div><div class="camera-actions"><button class="full-width-btn" id="openCameraBtn">📷 Сфотографировать</button><button class="full-width-btn" id="selectFromGalleryBtn">📁 Выбрать из галереи</button></div><button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>`; renderMediaGallery(); document.getElementById('cameraBackBtn').onclick=()=>{ attachScreen='main'; renderAttachMain(); }; document.getElementById('openCameraBtn').onclick=()=>showCameraModal('image'); document.getElementById('selectFromGalleryBtn').onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true; inp.onchange=e=>{ if(e.target.files) addFiles(e.target.files,'image'); inp.remove(); }; inp.click(); }; document.getElementById('attachModalCloseBtn').onclick=e=>{ closeModal('attachSheet'); }; }
+    function renderVideoScreen(){ let c=document.getElementById('attachModalContent'); if(!c) return; c.innerHTML=`<div class="attach-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;"><button class="back-btn" id="videoBackBtn">← Назад</button><span class="modal-title">Записать видео</span><div style="width:50px;"></div></div><div id="videoGallery" class="photo-gallery"></div><div class="camera-actions"><button class="full-width-btn" id="recordVideoBtn">🎥 Записать видео</button><button class="full-width-btn" id="selectVideoFromGalleryBtn">📁 Выбрать из галереи</button></div><button class="close-btn" id="attachModalCloseBtn" style="margin-top:10px;">Закрыть</button>`; renderMediaGallery(); document.getElementById('videoBackBtn').onclick=()=>{ attachScreen='main'; renderAttachMain(); }; document.getElementById('recordVideoBtn').onclick=()=>showCameraModal('video'); document.getElementById('selectVideoFromGalleryBtn').onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='video/*'; inp.multiple=true; inp.onchange=e=>{ if(e.target.files) addFiles(e.target.files,'video'); inp.remove(); }; inp.click(); }; document.getElementById('attachModalCloseBtn').onclick=e=>{ closeModal('attachSheet'); }; }
+    function renderMediaGallery(){ let g=document.getElementById('photoGallery')||document.getElementById('videoGallery'); if(!g) return; if(!selectedMedia.length){ g.innerHTML='<div class="empty-photo">😕 Нет выбранных медиа</div>'; return; } g.innerHTML=''; for(let i=0;i<selectedMedia.length;i++){ let m=selectedMedia[i],div=document.createElement('div'); div.className='photo-item'; if(m.type==='image'){ let img=document.createElement('img'); img.src=m.data; div.appendChild(img); }else{ let vid=document.createElement('video'); vid.src=m.data; vid.preload='metadata'; vid.style.cssText='width:100%; aspect-ratio:1; object-fit:cover; border-radius:16px;'; div.appendChild(vid); let b=document.createElement('div'); b.className='video-badge'; b.textContent='🎥'; div.appendChild(b); } let ns=document.createElement('div'); ns.className='photo-number'; ns.textContent=i+1; div.appendChild(ns); div.onclick=()=>{ selectedMedia.splice(i,1); renderMediaGallery(); }; g.appendChild(div); } }
+    function addFiles(files,type){ let nf=Array.from(files),rem=8-selectedMedia.length,toAdd=nf.slice(0,rem); for(let f of toAdd){ let r=new FileReader(); r.onload=e=>{ selectedMedia.push({type:type,data:e.target.result}); renderMediaGallery(); }; r.readAsDataURL(f); } if(nf.length>rem) alert(`Можно выбрать до 8 медиафайлов. Добавлено ${rem}.`); }
+    function showCameraModal(isVideo){ let iv=isVideo==='video',orig=document.getElementById('attachModalContent').innerHTML; document.getElementById('attachModalContent').innerHTML=`<div class="preview-header" style="display:flex; justify-content:space-between; margin-bottom:1rem;"><button class="back-btn" id="cameraBackBtn" style="background:#0a3f6f;">← Назад</button><span class="modal-title">${iv?'Запись видео':'Снять фото'}</span><button class="rotate-btn" id="rotateCameraBtn" style="background:#0a3f6f; border:none; border-radius:40px; padding:0.3rem 0.8rem; color:white; cursor:pointer;">🔄</button></div><video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:24px; background:#000;"></video><div class="camera-actions" style="margin-top:1rem;"><button class="full-width-btn" id="captureBtn">${iv?'⏺ Начать запись':'📸 Сделать снимок'}</button>${iv?'<button class="full-width-btn" id="stopRecordBtn" style="display:none;">⏹ Остановить запись</button>':''}</div><button class="close-btn" id="cameraCloseBtn">Закрыть</button>`; let fm='environment',stream=null,mrc=null,rcs=[],sc=async()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{exact:fm}},audio:iv}); }catch{ try{ stream=await navigator.mediaDevices.getUserMedia({video:true,audio:iv}); }catch(e){ alert('Нет доступа к камере'); return; } } document.getElementById('cameraVideo').srcObject=stream; }; sc(); document.getElementById('cameraBackBtn').onclick=()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); document.getElementById('attachModalContent').innerHTML=orig; renderMediaGallery(); if(iv) renderVideoScreen(); else renderCameraScreen(); }; document.getElementById('rotateCameraBtn').onclick=()=>{ fm=fm==='environment'?'user':'environment'; sc(); }; if(!iv){ document.getElementById('captureBtn').onclick=()=>{ let v=document.getElementById('cameraVideo'); if(!v) return; let c=document.createElement('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); let du=c.toDataURL('image/jpeg'); if(selectedMedia.length<8){ selectedMedia.push({type:'image',data:du}); renderMediaGallery(); }else alert('Максимум 8 медиафайлов'); }; }else{ let cb=document.getElementById('captureBtn'),sb=document.getElementById('stopRecordBtn'); cb.onclick=()=>{ rcs=[]; mrc=new MediaRecorder(stream); mrc.ondataavailable=e=>{ if(e.data.size>0) rcs.push(e.data); }; mrc.onstop=()=>{ let b=new Blob(rcs,{type:'video/mp4'}),r=new FileReader(); r.onload=e=>{ if(selectedMedia.length<8){ selectedMedia.push({type:'video',data:e.target.result}); renderMediaGallery(); }else alert('Максимум 8 медиафайлов'); }; r.readAsDataURL(b); cb.style.display='block'; sb.style.display='none'; }; mrc.start(); cb.style.display='none'; sb.style.display='block'; }; sb.onclick=()=>{ if(mrc&&mrc.state==='recording') mrc.stop(); }; } document.getElementById('cameraCloseBtn').onclick=()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); document.getElementById('attachModalContent').innerHTML=orig; renderMediaGallery(); if(iv) renderVideoScreen(); else renderCameraScreen(); }; }
+    initSwipeClose('stickerSheet','stickerHandle'); initSwipeClose('attachSheet','attachHandle'); initSwipeClose('seenSheet','seenHandle');
+    document.getElementById('cancelDeleteModalBtn').onclick=closeDeleteModal;
+    document.getElementById('confirmDeleteModalBtn').onclick=confirmDelete;
+    document.getElementById('mediaViewerClose').onclick=closeMediaViewer;
+    document.getElementById('mediaViewer').addEventListener('click',e=>{ if(e.target===document.getElementById('mediaViewer')) closeMediaViewer(); });
+    document.getElementById('cancelReplyBtn').onclick=cancelReply;
+    document.getElementById('stickerBtn').onclick=()=>{ renderStickerModal(); openModal('stickerSheet'); };
+    document.getElementById('attachBtn').onclick=()=>{ attachScreen='main'; selectedMedia=[]; renderAttachMain(); openModal('attachSheet'); };
+    document.getElementById('sendBtn').onclick=async()=>{ let txt=document.getElementById('messageInput').value,imgs=selectedMedia.filter(m=>m.type==='image').map(m=>m.data),vids=selectedMedia.filter(m=>m.type==='video').map(m=>m.data),aud=getAudioPreviewData(),dur=document.getElementById('recorderTimer')?.textContent||null; if(aud){ await sendMessageOptimistic(txt,imgs,vids,aud,dur); clearAudioPreview(); selectedMedia=[]; document.getElementById('messageInput').value=''; closeModal('attachSheet'); }else if(selectedMedia.length){ await sendMessageOptimistic(txt,imgs,vids); selectedMedia=[]; document.getElementById('messageInput').value=''; closeModal('attachSheet'); }else if(txt.trim()){ await sendMessageOptimistic(txt,null,null); document.getElementById('messageInput').value=''; } };
+    document.getElementById('settingsBtn').onclick=()=>window.location.href='settings.html';
 </script>
 </body>
 </html>
