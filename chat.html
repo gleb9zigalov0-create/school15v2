@@ -6,7 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* ===== ВСЕ ТВОИ СТИЛИ (такие же, как были) ===== */
+        /* ===== ТВОЙ СТИЛЬ (КОПИРУЙ ИЗ ТВОЕГО ТЕКУЩЕГО chat.html, ОН ТАКОЙ ЖЕ) ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -597,7 +597,7 @@
 </div>
 
 <script src="js/firebase-config.js"></script>
-<script src="js/yandex-secret.js"></script>
+<script src="js/github-secret.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
@@ -617,32 +617,31 @@
     let replyToMsg = null;
     let contextMenu = null;
 
-    // === НОВАЯ ФУНКЦИЯ ДЛЯ ЯНДЕКС ДИСКА ===
-    async function uploadToYandex(base64Data, fileName) {
-        const blob = await (await fetch(base64Data)).blob();
+    // === НОВАЯ ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ ВИДЕО НА GITHUB ===
+    async function uploadToGitHub(base64Data, fileName) {
+        const pureBase64 = base64Data.split(',')[1];
+        const url = `https://api.github.com/repos/gleb9zigalov0-create/school15v2/contents/videos/${fileName}`;
         
-        // 1. Получаем ссылку для загрузки
-        const uploadResponse = await fetch('https://cloud-api.yandex.net/v1/disk/resources/upload', {
-            method: 'GET',
-            headers: { 'Authorization': `OAuth ${YANDEX_ACCESS_TOKEN}` },
-            params: { path: `/school15_videos/${fileName}`, overwrite: true }
-        });
-        const uploadUrl = (await uploadResponse.json()).href;
-        
-        // 2. Загружаем видео
-        await fetch(uploadUrl, {
+        const response = await fetch(url, {
             method: 'PUT',
-            body: blob,
-            headers: { 'Content-Type': 'video/mp4' }
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message: `Upload video ${fileName}`,
+                content: pureBase64,
+                branch: 'main'
+            })
         });
         
-        // 3. Получаем публичную ссылку
-        const publishResponse = await fetch('https://cloud-api.yandex.net/v1/disk/resources/publish', {
-            method: 'PUT',
-            headers: { 'Authorization': `OAuth ${YANDEX_ACCESS_TOKEN}` },
-            params: { path: `/school15_videos/${fileName}` }
-        });
-        return (await publishResponse.json()).href;
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Ошибка загрузки на GitHub');
+        }
+        
+        const data = await response.json();
+        return data.content.download_url;
     }
 
     function formatDateLabel(date) {
@@ -1086,11 +1085,11 @@
                 if (pending) pending.progress = Math.floor((i / videosArray.length) * 90);
                 
                 try {
-                    // ВОТ ЗДЕСЬ ЗАМЕНИЛИ ImgBB на Яндекс Диск
-                    const url = await uploadToYandex(videosArray[i], `video_${Date.now()}_${i}.mp4`);
+                    // ЗАМЕНА: загружаем на GitHub вместо Яндекс Диска
+                    const url = await uploadToGitHub(videosArray[i], `video_${Date.now()}_${i}.mp4`);
                     uploadedVideos.push(url);
                 } catch (err) {
-                    alert(`Ошибка загрузки видео на Яндекс Диск: ${err.message}`);
+                    alert(`Ошибка загрузки видео на GitHub: ${err.message}`);
                     pendingMessages.delete(tempId);
                     loadMessages();
                     return;
