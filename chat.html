@@ -204,6 +204,45 @@
             cursor: pointer;
             background-color: #000;
         }
+        .audio-player {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 40px;
+            padding: 0.3rem 0.8rem;
+            margin-top: 0.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .audio-play-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .audio-wave {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 30px;
+        }
+        .audio-wave-bar {
+            width: 3px;
+            background: white;
+            border-radius: 2px;
+            transition: height 0.05s ease;
+        }
+        .audio-duration {
+            font-size: 0.7rem;
+            color: #ccc;
+            margin-left: 0.5rem;
+        }
         .msg-time { font-size: 0.6rem; opacity: 0.6; margin-top: 0.2rem; text-align: right; }
         .msg-footer {
             display: flex;
@@ -257,6 +296,7 @@
             display: flex;
             gap: 0.6rem;
             align-items: center;
+            position: relative;
         }
         .icon-button {
             background: rgba(255, 255, 255, 0.3);
@@ -266,6 +306,7 @@
             border-radius: 40px;
             font-size: 1.3rem;
             cursor: pointer;
+            flex-shrink: 0;
         }
         .text-input {
             flex: 1;
@@ -278,6 +319,119 @@
             color: #000 !important;
         }
         .text-input::placeholder { color: #555; }
+
+        /* АУДИО ЗАПИСЬ */
+        .audio-recorder-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            z-index: 100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease, backdrop-filter 0.3s ease;
+            pointer-events: none;
+        }
+        .audio-recorder-overlay.active {
+            display: flex;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            pointer-events: auto;
+        }
+        .recorder-container {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 60px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            animation: fadeInUp 0.2s ease;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .waveform {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            height: 80px;
+            margin-bottom: 1rem;
+        }
+        .waveform-bar {
+            width: 4px;
+            background: #4ade80;
+            border-radius: 2px;
+            transition: height 0.05s ease;
+            box-shadow: 0 0 5px #4ade80;
+        }
+        .recorder-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.1s ease;
+        }
+        .recorder-btn.recording {
+            background: #e94560;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .recorder-timer {
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
+            font-family: monospace;
+        }
+
+        .audio-preview {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 40px;
+            padding: 0.3rem 0.8rem;
+            margin-right: 0.5rem;
+        }
+        .audio-preview.active {
+            display: flex;
+        }
+        .audio-preview-play {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .audio-preview-wave {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 24px;
+        }
+        .audio-preview-wave-bar {
+            width: 3px;
+            background: #4ade80;
+            border-radius: 1px;
+        }
+        .audio-preview-delete {
+            background: none;
+            border: none;
+            color: #e94560;
+            cursor: pointer;
+            font-size: 1rem;
+        }
 
         .context-menu {
             position: fixed;
@@ -552,10 +706,24 @@
                 <button class="cancel-reply" id="cancelReplyBtn">✖</button>
             </div>
             <div class="input-row">
-                <button class="icon-button" id="stickerBtn">😊</button>
+                <div class="audio-preview" id="audioPreview">
+                    <button class="audio-preview-play" id="audioPreviewPlay">▶️</button>
+                    <div class="audio-preview-wave" id="audioPreviewWave"></div>
+                    <button class="audio-preview-delete" id="audioPreviewDelete">✖</button>
+                </div>
+                <button class="icon-button" id="voiceBtn">🎤</button>
                 <input type="text" class="text-input" id="messageInput" placeholder="Сообщение...">
+                <button class="icon-button" id="stickerBtn">😊</button>
                 <button class="icon-button" id="attachBtn">📎</button>
                 <button class="icon-button" id="sendBtn">➤</button>
+            </div>
+        </div>
+
+        <div id="audioRecorderOverlay" class="audio-recorder-overlay">
+            <div class="recorder-container">
+                <div class="waveform" id="waveform"></div>
+                <div class="recorder-timer" id="recorderTimer">0:00</div>
+                <button class="recorder-btn" id="recorderBtn">🎤 Удерживайте для записи</button>
             </div>
         </div>
 
@@ -599,7 +767,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js"></script>
 <script>
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
@@ -615,10 +783,21 @@
     let onlineInterval = null;
     let replyToMsg = null;
     let contextMenu = null;
+    
+    // Аудио запись
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+    let recordingStartTime = null;
+    let audioTimer = null;
+    let audioData = null;
+    let audioWaveInterval = null;
+    
+    // FFMPEG для видео
     let ffmpeg = null;
     let ffmpegLoading = false;
 
-    // === FFMPEG ДЛЯ СЖАТИЯ ВИДЕО ===
+    // === ИНИЦИАЛИЗАЦИЯ FFMPEG ===
     async function initFFmpeg() {
         if (ffmpeg) return ffmpeg;
         if (ffmpegLoading) {
@@ -630,25 +809,14 @@
             return ffmpeg;
         }
         ffmpegLoading = true;
-        const { createFFmpeg } = FFmpeg;
-        ffmpeg = createFFmpeg({ log: false });
-        
-        // Показываем уведомление о загрузке FFmpeg
         const toast = document.createElement('div');
-        toast.textContent = '⚙️ Загрузка видеокодера (1 раз)...';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '100px';
-        toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)';
-        toast.style.background = 'rgba(0,0,0,0.8)';
-        toast.style.color = 'white';
-        toast.style.padding = '0.5rem 1rem';
-        toast.style.borderRadius = '40px';
-        toast.style.fontSize = '0.8rem';
-        toast.style.zIndex = '1001';
+        toast.textContent = '⚙️ Загрузка видеокодера (один раз)...';
+        toast.style.cssText = 'position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:0.5rem 1rem; border-radius:40px; font-size:0.8rem; z-index:1001;';
         document.body.appendChild(toast);
         
+        ffmpeg = new FFmpeg();
         await ffmpeg.load();
+        
         toast.remove();
         ffmpegLoading = false;
         return ffmpeg;
@@ -660,8 +828,7 @@
         const data = new Uint8Array(await file.arrayBuffer());
         ffmpegLib.FS('writeFile', name, data);
         
-        // Команда сжатия: битрейт 500k, разрешение 640x?, пресет fast
-        await ffmpegLib.run('-i', name, '-b:v', '500k', '-vf', 'scale=640:-2', '-preset', 'fast', 'output.mp4');
+        await ffmpegLib.run('-i', name, '-b:v', '400k', '-vf', 'scale=480:-2', '-preset', 'fast', 'output.mp4');
         
         const output = ffmpegLib.FS('readFile', 'output.mp4');
         const blob = new Blob([output.buffer], { type: 'video/mp4' });
@@ -677,6 +844,246 @@
         });
     }
 
+    // === АУДИО ЗАПИСЬ ===
+    function initAudioRecorder() {
+        const voiceBtn = document.getElementById('voiceBtn');
+        const overlay = document.getElementById('audioRecorderOverlay');
+        const recorderBtn = document.getElementById('recorderBtn');
+        
+        let pressTimer = null;
+        
+        voiceBtn.addEventListener('mousedown', () => {
+            pressTimer = setTimeout(() => {
+                startRecording();
+            }, 150);
+        });
+        
+        voiceBtn.addEventListener('mouseup', () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+        
+        voiceBtn.addEventListener('mouseleave', () => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+        
+        // touch для телефона
+        voiceBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            pressTimer = setTimeout(() => {
+                startRecording();
+            }, 150);
+        });
+        
+        voiceBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+        
+        voiceBtn.addEventListener('touchcancel', (e) => {
+            if (pressTimer) {
+                clearTimeout(pressTimer);
+                pressTimer = null;
+            }
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+        
+        recorderBtn.addEventListener('mouseup', (e) => {
+            e.preventDefault();
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+        
+        recorderBtn.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (isRecording) {
+                stopRecording();
+            }
+        });
+    }
+    
+    function startRecording() {
+        if (isRecording) return;
+        
+        navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(stream => {
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        audioData = reader.result;
+                        showAudioPreview();
+                    };
+                    reader.readAsDataURL(audioBlob);
+                    
+                    stream.getTracks().forEach(track => track.stop());
+                };
+                
+                mediaRecorder.start(100);
+                isRecording = true;
+                recordingStartTime = Date.now();
+                
+                const overlay = document.getElementById('audioRecorderOverlay');
+                const recorderBtn = document.getElementById('recorderBtn');
+                const timerDiv = document.getElementById('recorderTimer');
+                const waveformDiv = document.getElementById('waveform');
+                
+                overlay.classList.add('active');
+                recorderBtn.classList.add('recording');
+                recorderBtn.innerHTML = '⏹ Отпустите для отправки';
+                
+                // Таймер
+                if (audioTimer) clearInterval(audioTimer);
+                audioTimer = setInterval(() => {
+                    const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    const minutes = Math.floor(elapsed / 60);
+                    const seconds = elapsed % 60;
+                    timerDiv.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                }, 100);
+                
+                // Визуализация звука
+                const audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                if (audioWaveInterval) clearInterval(audioWaveInterval);
+                audioWaveInterval = setInterval(() => {
+                    analyser.getByteFrequencyData(dataArray);
+                    const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+                    const height = Math.min(60, 20 + average / 3);
+                    
+                    waveformDiv.innerHTML = '';
+                    for (let i = 0; i < 30; i++) {
+                        const bar = document.createElement('div');
+                        bar.className = 'waveform-bar';
+                        const randomHeight = Math.max(5, Math.min(60, 10 + Math.random() * 50 + (average / 5)));
+                        bar.style.height = randomHeight + 'px';
+                        bar.style.opacity = 0.5 + (average / 255) * 0.5;
+                        waveformDiv.appendChild(bar);
+                    }
+                }, 50);
+            })
+            .catch(err => {
+                console.error('Microphone error:', err);
+                alert('Нет доступа к микрофону');
+            });
+    }
+    
+    function stopRecording() {
+        if (!isRecording || !mediaRecorder) return;
+        
+        mediaRecorder.stop();
+        isRecording = false;
+        
+        if (audioTimer) {
+            clearInterval(audioTimer);
+            audioTimer = null;
+        }
+        if (audioWaveInterval) {
+            clearInterval(audioWaveInterval);
+            audioWaveInterval = null;
+        }
+        
+        const overlay = document.getElementById('audioRecorderOverlay');
+        const recorderBtn = document.getElementById('recorderBtn');
+        
+        overlay.classList.remove('active');
+        recorderBtn.classList.remove('recording');
+        recorderBtn.innerHTML = '🎤 Удерживайте для записи';
+        document.getElementById('recorderTimer').textContent = '0:00';
+        document.getElementById('waveform').innerHTML = '';
+    }
+    
+    function showAudioPreview() {
+        const preview = document.getElementById('audioPreview');
+        const waveContainer = document.getElementById('audioPreviewWave');
+        
+        // Создаём простую визуализацию
+        waveContainer.innerHTML = '';
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'audio-preview-wave-bar';
+            bar.style.height = (5 + Math.random() * 15) + 'px';
+            waveContainer.appendChild(bar);
+        }
+        
+        preview.classList.add('active');
+        
+        const playBtn = document.getElementById('audioPreviewPlay');
+        let isPlaying = false;
+        let audio = null;
+        
+        playBtn.onclick = () => {
+            if (isPlaying && audio) {
+                audio.pause();
+                isPlaying = false;
+                playBtn.textContent = '▶️';
+            } else {
+                if (audio) {
+                    audio.play();
+                } else {
+                    audio = new Audio(audioData);
+                    audio.onended = () => {
+                        isPlaying = false;
+                        playBtn.textContent = '▶️';
+                    };
+                    audio.play();
+                }
+                isPlaying = true;
+                playBtn.textContent = '⏸';
+            }
+        };
+        
+        document.getElementById('audioPreviewDelete').onclick = () => {
+            if (audio) {
+                audio.pause();
+            }
+            audioData = null;
+            preview.classList.remove('active');
+        };
+    }
+    
+    function getAudioPreviewData() {
+        return audioData;
+    }
+    
+    function clearAudioPreview() {
+        audioData = null;
+        document.getElementById('audioPreview').classList.remove('active');
+    }
+
+    // === ОСТАЛЬНЫЕ ФУНКЦИИ ЧАТА ===
     function formatDateLabel(date) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -856,6 +1263,7 @@
             let textToCopy = msgData.text || '';
             if (msgData.images?.length) textToCopy = `📷 ${msgData.images.length} фото`;
             if (msgData.videos?.length) textToCopy = `🎥 ${msgData.videos.length} видео`;
+            if (msgData.audio) textToCopy = `🎤 Голосовое сообщение`;
             if (msgData.sticker) textToCopy = `😊 Стикер`;
             navigator.clipboard.writeText(textToCopy);
             const toast = document.createElement('div');
@@ -901,6 +1309,7 @@
         let previewText = msg.text || '';
         if (msg.images?.length) previewText = `📷 ${msg.images.length} фото`;
         if (msg.videos?.length) previewText = `🎥 ${msg.videos.length} видео`;
+        if (msg.audio) previewText = `🎤 Голосовое`;
         if (msg.sticker) previewText = `😊 Стикер`;
         replyContent.innerHTML = `<strong>${msg.name || 'Ученик'}</strong>: ${previewText.substring(0, 50)}`;
         replyBar.classList.add('active');
@@ -945,6 +1354,7 @@
                     let repliedText = m.replyTo.text || '';
                     if (m.replyTo.images?.length) repliedText = `📷 фото`;
                     if (m.replyTo.videos?.length) repliedText = `🎥 видео`;
+                    if (m.replyTo.audio) repliedText = `🎤 голосовое`;
                     if (m.replyTo.sticker) repliedText = `😊 Стикер`;
                     replyHtml = `<div class="reply-preview" data-reply-to-id="${replyToId}"><div class="reply-author">→ ${repliedUserName}</div><div class="reply-text">${repliedText.substring(0, 50)}</div></div>`;
                 }
@@ -971,6 +1381,15 @@
                         `;
                     }
                 }
+                if (m.audio) {
+                    mediaHtml += `
+                        <div class="audio-player" data-audio-url="${m.audio}">
+                            <button class="audio-play-btn">▶️</button>
+                            <div class="audio-wave"></div>
+                            <span class="audio-duration">${m.audioDuration || '0:00'}</span>
+                        </div>
+                    `;
+                }
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px; cursor:pointer;" class="clickable-media" data-type="image" data-url="${m.sticker}">`;
                 
                 const seenCount = (m.seenBy || []).filter(uid => uid !== m.uid).length;
@@ -978,8 +1397,46 @@
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = m.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text || ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
+                
+                // Аудио плееры
+                div.querySelectorAll('.audio-player').forEach(player => {
+                    const audioUrl = player.getAttribute('data-audio-url');
+                    const playBtn = player.querySelector('.audio-play-btn');
+                    const waveContainer = player.querySelector('.audio-wave');
+                    let isPlaying = false;
+                    let audio = null;
+                    
+                    // Создаём визуализацию
+                    for (let i = 0; i < 20; i++) {
+                        const bar = document.createElement('div');
+                        bar.className = 'audio-wave-bar';
+                        bar.style.height = (5 + Math.random() * 15) + 'px';
+                        waveContainer.appendChild(bar);
+                    }
+                    
+                    playBtn.addEventListener('click', () => {
+                        if (isPlaying && audio) {
+                            audio.pause();
+                            isPlaying = false;
+                            playBtn.textContent = '▶️';
+                        } else {
+                            if (audio) {
+                                audio.play();
+                            } else {
+                                audio = new Audio(audioUrl);
+                                audio.onended = () => {
+                                    isPlaying = false;
+                                    playBtn.textContent = '▶️';
+                                };
+                                audio.play();
+                            }
+                            isPlaying = true;
+                            playBtn.textContent = '⏸';
+                        }
+                    });
+                });
                 
                 div.querySelectorAll('.clickable-media').forEach(el => {
                     el.addEventListener('click', (e) => {
@@ -1008,6 +1465,7 @@
                         uid: m.uid,
                         images: m.images,
                         videos: m.videos,
+                        audio: m.audio,
                         sticker: m.sticker
                     });
                 });
@@ -1023,6 +1481,7 @@
                             uid: m.uid,
                             images: m.images,
                             videos: m.videos,
+                            audio: m.audio,
                             sticker: m.sticker
                         });
                     }, 500);
@@ -1032,8 +1491,8 @@
                 
                 div.querySelector('.delete-btn')?.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/видео/стикер' };
-                    document.getElementById('deleteQuote').textContent = (m.text || 'Фото/видео/стикер').substring(0, 100);
+                    pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/видео/голосовое/стикер' };
+                    document.getElementById('deleteQuote').textContent = (m.text || 'Фото/видео/голосовое/стикер').substring(0, 100);
                     openModal('deleteConfirmModal');
                 });
                 div.querySelector('.seen-btn')?.addEventListener('click', async (e) => {
@@ -1062,6 +1521,9 @@
                         for (let i = 0; i < pending.videos.length; i++) {
                             mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:280px; max-width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; margin-top:8px;"><div class="spinner"></div></div>`;
                         }
+                    }
+                    if (pending.audio) {
+                        mediaHtml += `<div class="audio-player"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${pending.audioDuration || '0:00'}</span></div>`;
                     }
                     const div = document.createElement('div');
                     div.className = 'message mine';
@@ -1098,17 +1560,17 @@
         });
     }
 
-    async function sendMessageOptimistic(text, imagesArray, videosArray, stickerUrl = null) {
+    async function sendMessageOptimistic(text, imagesArray, videosArray, audioDataUrl = null, audioDuration = null, stickerUrl = null) {
         const tempId = 'temp_' + Date.now() + '_' + Math.random();
         const userData = await getUserData(currentUser.uid);
         const replyData = replyToMsg ? {
             id: replyToMsg.id,
-            text: replyToMsg.text || (replyToMsg.images ? '📷 Фото' : (replyToMsg.videos ? '🎥 Видео' : (replyToMsg.sticker ? '😊 Стикер' : ''))),
+            text: replyToMsg.text || (replyToMsg.images ? '📷 Фото' : (replyToMsg.videos ? '🎥 Видео' : (replyToMsg.audio ? '🎤 Голосовое' : (replyToMsg.sticker ? '😊 Стикер' : '')))),
             name: replyToMsg.name,
             uid: replyToMsg.uid
         } : null;
         
-        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], videos: videosArray || [], progress: 0 });
+        pendingMessages.set(tempId, { text: text || '', images: imagesArray || [], videos: videosArray || [], audio: audioDataUrl, audioDuration: audioDuration, progress: 0 });
         loadMessages();
         
         let uploadedVideos = [];
@@ -1118,17 +1580,11 @@
                 if (pending) pending.progress = Math.floor((i / videosArray.length) * 50);
                 
                 try {
-                    // СЖАТИЕ ВИДЕО ЧЕРЕЗ FFMPEG
                     const fileBlob = await (await fetch(videosArray[i])).blob();
                     const file = new File([fileBlob], 'video.mp4', { type: 'video/mp4' });
-                    
-                    // Обновляем прогресс перед сжатием
-                    if (pending) pending.progress = 50 + Math.floor((i / videosArray.length) * 40);
-                    
                     const compressed = await compressVideo(file);
                     uploadedVideos.push(compressed);
-                    
-                    if (pending) pending.progress = 90 + Math.floor(((i + 1) / videosArray.length) * 10);
+                    if (pending) pending.progress = 50 + Math.floor(((i + 1) / videosArray.length) * 40);
                 } catch (err) {
                     console.error('Ошибка сжатия:', err);
                     alert(`Ошибка сжатия видео: ${err.message || 'неизвестная ошибка'}`);
@@ -1140,10 +1596,12 @@
         }
         
         let uploadedImages = imagesArray || [];
+        let uploadedAudio = audioDataUrl;
+        let uploadedAudioDuration = audioDuration;
         
         try {
             await db.collection('rooms').doc(CHAT_PATH).collection('messages').add({
-                text: text || '', images: uploadedImages, videos: uploadedVideos, sticker: stickerUrl,
+                text: text || '', images: uploadedImages, videos: uploadedVideos, audio: uploadedAudio, audioDuration: uploadedAudioDuration, sticker: stickerUrl,
                 uid: currentUser.uid, name: userData.name || currentUser.displayName || 'Ученик',
                 seenBy: [currentUser.uid], createdAt: new Date(),
                 replyTo: replyData
@@ -1170,7 +1628,7 @@
         document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
             img.onclick = (e) => {
                 e.stopPropagation();
-                sendMessageOptimistic('', null, null, img.getAttribute('data-sticker-url'));
+                sendMessageOptimistic('', null, null, null, null, img.getAttribute('data-sticker-url'));
                 closeModal('stickerSheet');
             };
         });
@@ -1408,6 +1866,7 @@
     initSwipeClose('stickerSheet', 'stickerHandle');
     initSwipeClose('attachSheet', 'attachHandle');
     initSwipeClose('seenSheet', 'seenHandle');
+    initAudioRecorder();
 
     document.getElementById('cancelDeleteBtn').onclick = () => closeModal('deleteConfirmModal');
     document.getElementById('confirmDeleteBtn').onclick = async () => {
@@ -1433,8 +1892,16 @@
         const text = document.getElementById('messageInput').value;
         const images = selectedMedia.filter(m => m.type === 'image').map(m => m.data);
         const videos = selectedMedia.filter(m => m.type === 'video').map(m => m.data);
+        const audio = getAudioPreviewData();
+        const audioDuration = document.getElementById('recorderTimer')?.textContent || null;
         
-        if (selectedMedia.length) {
+        if (audio) {
+            await sendMessageOptimistic(text, images, videos, audio, audioDuration);
+            clearAudioPreview();
+            selectedMedia = [];
+            document.getElementById('messageInput').value = '';
+            closeModal('attachSheet');
+        } else if (selectedMedia.length) {
             await sendMessageOptimistic(text, images, videos);
             selectedMedia = [];
             document.getElementById('messageInput').value = '';
