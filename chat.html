@@ -1642,12 +1642,20 @@
                     startRecordingFromSheet();
                     const overlay = document.getElementById('audioRecorderOverlay');
                     const recorderBtn = document.getElementById('recorderBtn');
-                    const stopHandler = () => { stopRecordingFromSheet(); recorderBtn.removeEventListener('mouseup', stopHandler); recorderBtn.removeEventListener('touchend', stopHandler); overlay.removeEventListener('mouseleave', stopHandler); };
+                    const stopHandler = () => { 
+                        stopRecordingFromSheet(); 
+                        recorderBtn.removeEventListener('mouseup', stopHandler); 
+                        recorderBtn.removeEventListener('touchend', stopHandler); 
+                        overlay.removeEventListener('mouseleave', stopHandler);
+                        attachScreen = 'main';
+                        renderAttachMain();
+                    };
                     recorderBtn.addEventListener('mouseup', stopHandler);
                     recorderBtn.addEventListener('touchend', stopHandler);
                     overlay.addEventListener('mouseleave', stopHandler);
-                } else alert(`📎 Отправка ${el.dataset.type} — в разработке`);
-                closeModal('attachSheet');
+                } else {
+                    alert(`📎 Отправка ${el.dataset.type} — в разработке`);
+                }
             };
         });
         document.getElementById('attachModalCloseBtn').onclick = (e) => { closeModal('attachSheet'); };
