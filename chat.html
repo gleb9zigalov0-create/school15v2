@@ -200,6 +200,11 @@
             border-radius: 16px;
             margin-top: 0.3rem;
         }
+        .msg-text iframe {
+            max-width: 280px;
+            border-radius: 16px;
+            margin-top: 0.3rem;
+        }
         .audio-player {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 40px;
@@ -556,6 +561,81 @@
             justify-content: center;
         }
 
+        /* МОДАЛКА УДАЛЕНИЯ (отдельная, по центру) */
+        .delete-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0);
+            backdrop-filter: blur(0px);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease, backdrop-filter 0.3s ease;
+        }
+        .delete-modal-overlay.active {
+            display: flex;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+        }
+        .delete-modal {
+            background: rgba(30, 40, 50, 0.96);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            max-width: 400px;
+            width: 85%;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.25);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            animation: slideUp 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .delete-modal p {
+            color: white;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+        .delete-content-preview {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            max-height: 150px;
+            overflow-y: auto;
+            color: #ddd;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+        .delete-content-preview img {
+            max-width: 100px;
+            border-radius: 12px;
+        }
+        .delete-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+        .delete-buttons button {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 40px;
+            color: white;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .delete-buttons button:hover { background: rgba(255,255,255,0.3); transform: scale(1.02); }
+        .delete-buttons button.confirm { background: #e94560; }
+        .delete-buttons button.confirm:hover { background: #ff5a7a; }
+
         .modal-sheet {
             position: absolute;
             bottom: 60px;
@@ -586,6 +666,7 @@
             margin: 12px auto 8px;
             cursor: grab;
         }
+        .modal-handle:active { cursor: grabbing; }
         .modal-content-inner { padding: 0 1rem 1.5rem; max-height: 55vh; overflow-y: auto; }
         .modal-title { text-align: center; color: #e0e0e0; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem; }
         .close-btn {
@@ -787,13 +868,14 @@
             <div class="modal-content-inner" id="seenModalContent"></div>
         </div>
 
-        <div id="deleteConfirmModal" class="modal-sheet" style="border-radius: 28px; max-width: 400px; width: 80%; left: 0; right: 0; margin: 0 auto; bottom: auto; top: 50%; transform: translateY(-50%) scale(0.9); opacity: 0; transition: 0.2s; display: none;">
-            <div class="modal-content-inner" style="padding: 1.5rem;">
-                <p style="color:white;">🗑️ Вы действительно хотите удалить сообщение?</p>
-                <div class="quote" id="deleteQuote" style="background:rgba(255,255,255,0.1); padding:0.5rem; border-radius:16px; margin:1rem 0; color:#ddd;"></div>
-                <div style="display:flex; gap:1rem; justify-content:flex-end;">
-                    <button id="cancelDeleteBtn" style="background:#0a3f6f; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Отмена</button>
-                    <button id="confirmDeleteBtn" style="background:#e94560; color:white; border:none; padding:0.5rem 1rem; border-radius:40px;">Удалить</button>
+        <!-- НОВАЯ МОДАЛКА УДАЛЕНИЯ -->
+        <div id="deleteModalOverlay" class="delete-modal-overlay">
+            <div class="delete-modal">
+                <p>🗑️ Вы действительно хотите удалить сообщение?</p>
+                <div class="delete-content-preview" id="deletePreview"></div>
+                <div class="delete-buttons">
+                    <button id="cancelDeleteModalBtn">Отмена</button>
+                    <button id="confirmDeleteModalBtn" class="confirm">Удалить</button>
                 </div>
             </div>
         </div>
@@ -823,7 +905,8 @@
     let selectedMedia = [];
     let attachScreen = 'main';
     let pendingMessages = new Map();
-    let pendingDelete = { msgId: null, msgUid: null, messageText: null };
+    let pendingDeleteId = null;
+    let pendingDeleteContent = '';
     let onlineInterval = null;
     let replyToMsg = null;
     let contextMenu = null;
@@ -843,9 +926,39 @@
     // ОПРОСЫ
     let pollData = { title: '', options: [''], correctOption: null };
     
+    // УДАЛЕНИЕ
+    function showDeleteModal(msgId, contentPreview) {
+        pendingDeleteId = msgId;
+        document.getElementById('deletePreview').innerHTML = contentPreview;
+        document.getElementById('deleteModalOverlay').classList.add('active');
+    }
+    
+    function closeDeleteModal() {
+        document.getElementById('deleteModalOverlay').classList.remove('active');
+        pendingDeleteId = null;
+    }
+    
+    async function confirmDelete() {
+        if (!pendingDeleteId) return;
+        const docRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDeleteId);
+        const doc = await docRef.get();
+        if (!doc.exists) return;
+        const msg = doc.data();
+        const isMine = msg.uid === currentUser.uid;
+        let canDelete = isMine;
+        if (!isMine) {
+            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
+            if (password === 'КИКИ99СССР') canDelete = true;
+            else alert('Неверный пароль!');
+        }
+        if (canDelete) {
+            await docRef.delete();
+        }
+        closeDeleteModal();
+    }
+    
     function startRecordingFromSheet() {
         if (isRecording) return;
-        
         navigator.mediaDevices.getUserMedia({ audio: true })
             .then(stream => {
                 audioContext = new AudioContext();
@@ -853,10 +966,8 @@
                 audioAnalyser = audioContext.createAnalyser();
                 audioAnalyser.fftSize = 256;
                 audioSource.connect(audioAnalyser);
-                
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-                
                 mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data); };
                 mediaRecorder.onstop = () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
@@ -872,16 +983,13 @@
                 mediaRecorder.start(100);
                 isRecording = true;
                 recordingStartTime = Date.now();
-                
                 const overlay = document.getElementById('audioRecorderOverlay');
                 const recorderBtn = document.getElementById('recorderBtn');
                 const timerDiv = document.getElementById('recorderTimer');
                 const waveformDiv = document.getElementById('waveform');
-                
                 overlay.classList.add('active');
                 recorderBtn.classList.add('recording');
                 recorderBtn.innerHTML = '⏹ Отпустите для отправки';
-                
                 if (audioTimer) clearInterval(audioTimer);
                 audioTimer = setInterval(() => {
                     const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
@@ -889,7 +997,6 @@
                     const seconds = elapsed % 60;
                     timerDiv.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
                 }, 100);
-                
                 if (audioWaveInterval) clearInterval(audioWaveInterval);
                 audioWaveInterval = setInterval(() => {
                     if (!audioAnalyser || !isRecording) return;
@@ -970,12 +1077,10 @@
     function renderPollCreator() {
         const container = document.getElementById('attachModalContent');
         if (!container) return;
-        
         let optionsHtml = '';
         for (let i = 0; i < pollData.options.length; i++) {
             optionsHtml += `<div style="margin-bottom:0.5rem;"><input type="text" class="poll-option-input" data-index="${i}" value="${escapeHtml(pollData.options[i])}" placeholder="Вариант ответа ${i+1}" style="width:100%; padding:0.5rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>`;
         }
-        
         container.innerHTML = `
             <div class="modal-title">📊 Создать опрос</div>
             <div style="margin-bottom:1rem;"><input type="text" id="pollTitle" value="${escapeHtml(pollData.title)}" placeholder="Заголовок опроса..." style="width:100%; padding:0.7rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>
@@ -984,7 +1089,6 @@
             <button id="setCorrectPollBtn" class="full-width-btn" style="margin-bottom:0.5rem; ${pollData.correctOption !== null ? 'background:#4ade80; color:#000;' : ''}">🎯 ${pollData.correctOption !== null ? 'Правильный ответ выбран' : 'Выбрать правильный ответ'}</button>
             <div style="display:flex; gap:0.5rem; margin-top:1rem;"><button id="backFromPollBtn" class="close-btn" style="background:#555;">← Назад</button><button id="sendPollBtn" class="close-btn">📤 Отправить опрос</button></div>
         `;
-        
         document.querySelectorAll('.poll-option-input').forEach(inp => {
             inp.addEventListener('change', (e) => { pollData.options[parseInt(inp.dataset.index)] = inp.value; });
         });
@@ -1244,10 +1348,9 @@
                 // Видео (ссылки YouTube/Rutube)
                 const videoUrlMatch = m.text?.match(/(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be|rutube\.ru)\/[\w\/\-?=&]+/);
                 if (videoUrlMatch) {
-                    let videoId = '';
                     let embedUrl = '';
                     if (videoUrlMatch[0].includes('youtube') || videoUrlMatch[0].includes('youtu.be')) {
-                        videoId = videoUrlMatch[0].split('v=')[1]?.split('&')[0] || videoUrlMatch[0].split('/').pop();
+                        let videoId = videoUrlMatch[0].split('v=')[1]?.split('&')[0] || videoUrlMatch[0].split('/').pop();
                         embedUrl = `https://www.youtube.com/embed/${videoId}`;
                     } else if (videoUrlMatch[0].includes('rutube')) {
                         embedUrl = videoUrlMatch[0];
@@ -1286,7 +1389,7 @@
                 const div = document.createElement('div');
                 div.className = `message ${mine ? 'mine' : ''}`;
                 div.id = m.id;
-                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-uid="${m.uid}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
+                div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
                 // Обработчики
@@ -1322,7 +1425,34 @@
                 div.addEventListener('touchstart', (e) => { pressTimer = setTimeout(() => { const touch = e.touches[0]; showContextMenu(touch.clientX, touch.clientY, { id: m.id, text: m.text || '', name: userData.name || m.name, uid: m.uid, images: m.images, videos: m.videos, audio: m.audio, sticker: m.sticker, type: m.type, title: m.title }); }, 500); });
                 div.addEventListener('touchend', () => clearTimeout(pressTimer));
                 div.addEventListener('touchmove', () => clearTimeout(pressTimer));
-                div.querySelector('.delete-btn')?.addEventListener('click', (e) => { e.stopPropagation(); pendingDelete = { msgId: m.id, msgUid: m.uid, messageText: m.text || 'Фото/видео/голосовое/стикер/опрос' }; document.getElementById('deleteQuote').textContent = (m.text || 'Фото/видео/голосовое/стикер/опрос').substring(0, 100); openModal('deleteConfirmModal'); });
+                
+                // КНОПКА УДАЛЕНИЯ
+                const deleteBtn = div.querySelector('.delete-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const msgId = deleteBtn.getAttribute('data-msg-id');
+                        const msgText = deleteBtn.getAttribute('data-msg-text');
+                        let previewHtml = `<div>${escapeHtml(msgText)}</div>`;
+                        if (m.images && m.images.length) {
+                            previewHtml = `<div><img src="${m.images[0]}" style="max-width:120px; border-radius:12px;"><br>${m.images.length} фото</div>`;
+                        }
+                        if (m.videos && m.videos.length) {
+                            previewHtml = `<div>🎥 Видео (${m.videos.length})</div>`;
+                        }
+                        if (m.audio) {
+                            previewHtml = `<div>🎤 Голосовое сообщение</div>`;
+                        }
+                        if (m.sticker) {
+                            previewHtml = `<div>😊 Стикер</div>`;
+                        }
+                        if (m.type === 'poll') {
+                            previewHtml = `<div>📊 Опрос: ${escapeHtml(m.title)}</div>`;
+                        }
+                        showDeleteModal(m.id, previewHtml);
+                    });
+                }
+                
                 div.querySelector('.seen-btn')?.addEventListener('click', async (e) => {
                     const users = [];
                     for (const uid of (m.seenBy || [])) if (uid !== currentUser?.uid) { const userData = await getUserData(uid); users.push(userData.name || 'Ученик'); }
@@ -1576,18 +1706,8 @@
     initSwipeClose('attachSheet', 'attachHandle');
     initSwipeClose('seenSheet', 'seenHandle');
     
-    document.getElementById('cancelDeleteBtn').onclick = () => closeModal('deleteConfirmModal');
-    document.getElementById('confirmDeleteBtn').onclick = async () => {
-        closeModal('deleteConfirmModal');
-        if (!pendingDelete.msgId) return;
-        const isMine = pendingDelete.msgUid === currentUser.uid;
-        if (!isMine) {
-            const password = prompt('🔐 Это чужое сообщение. Введите пароль модератора:');
-            if (password !== 'КИКИ99СССР') { alert('Неверный пароль!'); return; }
-        }
-        await db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(pendingDelete.msgId).delete();
-    };
-    
+    document.getElementById('cancelDeleteModalBtn').onclick = closeDeleteModal;
+    document.getElementById('confirmDeleteModalBtn').onclick = confirmDelete;
     document.getElementById('mediaViewerClose').onclick = closeMediaViewer;
     document.getElementById('mediaViewer').addEventListener('click', (e) => { if (e.target === document.getElementById('mediaViewer')) closeMediaViewer(); });
     document.getElementById('cancelReplyBtn').onclick = cancelReply;
