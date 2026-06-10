@@ -71,6 +71,24 @@
         .back-link { display: block; text-align: center; margin-top: 1.5rem; color: #0a3f6f; text-decoration: none; }
         .row-2cols { display: flex; gap: 1rem; flex-wrap: wrap; }
         .row-2cols > * { flex: 1; }
+        .yandex-auth-warning {
+            background: rgba(233, 69, 96, 0.2);
+            border-radius: 40px;
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            color: #e94560;
+            font-size: 0.9rem;
+        }
+        .yandex-auth-btn {
+            background: #fc3f1d;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            cursor: pointer;
+            margin-left: 0.5rem;
+        }
         @media (max-width: 600px) { .row-2cols { flex-direction: column; } }
     </style>
 </head>
@@ -79,6 +97,11 @@
 <div class="glass-card">
     <h1>📤 Загрузить проект</h1>
     <div class="sub">Поделись своей работой с классом</div>
+
+    <div id="authWarning" class="yandex-auth-warning" style="display: none;">
+        ⚠️ Для загрузки больших файлов (>1 МБ) нужен Яндекс.Диск
+        <button class="yandex-auth-btn" id="yandexAuthBtn">☁️ Войти через Яндекс</button>
+    </div>
 
     <div class="form-group">
         <label>📌 Название проекта</label>
@@ -160,6 +183,21 @@
     let selectedProjectFiles = null;
     const submitBtn = document.getElementById('submitBtn');
 
+    // Проверка авторизации Яндекс
+    function checkYandexAuth() {
+        const warning = document.getElementById('authWarning');
+        if (ProjectStorage.isYandexAuthorized && ProjectStorage.isYandexAuthorized()) {
+            warning.style.display = 'none';
+            return true;
+        }
+        warning.style.display = 'block';
+        return false;
+    }
+
+    document.getElementById('yandexAuthBtn')?.addEventListener('click', () => {
+        ProjectStorage.redirectToYandexAuth();
+    });
+
     // Обложка
     const imageArea = document.getElementById('imageArea');
     const imageFile = document.getElementById('imageFile');
@@ -225,6 +263,14 @@
         if (!title) { alert('Введите название'); return; }
         if (!selectedProjectFiles) { alert('Выберите файл проекта'); return; }
 
+        // Проверяем размер файлов и авторизацию
+        const hasLargeFile = Array.from(selectedProjectFiles).some(f => f.size > 1024 * 1024);
+        if (hasLargeFile && !ProjectStorage.isYandexAuthorized()) {
+            alert('Для загрузки больших файлов (>1 МБ) нужно авторизоваться через Яндекс.Диск');
+            checkYandexAuth();
+            return;
+        }
+
         submitBtn.disabled = true;
         submitBtn.textContent = '⏳ Загрузка...';
 
@@ -243,7 +289,6 @@
                 });
             }
 
-            // ✅ ДОБАВЛЯЕМ, А НЕ ЗАМЕНЯЕМ
             const projects = ProjectStorage.getProjects();
             projects.push({
                 id: projectId,
@@ -256,8 +301,6 @@
                 createdAt: new Date().toISOString()
             });
             ProjectStorage.saveProjects(projects);
-            
-            console.log('Все проекты после сохранения:', ProjectStorage.getProjects());
 
             alert('✅ Проект отправлен на модерацию!');
             window.location.href = 'projects.html';
@@ -268,6 +311,9 @@
             submitBtn.textContent = '🚀 Отправить на модерацию';
         }
     };
+
+    // Проверяем авторизацию при загрузке
+    checkYandexAuth();
 </script>
 </body>
 </html>
