@@ -105,7 +105,42 @@
             flex-direction: column;
             gap: 0.8rem;
             scroll-behavior: smooth;
+            position: relative;
         }
+        /* СКЕЛЕТОН */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 20px;
+            height: 60px;
+            margin-bottom: 0.8rem;
+        }
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .scroll-down-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #0a3f6f;
+            backdrop-filter: blur(12px);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 1.4rem;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: 0.1s;
+            z-index: 40;
+        }
+        .scroll-down-btn:hover { transform: scale(1.05); background: #0e5090; }
         .date-divider { text-align: center; margin: 1rem 0; }
         .date-badge {
             display: inline-block;
@@ -123,9 +158,13 @@
             align-items: flex-start;
             max-width: 85%;
             position: relative;
-            transition: box-shadow 0.4s ease;
+            transition: box-shadow 0.4s ease, opacity 0.25s ease, transform 0.25s ease;
             border-radius: 20px;
             padding: 0.1rem 0;
+        }
+        .message.deleting {
+            opacity: 0;
+            transform: scale(0.8);
         }
         .message.highlight {
             animation: megaGlow 0.8s ease-out forwards;
@@ -213,6 +252,8 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            position: relative;
+            cursor: pointer;
         }
         .audio-play-btn {
             background: none;
@@ -226,23 +267,49 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
         }
         .audio-wave {
             display: flex;
             align-items: center;
             gap: 3px;
             height: 30px;
+            flex: 1;
+            position: relative;
+            cursor: pointer;
         }
         .audio-wave-bar {
             width: 3px;
             background: white;
             border-radius: 2px;
             transition: height 0.05s ease;
+            cursor: pointer;
+        }
+        .audio-wave-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: rgba(0, 200, 255, 0.5);
+            border-radius: 40px;
+            pointer-events: none;
+            z-index: 1;
+            width: 0%;
+        }
+        .audio-wave-bars {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+            flex: 1;
         }
         .audio-duration {
             font-size: 0.7rem;
             color: #ccc;
             margin-left: 0.5rem;
+            flex-shrink: 0;
         }
         .poll-container {
             background: rgba(0, 0, 0, 0.35);
@@ -854,13 +921,16 @@
             <span class="chat-title">💬 Общий чат 5 «А»</span>
             <button class="settings-btn" id="settingsBtn">⚙️ Настройки</button>
         </div>
-        <div class="messages-area" id="messagesArea"></div>
+        <div class="messages-area" id="messagesArea">
+            <div class="scroll-down-btn" id="scrollDownBtn">↓</div>
+        </div>
         <div class="input-panel">
             <div class="reply-bar" id="replyBar">
                 <span>💬 Ответ:</span>
                 <div class="reply-content" id="replyContent"></div>
                 <button class="cancel-reply" id="cancelReplyBtn">✖</button>
             </div>
+            <div class="typing-indicator" id="typingIndicator" style="display: none; font-size: 0.7rem; color: #aaa; margin-left: 1rem;">✍️ Кто-то печатает...</div>
             <div class="input-row">
                 <div class="audio-preview" id="audioPreview">
                     <button class="audio-preview-play" id="audioPreviewPlay">▶️</button>
@@ -928,6 +998,8 @@
     const db = firebase.firestore();
     let currentUser = null;
     let messagesUnsub = null;
+    let typingUnsub = null;
+    let typingTimeout = null;
     const CHAT_PATH = 'class5a_chat';
     const usersCache = new Map();
     let selectedMedia = [];
@@ -937,6 +1009,8 @@
     let onlineInterval = null;
     let replyToMsg = null;
     let contextMenu = null;
+    let newMessagesCount = 0;
+    let isScrolledUp = false;
     
     let mediaRecorder = null;
     let audioChunks = [];
@@ -984,6 +1058,7 @@
         };
         await updateStatus();
         onlineInterval = setInterval(updateStatus, 30000);
+        setupTypingListener();
         loadMessages();
         loadMembers();
         window.addEventListener('beforeunload', () => {
@@ -995,6 +1070,43 @@
     async function markAsSeen(msgId) {
         const msgRef = db.collection('rooms').doc(CHAT_PATH).collection('messages').doc(msgId);
         await msgRef.update({ seenBy: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+    }
+    
+    function setupTypingListener() {
+        const typingRef = db.collection('rooms').doc(CHAT_PATH).collection('typing');
+        if (typingUnsub) typingUnsub();
+        typingUnsub = typingRef.onSnapshot((snap) => {
+            let typingUsers = [];
+            snap.forEach(doc => {
+                const data = doc.data();
+                if (data.uid !== currentUser.uid && data.isTyping && Date.now() - data.timestamp < 3000) {
+                    typingUsers.push(data.name);
+                }
+            });
+            const indicator = document.getElementById('typingIndicator');
+            if (typingUsers.length) {
+                indicator.textContent = `✍️ ${typingUsers.join(', ')} печатает...`;
+                indicator.style.display = 'block';
+            } else {
+                indicator.style.display = 'none';
+            }
+        });
+    }
+    
+    function sendTyping(isTyping) {
+        const typingRef = db.collection('rooms').doc(CHAT_PATH).collection('typing').doc(currentUser.uid);
+        typingRef.set({
+            uid: currentUser.uid,
+            name: currentUser.displayName || 'Ученик',
+            isTyping: isTyping,
+            timestamp: Date.now()
+        });
+        if (typingTimeout) clearTimeout(typingTimeout);
+        if (isTyping) {
+            typingTimeout = setTimeout(() => {
+                sendTyping(false);
+            }, 2000);
+        }
     }
     
     function closeModal(sheetId) {
@@ -1188,7 +1300,11 @@
             else alert('Неверный пароль!');
         }
         if (canDelete) {
-            await docRef.delete();
+            const msgElement = document.getElementById(pendingDeleteId);
+            if (msgElement) msgElement.classList.add('deleting');
+            setTimeout(async () => {
+                await docRef.delete();
+            }, 200);
         }
         closeDeleteModal();
     }
@@ -1391,6 +1507,35 @@
         });
     }
     
+    function updateScrollDownButton() {
+        const msgsArea = document.getElementById('messagesArea');
+        const btn = document.getElementById('scrollDownBtn');
+        if (!msgsArea || !btn) return;
+        const isNearBottom = msgsArea.scrollHeight - msgsArea.scrollTop - msgsArea.clientHeight < 100;
+        if (isNearBottom) {
+            btn.style.display = 'none';
+            newMessagesCount = 0;
+            isScrolledUp = false;
+        } else {
+            btn.style.display = 'flex';
+            btn.innerHTML = isScrolledUp && newMessagesCount > 0 ? `↓ ${newMessagesCount}` : '↓';
+        }
+    }
+    
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    
+    function renderStickerModal() {
+        const container = document.getElementById('stickerModalContent');
+        if (!container) return;
+        container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
+        const stickers = ['stickers/okay.gif'];
+        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
+        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
+            img.onclick = (e) => { e.stopPropagation(); sendMessageOptimistic('', null, null, null, null, img.getAttribute('data-sticker-url')); closeModal('stickerSheet'); };
+        });
+        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerSheet'); };
+    }
+    
     function loadMessages() {
         if (messagesUnsub) messagesUnsub();
         messagesUnsub = db.collection('rooms').doc(CHAT_PATH).collection('messages').orderBy('createdAt').onSnapshot(async (snap) => {
@@ -1398,6 +1543,9 @@
             for (const doc of snap.docs) messages.push({ id: doc.id, ...doc.data() });
             let lastDate = null;
             const container = document.getElementById('messagesArea');
+            let oldHeight = container.scrollHeight;
+            let wasNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+            
             container.innerHTML = '';
             for (const m of messages) {
                 const msgDate = m.createdAt?.toDate();
@@ -1446,9 +1594,6 @@
                     }
                     mediaHtml = `<div style="margin-top:8px;"><iframe src="${embedUrl}" style="width:280px; max-width:100%; height:180px; border-radius:16px; border:none;" allowfullscreen></iframe></div>`;
                 }
-                if (m.audio) {
-                    mediaHtml += `<div class="audio-player" data-audio-url="${m.audio}"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${m.audioDuration || '0:00'}</span></div>`;
-                }
                 if (m.sticker) mediaHtml += `<img src="${m.sticker}" style="max-width:130px; cursor:pointer;" class="clickable-media" data-type="image" data-url="${m.sticker}">`;
                 if (m.type === 'poll') {
                     const votes = m.votes || {};
@@ -1476,21 +1621,101 @@
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                div.querySelectorAll('.audio-player').forEach(player => {
-                    const audioUrl = player.getAttribute('data-audio-url');
-                    const playBtn = player.querySelector('.audio-play-btn');
-                    const waveContainer = player.querySelector('.audio-wave');
-                    let isPlaying = false, audio = null;
-                    for (let i = 0; i < 20; i++) { const bar = document.createElement('div'); bar.className = 'audio-wave-bar'; bar.style.height = (5 + Math.random() * 15) + 'px'; waveContainer.appendChild(bar); }
-                    playBtn.addEventListener('click', () => {
-                        if (isPlaying && audio) { audio.pause(); isPlaying = false; playBtn.textContent = '▶️'; }
-                        else {
-                            if (audio) audio.play();
-                            else { audio = new Audio(audioUrl); audio.onended = () => { isPlaying = false; playBtn.textContent = '▶️'; }; audio.play(); }
-                            isPlaying = true; playBtn.textContent = '⏸';
+                // АУДИО ПЛЕЕР С ПЕРЕМОТКОЙ
+                if (m.audio) {
+                    const audioDiv = div.querySelector('.audio-player');
+                    if (audioDiv) {
+                        const audioUrl = m.audio;
+                        const audio = new Audio(audioUrl);
+                        const playBtn = audioDiv.querySelector('.audio-play-btn');
+                        const waveContainer = audioDiv.querySelector('.audio-wave');
+                        const durationSpan = audioDiv.querySelector('.audio-duration');
+                        
+                        // Создаём структуру для визуализации
+                        waveContainer.innerHTML = '<div class="audio-wave-progress"></div><div class="audio-wave-bars"></div>';
+                        const progressBar = waveContainer.querySelector('.audio-wave-progress');
+                        const barsContainer = waveContainer.querySelector('.audio-wave-bars');
+                        const barCount = 40;
+                        let bars = [];
+                        for (let i = 0; i < barCount; i++) {
+                            const bar = document.createElement('div');
+                            bar.className = 'audio-wave-bar';
+                            bar.style.height = (5 + Math.random() * 20) + 'px';
+                            barsContainer.appendChild(bar);
+                            bars.push(bar);
                         }
-                    });
-                });
+                        
+                        let isPlaying = false;
+                        audio.addEventListener('loadedmetadata', () => {
+                            const minutes = Math.floor(audio.duration / 60);
+                            const seconds = Math.floor(audio.duration % 60);
+                            durationSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                        });
+                        audio.addEventListener('timeupdate', () => {
+                            if (audio.duration) {
+                                const percent = (audio.currentTime / audio.duration) * 100;
+                                progressBar.style.width = percent + '%';
+                                const activeIndex = Math.floor((audio.currentTime / audio.duration) * barCount);
+                                bars.forEach((bar, idx) => {
+                                    if (idx <= activeIndex) bar.style.background = '#00aaff';
+                                    else bar.style.background = 'white';
+                                });
+                            }
+                        });
+                        audio.addEventListener('ended', () => {
+                            isPlaying = false;
+                            playBtn.textContent = '▶️';
+                        });
+                        
+                        playBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            if (isPlaying) {
+                                audio.pause();
+                                isPlaying = false;
+                                playBtn.textContent = '▶️';
+                            } else {
+                                audio.play();
+                                isPlaying = true;
+                                playBtn.textContent = '⏸';
+                            }
+                        };
+                        
+                        // Перемотка по клику на волну
+                        waveContainer.style.cursor = 'pointer';
+                        waveContainer.addEventListener('click', (e) => {
+                            if (!audio.duration) return;
+                            const rect = waveContainer.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const percent = Math.min(1, Math.max(0, x / rect.width));
+                            audio.currentTime = audio.duration * percent;
+                        });
+                        
+                        // Появление подсказки при движении мыши
+                        let tooltip = null;
+                        waveContainer.addEventListener('mousemove', (e) => {
+                            if (!audio.duration) return;
+                            if (!tooltip) {
+                                tooltip = document.createElement('div');
+                                tooltip.style.cssText = 'position:fixed; background:rgba(0,0,0,0.8); color:white; padding:0.2rem 0.5rem; border-radius:20px; font-size:0.7rem; pointer-events:none; z-index:1000;';
+                                document.body.appendChild(tooltip);
+                            }
+                            const rect = waveContainer.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const percent = Math.min(1, Math.max(0, x / rect.width));
+                            const time = audio.duration * percent;
+                            const minutes = Math.floor(time / 60);
+                            const seconds = Math.floor(time % 60);
+                            tooltip.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                            tooltip.style.left = (e.clientX + 10) + 'px';
+                            tooltip.style.top = (e.clientY - 25) + 'px';
+                            tooltip.style.display = 'block';
+                        });
+                        waveContainer.addEventListener('mouseleave', () => {
+                            if (tooltip) tooltip.style.display = 'none';
+                        });
+                    }
+                }
+                
                 div.querySelectorAll('.clickable-media').forEach(el => {
                     el.addEventListener('click', (e) => { e.stopPropagation(); const type = el.getAttribute('data-type'); const url = el.getAttribute('data-url'); showMediaViewer(url, type, e); });
                 });
@@ -1513,24 +1738,12 @@
                     deleteBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         let previewHtml = '';
-                        if (m.text && m.text.trim()) {
-                            previewHtml += `<div>📝 ${escapeHtml(m.text.substring(0, 150))}${m.text.length > 150 ? '…' : ''}</div>`;
-                        }
-                        if (m.images && m.images.length) {
-                            previewHtml += `<div style="margin-top:8px;"><img src="${m.images[0]}" style="max-width:100px; border-radius:12px;"><br>📷 ${m.images.length} фото</div>`;
-                        }
-                        if (m.videos && m.videos.length) {
-                            previewHtml += `<div style="margin-top:8px;">🎥 Видео (${m.videos.length})</div>`;
-                        }
-                        if (m.audio) {
-                            previewHtml += `<div style="margin-top:8px;">🎤 Голосовое сообщение</div>`;
-                        }
-                        if (m.sticker) {
-                            previewHtml += `<div style="margin-top:8px;"><img src="${m.sticker}" style="max-width:80px; border-radius:12px;"><br>😊 Стикер</div>`;
-                        }
-                        if (m.type === 'poll') {
-                            previewHtml += `<div style="margin-top:8px;">📊 Опрос: ${escapeHtml(m.title)}<br>📌 ${m.options.length} вариантов</div>`;
-                        }
+                        if (m.text && m.text.trim()) previewHtml += `<div>📝 ${escapeHtml(m.text.substring(0, 150))}${m.text.length > 150 ? '…' : ''}</div>`;
+                        if (m.images && m.images.length) previewHtml += `<div style="margin-top:8px;"><img src="${m.images[0]}" style="max-width:100px; border-radius:12px;"><br>📷 ${m.images.length} фото</div>`;
+                        if (m.videos && m.videos.length) previewHtml += `<div style="margin-top:8px;">🎥 Видео (${m.videos.length})</div>`;
+                        if (m.audio) previewHtml += `<div style="margin-top:8px;">🎤 Голосовое сообщение</div>`;
+                        if (m.sticker) previewHtml += `<div style="margin-top:8px;"><img src="${m.sticker}" style="max-width:80px; border-radius:12px;"><br>😊 Стикер</div>`;
+                        if (m.type === 'poll') previewHtml += `<div style="margin-top:8px;">📊 Опрос: ${escapeHtml(m.title)}<br>📌 ${m.options.length} вариантов</div>`;
                         if (!previewHtml) previewHtml = '<div>Сообщение</div>';
                         showDeleteModal(m.id, previewHtml);
                     });
@@ -1566,7 +1779,17 @@
                     container.appendChild(div);
                 }
             }
-            container.scrollTop = container.scrollHeight;
+            
+            let newHeight = container.scrollHeight;
+            if (wasNearBottom) {
+                container.scrollTop = container.scrollHeight;
+            } else if (!wasNearBottom && messages.length > 0 && oldHeight !== newHeight) {
+                newMessagesCount++;
+                isScrolledUp = true;
+                document.getElementById('scrollDownBtn').style.display = 'flex';
+                document.getElementById('scrollDownBtn').innerHTML = `↓ ${newMessagesCount}`;
+            }
+            updateScrollDownButton();
             
             for (const change of snap.docChanges()) {
                 const m = change.doc.data();
@@ -1633,20 +1856,6 @@
             loadMessages();
             alert('Ошибка отправки: ' + (err.message || 'неизвестная ошибка'));
         }
-    }
-    
-    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, (m) => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
-    
-    function renderStickerModal() {
-        const container = document.getElementById('stickerModalContent');
-        if (!container) return;
-        container.innerHTML = `<div class="modal-title">✨ Стикеры</div><div id="stickerList" class="sticker-grid"></div><button class="close-btn" id="stickerModalCloseBtn">Закрыть</button>`;
-        const stickers = ['stickers/okay.gif'];
-        document.getElementById('stickerList').innerHTML = stickers.map(s => `<img src="${s}" class="sticker-img" data-sticker-url="${s}">`).join('');
-        document.querySelectorAll('#stickerList .sticker-img').forEach(img => {
-            img.onclick = (e) => { e.stopPropagation(); sendMessageOptimistic('', null, null, null, null, img.getAttribute('data-sticker-url')); closeModal('stickerSheet'); };
-        });
-        document.getElementById('stickerModalCloseBtn').onclick = (e) => { e.preventDefault(); closeModal('stickerSheet'); };
     }
     
     function renderAttachMain() {
@@ -1804,7 +2013,31 @@
     document.getElementById('cancelReplyBtn').onclick = cancelReply;
     document.getElementById('stickerBtn').onclick = () => { renderStickerModal(); openModal('stickerSheet'); };
     document.getElementById('attachBtn').onclick = () => { attachScreen = 'main'; selectedMedia = []; renderAttachMain(); openModal('attachSheet'); };
+    document.getElementById('scrollDownBtn').onclick = () => {
+        const msgsArea = document.getElementById('messagesArea');
+        msgsArea.scrollTo({ top: msgsArea.scrollHeight, behavior: 'smooth' });
+        newMessagesCount = 0;
+        isScrolledUp = false;
+        document.getElementById('scrollDownBtn').style.display = 'none';
+    };
+    const msgsArea = document.getElementById('messagesArea');
+    msgsArea.addEventListener('scroll', () => {
+        const isNearBottom = msgsArea.scrollHeight - msgsArea.scrollTop - msgsArea.clientHeight < 100;
+        if (isNearBottom) {
+            newMessagesCount = 0;
+            isScrolledUp = false;
+            document.getElementById('scrollDownBtn').style.display = 'none';
+        } else {
+            document.getElementById('scrollDownBtn').style.display = 'flex';
+            if (newMessagesCount > 0) document.getElementById('scrollDownBtn').innerHTML = `↓ ${newMessagesCount}`;
+            else document.getElementById('scrollDownBtn').innerHTML = '↓';
+        }
+    });
+    document.getElementById('messageInput').addEventListener('input', () => {
+        sendTyping(true);
+    });
     document.getElementById('sendBtn').onclick = async () => {
+        sendTyping(false);
         const text = document.getElementById('messageInput').value;
         const images = selectedMedia.filter(m => m.type === 'image').map(m => m.data);
         const videos = selectedMedia.filter(m => m.type === 'video').map(m => m.data);
@@ -1815,6 +2048,12 @@
         else if (text.trim()) { await sendMessageOptimistic(text, null, null); document.getElementById('messageInput').value = ''; }
     };
     document.getElementById('settingsBtn').onclick = () => window.location.href = 'settings.html';
+    
+    // Показываем скелетон на 1 секунду
+    setTimeout(() => {
+        const skeletons = document.querySelectorAll('.skeleton');
+        skeletons.forEach(s => s.remove());
+    }, 1000);
 </script>
 </body>
 </html>
