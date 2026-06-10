@@ -6,6 +6,7 @@
     <title>Чат 5А | Школа №15</title>
     <link rel="stylesheet" href="common.css">
     <style>
+        /* ----- ВСЕ СТИЛИ (ТЕ ЖЕ, БЕЗ ИЗМЕНЕНИЙ) ----- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
@@ -243,7 +244,6 @@
             border-radius: 16px;
             margin-top: 0.3rem;
         }
-        /* АУДИО ПЛЕЕР С ЖИВОЙ ВИЗУАЛИЗАЦИЕЙ */
         .audio-player {
             background: rgba(0, 0, 0, 0.4);
             backdrop-filter: blur(12px);
@@ -293,11 +293,15 @@
         }
         .audio-wave-bar {
             flex: 1;
-            height: 12px;
+            height: 8px;
             background: #ffffff;
             border-radius: 4px;
-            transition: height 0.05s ease;
+            transition: background 0.1s ease;
             min-width: 2px;
+        }
+        .audio-wave-bar.active {
+            background: #4ade80;
+            box-shadow: 0 0 4px #4ade80;
         }
         .audio-time-display {
             font-family: monospace;
@@ -1611,7 +1615,7 @@
                     mediaHtml = `<div class="poll-container"><div class="poll-title">📊 ${escapeHtml(m.title)}</div>${optionsHtml}<div class="poll-total">Всего голосов: ${totalVotes}</div></div>`;
                 }
                 
-                // АУДИО С ЖИВОЙ ВИЗУАЛИЗАЦИЕЙ
+                // АУДИО СО СТАТИЧЕСКОЙ ВИЗУАЛИЗАЦИЕЙ (СЛУЧАЙНЫЕ ВЫСОТЫ)
                 if (m.audio) {
                     mediaHtml += `
                         <div class="audio-player" data-audio-url="${m.audio}" data-audio-duration="${m.audioDuration || '0:00'}">
@@ -1632,7 +1636,7 @@
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                // === ЖИВОЙ АУДИОПЛЕЕР С ВИЗУАЛИЗАЦИЕЙ ===
+                // === АУДИО ПЛЕЕР СТАТИЧЕСКИЙ (ПОЛОСКИ НЕ МЕНЯЮТСЯ ПРИ ПРОИГРЫВАНИИ) ===
                 const audioPlayerDiv = div.querySelector('.audio-player');
                 if (audioPlayerDiv) {
                     const audioUrl = audioPlayerDiv.getAttribute('data-audio-url');
@@ -1645,101 +1649,54 @@
                     
                     const barCount = 40;
                     let bars = [];
-                    let animationId = null;
-                    let audioCtx = null;
-                    let sourceNode = null;
-                    let analyserNode = null;
                     let isPlaying = false;
                     let isDragging = false;
                     
+                    // Генерируем случайные высоты для каждой полоски (статическая визуализация)
                     for (let i = 0; i < barCount; i++) {
                         const bar = document.createElement('div');
                         bar.className = 'audio-wave-bar';
-                        bar.style.height = '8px';
-                        bar.style.background = '#ffffff';
+                        const randomHeight = 8 + Math.random() * 32; // от 8px до 40px
+                        bar.style.height = randomHeight + 'px';
                         barsContainer.appendChild(bar);
                         bars.push(bar);
                     }
                     
-                    function stopVisualization() {
-                        if (animationId) cancelAnimationFrame(animationId);
-                        if (sourceNode) try { sourceNode.disconnect(); } catch(e) {}
-                        if (analyserNode) try { analyserNode.disconnect(); } catch(e) {}
-                        if (audioCtx) try { audioCtx.close(); } catch(e) {}
-                        audioCtx = null;
-                        sourceNode = null;
-                        analyserNode = null;
-                        for (let bar of bars) {
-                            bar.style.height = '8px';
-                            bar.style.background = '#ffffff';
-                        }
-                    }
+                    timeDisplay.textContent = `0:00 / ${fullDuration}`;
                     
-                    async function setupAudioContext() {
-                        if (audioCtx) return;
-                        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        analyserNode = audioCtx.createAnalyser();
-                        analyserNode.fftSize = 256;
-                        sourceNode = audioCtx.createMediaElementSource(audio);
-                        sourceNode.connect(analyserNode);
-                        analyserNode.connect(audioCtx.destination);
-                        if (audioCtx.state === 'suspended') await audioCtx.resume();
-                    }
-                    
-                    function updateVisualization() {
-                        if (!isPlaying || !analyserNode) return;
-                        const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
-                        analyserNode.getByteFrequencyData(dataArray);
-                        const step = Math.floor(dataArray.length / barCount);
+                    function updateProgressBars(percent) {
+                        const activeCount = Math.floor(percent * barCount);
                         for (let i = 0; i < barCount; i++) {
-                            const value = dataArray[i * step] || 0;
-                            const percent = Math.min(100, Math.max(5, (value / 255) * 60 + 10));
-                            bars[i].style.height = `${percent}%`;
-                            bars[i].style.background = '#4ade80';
+                            if (i < activeCount) bars[i].classList.add('active');
+                            else bars[i].classList.remove('active');
                         }
-                        animationId = requestAnimationFrame(updateVisualization);
                     }
                     
-                    audio.addEventListener('play', async () => {
-                        isPlaying = true;
-                        await setupAudioContext();
-                        updateVisualization();
-                    });
-                    audio.addEventListener('pause', () => {
-                        isPlaying = false;
-                        stopVisualization();
-                    });
-                    audio.addEventListener('ended', () => {
-                        isPlaying = false;
-                        stopVisualization();
-                        playBtn.textContent = '▶️';
-                        timeDisplay.textContent = `0:00 / ${fullDuration}`;
-                        for (let bar of bars) bar.style.height = '8px';
-                    });
                     audio.addEventListener('timeupdate', () => {
                         if (!isDragging && audio.duration) {
                             const percent = audio.currentTime / audio.duration;
-                            const activeCount = Math.floor(percent * barCount);
-                            for (let i = 0; i < barCount; i++) {
-                                if (i < activeCount) {
-                                    bars[i].style.background = '#4ade80';
-                                } else {
-                                    bars[i].style.background = '#ffffff';
-                                }
-                            }
+                            updateProgressBars(percent);
                             const minutes = Math.floor(audio.currentTime / 60);
                             const seconds = Math.floor(audio.currentTime % 60);
                             timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} / ${fullDuration}`;
                         }
+                    });
+                    audio.addEventListener('ended', () => {
+                        isPlaying = false;
+                        playBtn.textContent = '▶️';
+                        updateProgressBars(0);
+                        timeDisplay.textContent = `0:00 / ${fullDuration}`;
                     });
                     
                     playBtn.onclick = (e) => {
                         e.stopPropagation();
                         if (isPlaying) {
                             audio.pause();
+                            isPlaying = false;
                             playBtn.textContent = '▶️';
                         } else {
                             audio.play();
+                            isPlaying = true;
                             playBtn.textContent = '⏸';
                         }
                     };
@@ -1752,11 +1709,7 @@
                         let percent = (clientX - rect.left) / rect.width;
                         percent = Math.min(1, Math.max(0, percent));
                         audio.currentTime = audio.duration * percent;
-                        const activeCount = Math.floor(percent * barCount);
-                        for (let i = 0; i < barCount; i++) {
-                            if (i < activeCount) bars[i].style.background = '#4ade80';
-                            else bars[i].style.background = '#ffffff';
-                        }
+                        updateProgressBars(percent);
                         const minutes = Math.floor(audio.currentTime / 60);
                         const seconds = Math.floor(audio.currentTime % 60);
                         timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} / ${fullDuration}`;
