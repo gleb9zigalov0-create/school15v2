@@ -244,7 +244,6 @@
             color: #ccc;
             margin-left: 0.5rem;
         }
-        /* СТИЛЬНЫЕ ОПРОСЫ — СТЕКЛО, НЕОН, КУБЫ */
         .poll-container {
             background: rgba(0, 0, 0, 0.35);
             backdrop-filter: blur(16px);
@@ -283,7 +282,6 @@
             border-color: rgba(255, 255, 255, 0.3);
             box-shadow: 0 0 12px rgba(0, 200, 255, 0.3);
         }
-        /* ПРАВИЛЬНЫЙ ОТВЕТ — НЕ ВЫДЕЛЯЕТСЯ (СКРЫТ) */
         .poll-option.wrong-selected {
             background: rgba(233, 69, 96, 0.35);
             border-left: 3px solid #e94560;
@@ -1316,15 +1314,26 @@
         if (!container) return;
         let optionsHtml = '';
         for (let i = 0; i < pollData.options.length; i++) {
-            optionsHtml += `<div style="margin-bottom:0.5rem;"><input type="text" class="poll-option-input" data-index="${i}" value="${escapeHtml(pollData.options[i])}" placeholder="Вариант ответа ${i+1}" style="width:100%; padding:0.5rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>`;
+            optionsHtml += `
+                <div class="poll-option-card" style="margin-bottom:0.75rem;">
+                    <input type="text" class="poll-option-input" data-index="${i}" value="${escapeHtml(pollData.options[i])}" placeholder="Вариант ответа ${i+1}" style="width:100%; padding:0.7rem; border-radius:60px; border:none; background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); color:white; font-size:0.9rem; outline:none; transition:0.2s;">
+                </div>
+            `;
         }
         container.innerHTML = `
-            <div class="modal-title">📊 Создать опрос</div>
-            <div style="margin-bottom:1rem;"><input type="text" id="pollTitle" value="${escapeHtml(pollData.title)}" placeholder="Заголовок опроса..." style="width:100%; padding:0.7rem; border-radius:40px; border:none; background:rgba(255,255,255,0.9);"></div>
-            <div id="pollOptionsContainer">${optionsHtml}</div>
-            <button id="addPollOptionBtn" class="full-width-btn" style="margin-bottom:0.5rem;">➕ Добавить вариант ответа</button>
-            <button id="setCorrectPollBtn" class="full-width-btn" style="margin-bottom:0.5rem; ${pollData.correctOption !== null ? 'background:#4ade80; color:#000;' : ''}">🎯 ${pollData.correctOption !== null ? 'Правильный ответ выбран' : 'Выбрать правильный ответ'}</button>
-            <div style="display:flex; gap:0.5rem; margin-top:1rem;"><button id="backFromPollBtn" class="close-btn" style="background:#555;">← Назад</button><button id="sendPollBtn" class="close-btn">📤 Отправить опрос</button></div>
+            <div style="background:rgba(0,0,0,0.45); backdrop-filter:blur(20px); border-radius:48px; padding:1.2rem; border:1px solid rgba(255,255,255,0.2); box-shadow:0 10px 30px rgba(0,0,0,0.4);">
+                <div class="modal-title" style="font-size:1.2rem; text-shadow:0 0 8px rgba(0,200,255,0.6); margin-bottom:1rem;">📊 Создать опрос</div>
+                <div style="margin-bottom:1rem;">
+                    <input type="text" id="pollTitle" value="${escapeHtml(pollData.title)}" placeholder="Заголовок опроса..." style="width:100%; padding:0.8rem; border-radius:60px; border:none; background:rgba(255,255,255,0.15); backdrop-filter:blur(8px); color:white; font-size:0.95rem; outline:none; transition:0.2s;">
+                </div>
+                <div id="pollOptionsContainer" style="margin-bottom:1rem;">${optionsHtml}</div>
+                <button id="addPollOptionBtn" class="full-width-btn" style="margin-bottom:0.6rem; background:rgba(255,255,255,0.12); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.25);">➕ Добавить вариант ответа</button>
+                <button id="setCorrectPollBtn" class="full-width-btn" style="margin-bottom:0.6rem; ${pollData.correctOption !== null ? 'background:#4ade80; color:#000; box-shadow:0 0 12px #4ade80;' : 'background:rgba(255,255,255,0.12);'} border:1px solid rgba(255,255,255,0.25);">🎯 ${pollData.correctOption !== null ? 'Правильный ответ выбран' : 'Выбрать правильный ответ'}</button>
+                <div style="display:flex; gap:0.7rem; margin-top:0.8rem;">
+                    <button id="backFromPollBtn" class="close-btn" style="background:rgba(100,100,120,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.2);">← Назад</button>
+                    <button id="sendPollBtn" class="close-btn" style="background:#0a3f6f; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3);">📤 Отправить опрос</button>
+                </div>
+            </div>
         `;
         document.querySelectorAll('.poll-option-input').forEach(inp => {
             inp.addEventListener('change', (e) => { pollData.options[parseInt(inp.dataset.index)] = inp.value; });
@@ -1333,7 +1342,7 @@
         document.getElementById('addPollOptionBtn').onclick = () => { pollData.options.push(''); renderPollCreator(); };
         document.getElementById('setCorrectPollBtn').onclick = () => {
             if (pollData.correctOption !== null) { pollData.correctOption = null; renderPollCreator(); return; }
-            container.innerHTML = `<div class="modal-title">🎯 Выберите правильный ответ</div>${pollData.options.map((opt, idx) => `<div class="poll-option" data-opt-index="${idx}" style="background:rgba(255,255,255,0.1); margin:0.5rem 0; padding:0.7rem; border-radius:40px; cursor:pointer;">${escapeHtml(opt)}</div>`).join('')}<button id="cancelCorrectBtn" class="close-btn" style="background:#555; margin-top:1rem;">Отмена</button>`;
+            container.innerHTML = `<div style="background:rgba(0,0,0,0.55); backdrop-filter:blur(24px); border-radius:48px; padding:1.2rem; text-align:center;"><div class="modal-title" style="font-size:1.2rem; margin-bottom:1rem;">🎯 Выберите правильный ответ</div>${pollData.options.map((opt, idx) => `<div class="poll-option" data-opt-index="${idx}" style="background:rgba(255,255,255,0.12); backdrop-filter:blur(8px); margin:0.7rem 0; padding:0.8rem; border-radius:60px; cursor:pointer; transition:0.2s; border:1px solid rgba(255,255,255,0.15);">${escapeHtml(opt)}</div>`).join('')}<button id="cancelCorrectBtn" class="close-btn" style="margin-top:1rem; background:rgba(100,100,120,0.8);">Отмена</button></div>`;
             document.querySelectorAll('[data-opt-index]').forEach(opt => { opt.onclick = () => { pollData.correctOption = parseInt(opt.dataset.optIndex); renderPollCreator(); }; });
             document.getElementById('cancelCorrectBtn').onclick = () => renderPollCreator();
         };
