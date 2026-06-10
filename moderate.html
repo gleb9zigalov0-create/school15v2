@@ -61,6 +61,8 @@
         .description { background: rgba(255, 255, 255, 0.6); border-radius: 28px; padding: 1rem; margin: 1rem 0; color: #1e2f3e; line-height: 1.4; }
         .files-list { background: rgba(255, 255, 255, 0.4); border-radius: 28px; padding: 1rem; margin: 1rem 0; }
         .file-item { padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .file-name { word-break: break-all; flex: 1; }
+        .file-size { color: #2c5a7a; font-size: 0.7rem; margin-left: 0.5rem; }
         .download-btn { background: #0a3f6f; color: white; border: none; padding: 0.3rem 1rem; border-radius: 40px; cursor: pointer; font-size: 0.8rem; }
         .action-buttons { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
         .btn-approve { background: #2e7d64; color: white; padding: 0.6rem 1.5rem; border-radius: 60px; border: none; cursor: pointer; font-weight: bold; }
@@ -69,6 +71,8 @@
         .back-link { display: block; text-align: center; margin-top: 2rem; color: #0a3f6f; text-decoration: none; font-weight: 500; }
         .nav-buttons { display: flex; justify-content: space-between; margin-top: 1rem; gap: 1rem; }
         .nav-btn { background: rgba(10,63,111,0.7); border: none; color: white; padding: 0.5rem 1rem; border-radius: 40px; cursor: pointer; }
+        .nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .yandex-badge { background: #fc3f1d; color: white; font-size: 0.6rem; padding: 0.2rem 0.5rem; border-radius: 20px; margin-left: 0.5rem; display: inline-block; vertical-align: middle; }
         @media (max-width: 700px) { .project-header h2 { font-size: 1.2rem; } .action-buttons { justify-content: center; } }
     </style>
 </head>
@@ -111,7 +115,11 @@
         } else {
             filesHtml = files.map(f => `
                 <div class="file-item">
-                    <span>📄 ${escapeHtml(f.name)} (${ProjectStorage.formatSize(f.size)})</span>
+                    <div class="file-name">
+                        📄 ${escapeHtml(f.name)}
+                        ${f.storage === 'yandex' ? '<span class="yandex-badge">☁️ Яндекс.Диск</span>' : '<span class="yandex-badge" style="background:#2e7d64;">💾 Локально</span>'}
+                        <span class="file-size">(${ProjectStorage.formatSize(f.size)})</span>
+                    </div>
                     <button class="download-btn" onclick="downloadFile('${project.id}', '${escapeAttr(f.name)}')">📥 Скачать</button>
                 </div>
             `).join('');
