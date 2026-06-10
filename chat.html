@@ -243,72 +243,82 @@
             border-radius: 16px;
             margin-top: 0.3rem;
         }
+        /* ЛУННАЯ ДОРОЖКА — УЛЬТРАСТИЛЬНЫЙ АУДИОПЛЕЕР */
         .audio-player {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 40px;
-            padding: 0.3rem 0.8rem;
-            margin-top: 0.3rem;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 0.5rem 1rem;
+            margin-top: 0.5rem;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.8rem;
             position: relative;
-            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.2s;
         }
         .audio-play-btn {
-            background: none;
+            background: rgba(255,255,255,0.15);
             border: none;
             color: white;
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             cursor: pointer;
-            width: 30px;
-            height: 30px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
+            transition: 0.1s;
         }
-        .audio-wave {
-            display: flex;
-            align-items: center;
-            gap: 3px;
-            height: 30px;
+        .audio-play-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.02);
+        }
+        .audio-wave-container {
             flex: 1;
             position: relative;
-            cursor: pointer;
+            cursor: grab;
+            height: 40px;
         }
-        .audio-wave-bar {
-            width: 3px;
-            background: white;
-            border-radius: 2px;
-            transition: height 0.05s ease;
-            cursor: pointer;
+        .audio-wave-container:active {
+            cursor: grabbing;
         }
-        .audio-wave-progress {
+        .audio-wave-bg {
             position: absolute;
             top: 0;
             left: 0;
-            height: 100%;
-            background: rgba(0, 200, 255, 0.5);
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
             border-radius: 40px;
-            pointer-events: none;
-            z-index: 1;
-            width: 0%;
         }
         .audio-wave-bars {
+            position: relative;
             display: flex;
             align-items: center;
             gap: 3px;
-            height: 100%;
-            position: relative;
+            height: 40px;
             z-index: 2;
-            flex: 1;
         }
-        .audio-duration {
-            font-size: 0.7rem;
-            color: #ccc;
-            margin-left: 0.5rem;
-            flex-shrink: 0;
+        .audio-wave-bar {
+            flex: 1;
+            height: 8px;
+            background: #ffffff;
+            border-radius: 4px;
+            transition: height 0.08s ease, background 0.1s ease;
+            min-width: 2px;
+        }
+        .audio-time-display {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #fff, #aaddff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 0 8px rgba(0,200,255,0.5);
+            letter-spacing: 1px;
         }
         .poll-container {
             background: rgba(0, 0, 0, 0.35);
@@ -1612,9 +1622,18 @@
                     mediaHtml = `<div class="poll-container"><div class="poll-title">📊 ${escapeHtml(m.title)}</div>${optionsHtml}<div class="poll-total">Всего голосов: ${totalVotes}</div></div>`;
                 }
                 
-                // АУДИО СООБЩЕНИЕ
+                // АУДИО СООБЩЕНИЕ С НОВЫМ ПЛЕЕРОМ
                 if (m.audio) {
-                    mediaHtml += `<div class="audio-player" data-audio-url="${m.audio}" data-audio-duration="${m.audioDuration || '0:00'}"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${m.audioDuration || '0:00'}</span></div>`;
+                    mediaHtml += `
+                        <div class="audio-player" data-audio-url="${m.audio}" data-audio-duration="${m.audioDuration || '0:00'}">
+                            <button class="audio-play-btn">▶️</button>
+                            <div class="audio-wave-container">
+                                <div class="audio-wave-bg"></div>
+                                <div class="audio-wave-bars"></div>
+                            </div>
+                            <div class="audio-time-display">0:00 / ${m.audioDuration || '0:00'}</div>
+                        </div>
+                    `;
                 }
                 
                 const seenCount = (m.seenBy || []).filter(uid => uid !== m.uid).length;
@@ -1625,46 +1644,61 @@
                 div.innerHTML = `<div class="msg-avatar">${avatarHtml}</div><div class="msg-bubble">${replyHtml}<div class="msg-name">${userData.name || m.name || 'Ученик'}</div><div class="msg-text">${mediaHtml} ${m.text && !videoUrlMatch ? m.text : ''}</div><div class="msg-footer"><div class="status-icons">${statusHtml}</div><div class="msg-actions"><button class="delete-btn" data-msg-id="${m.id}" data-msg-text="${escapeHtml(m.text || 'Фото/видео/голосовое/стикер/опрос')}">🗑️</button><button class="seen-btn" data-msg-id="${m.id}">👁️</button></div></div><div class="msg-time">${m.createdAt?.toDate().toLocaleTimeString() || ''}</div></div>`;
                 container.appendChild(div);
                 
-                // === АУДИО ПЛЕЕР С ПЕРЕМОТКОЙ ===
-                const audioDiv = div.querySelector('.audio-player');
-                if (audioDiv) {
-                    const audioUrl = audioDiv.getAttribute('data-audio-url');
-                    const audioDurationText = audioDiv.getAttribute('data-audio-duration');
+                // === НОВЫЙ АУДИО ПЛЕЕР С ПЕРЕМОТКОЙ ===
+                const audioPlayerDiv = div.querySelector('.audio-player');
+                if (audioPlayerDiv) {
+                    const audioUrl = audioPlayerDiv.getAttribute('data-audio-url');
+                    const fullDuration = audioPlayerDiv.getAttribute('data-audio-duration');
                     const audio = new Audio(audioUrl);
-                    const playBtn = audioDiv.querySelector('.audio-play-btn');
-                    const waveContainer = audioDiv.querySelector('.audio-wave');
-                    const durationSpan = audioDiv.querySelector('.audio-duration');
+                    const playBtn = audioPlayerDiv.querySelector('.audio-play-btn');
+                    const waveContainer = audioPlayerDiv.querySelector('.audio-wave-container');
+                    const barsContainer = audioPlayerDiv.querySelector('.audio-wave-bars');
+                    const timeDisplay = audioPlayerDiv.querySelector('.audio-time-display');
                     
-                    // Создаём структуру для визуализации
-                    waveContainer.innerHTML = '<div class="audio-wave-progress"></div><div class="audio-wave-bars"></div>';
-                    const progressBar = waveContainer.querySelector('.audio-wave-progress');
-                    const barsContainer = waveContainer.querySelector('.audio-wave-bars');
                     const barCount = 40;
                     let bars = [];
+                    let isDragging = false;
+                    let dragPercent = 0;
+                    
                     for (let i = 0; i < barCount; i++) {
                         const bar = document.createElement('div');
                         bar.className = 'audio-wave-bar';
-                        bar.style.height = (5 + Math.random() * 20) + 'px';
+                        bar.style.height = '12px';
+                        bar.style.background = '#ffffff';
                         barsContainer.appendChild(bar);
                         bars.push(bar);
                     }
                     
-                    durationSpan.textContent = audioDurationText;
+                    timeDisplay.textContent = `0:00 / ${fullDuration}`;
                     let isPlaying = false;
+                    
+                    function updateBars(percent) {
+                        const activeCount = Math.floor(percent * barCount);
+                        bars.forEach((bar, idx) => {
+                            if (idx < activeCount) {
+                                bar.style.background = '#4ade80';
+                                bar.style.boxShadow = '0 0 4px #4ade80';
+                            } else {
+                                bar.style.background = '#ffffff';
+                                bar.style.boxShadow = 'none';
+                            }
+                        });
+                    }
+                    
                     audio.addEventListener('timeupdate', () => {
-                        if (audio.duration) {
-                            const percent = (audio.currentTime / audio.duration) * 100;
-                            progressBar.style.width = percent + '%';
-                            const activeIndex = Math.floor((audio.currentTime / audio.duration) * barCount);
-                            bars.forEach((bar, idx) => {
-                                if (idx <= activeIndex) bar.style.background = '#00aaff';
-                                else bar.style.background = 'white';
-                            });
+                        if (!isDragging && audio.duration) {
+                            const percent = audio.currentTime / audio.duration;
+                            updateBars(percent);
+                            const minutes = Math.floor(audio.currentTime / 60);
+                            const seconds = Math.floor(audio.currentTime % 60);
+                            timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} / ${fullDuration}`;
                         }
                     });
                     audio.addEventListener('ended', () => {
                         isPlaying = false;
                         playBtn.textContent = '▶️';
+                        updateBars(0);
+                        timeDisplay.textContent = `0:00 / ${fullDuration}`;
                     });
                     
                     playBtn.onclick = (e) => {
@@ -1680,38 +1714,49 @@
                         }
                     };
                     
-                    // Перемотка по клику на волну
-                    waveContainer.style.cursor = 'pointer';
-                    waveContainer.addEventListener('click', (e) => {
+                    // Перемотка с зажатием
+                    function handleSeek(e) {
                         if (!audio.duration) return;
                         const rect = waveContainer.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percent = Math.min(1, Math.max(0, x / rect.width));
+                        let clientX = e.clientX;
+                        if (e.touches) clientX = e.touches[0].clientX;
+                        let percent = (clientX - rect.left) / rect.width;
+                        percent = Math.min(1, Math.max(0, percent));
                         audio.currentTime = audio.duration * percent;
+                        updateBars(percent);
+                        const minutes = Math.floor(audio.currentTime / 60);
+                        const seconds = Math.floor(audio.currentTime % 60);
+                        timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')} / ${fullDuration}`;
+                    }
+                    
+                    waveContainer.addEventListener('mousedown', (e) => {
+                        isDragging = true;
+                        handleSeek(e);
+                        const onMouseMove = (moveEvent) => {
+                            if (isDragging) handleSeek(moveEvent);
+                        };
+                        const onMouseUp = () => {
+                            isDragging = false;
+                            window.removeEventListener('mousemove', onMouseMove);
+                            window.removeEventListener('mouseup', onMouseUp);
+                        };
+                        window.addEventListener('mousemove', onMouseMove);
+                        window.addEventListener('mouseup', onMouseUp);
                     });
                     
-                    // Подсказка при движении мыши
-                    let tooltip = null;
-                    waveContainer.addEventListener('mousemove', (e) => {
-                        if (!audio.duration) return;
-                        if (!tooltip) {
-                            tooltip = document.createElement('div');
-                            tooltip.style.cssText = 'position:fixed; background:rgba(0,0,0,0.8); color:white; padding:0.2rem 0.5rem; border-radius:20px; font-size:0.7rem; pointer-events:none; z-index:1000;';
-                            document.body.appendChild(tooltip);
-                        }
-                        const rect = waveContainer.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const percent = Math.min(1, Math.max(0, x / rect.width));
-                        const time = audio.duration * percent;
-                        const minutes = Math.floor(time / 60);
-                        const seconds = Math.floor(time % 60);
-                        tooltip.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                        tooltip.style.left = (e.clientX + 10) + 'px';
-                        tooltip.style.top = (e.clientY - 25) + 'px';
-                        tooltip.style.display = 'block';
-                    });
-                    waveContainer.addEventListener('mouseleave', () => {
-                        if (tooltip) tooltip.style.display = 'none';
+                    waveContainer.addEventListener('touchstart', (e) => {
+                        isDragging = true;
+                        handleSeek(e);
+                        const onTouchMove = (moveEvent) => {
+                            if (isDragging) handleSeek(moveEvent);
+                        };
+                        const onTouchEnd = () => {
+                            isDragging = false;
+                            window.removeEventListener('touchmove', onTouchMove);
+                            window.removeEventListener('touchend', onTouchEnd);
+                        };
+                        window.addEventListener('touchmove', onTouchMove);
+                        window.addEventListener('touchend', onTouchEnd);
                     });
                 }
                 
@@ -1770,7 +1815,18 @@
                     if (pending.videos?.length) {
                         for (let i = 0; i < pending.videos.length; i++) mediaHtml += `<div class="loading-spinner-overlay" style="position:relative; display:block; width:280px; max-width:100%; aspect-ratio:16/9; border-radius:16px; overflow:hidden; background:#000; margin-top:8px;"><div class="spinner"></div></div>`;
                     }
-                    if (pending.audio) mediaHtml += `<div class="audio-player"><button class="audio-play-btn">▶️</button><div class="audio-wave"></div><span class="audio-duration">${pending.audioDuration || '0:00'}</span></div>`;
+                    if (pending.audio) {
+                        mediaHtml += `
+                            <div class="audio-player" data-audio-url="${pending.audio}" data-audio-duration="${pending.audioDuration || '0:00'}">
+                                <button class="audio-play-btn">▶️</button>
+                                <div class="audio-wave-container">
+                                    <div class="audio-wave-bg"></div>
+                                    <div class="audio-wave-bars"></div>
+                                </div>
+                                <div class="audio-time-display">0:00 / ${pending.audioDuration || '0:00'}</div>
+                            </div>
+                        `;
+                    }
                     const div = document.createElement('div');
                     div.className = 'message mine';
                     div.id = tempId;
