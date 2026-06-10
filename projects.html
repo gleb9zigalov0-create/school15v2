@@ -81,23 +81,30 @@
         renderProjects();
     }
 
-    function renderProjects() {
+    async function renderProjects() {
         const grid = document.getElementById('projectsGrid');
         if (!projects.length) {
             grid.innerHTML = '<div class="empty-msg">📭 Пока нет одобренных проектов. Стань первым!</div>';
             return;
         }
-        grid.innerHTML = projects.map(proj => `
-            <div class="project-card">
-                <div class="card-image" style="background-image: url('${proj.thumb || 'https://placehold.co/300x160/8fc9e8/white?text=Нет+фото'}'); background-size: cover; background-position: center;"></div>
-                <div class="card-info">
-                    <div class="subject-badge">${escapeHtml(proj.subject || 'Проект')}</div>
-                    <h3>${escapeHtml(proj.title)}</h3>
-                    <p>${escapeHtml(proj.description?.substring(0, 70) || '')}${proj.description?.length > 70 ? '...' : ''}</p>
-                    <button class="download-btn" onclick="downloadProject('${proj.id}')">📥 Скачать</button>
+        
+        const cards = [];
+        for (const proj of projects) {
+            const files = await ProjectStorage.listProjectFiles(proj.id);
+            const hasFiles = files.length > 0;
+            cards.push(`
+                <div class="project-card">
+                    <div class="card-image" style="background-image: url('${proj.thumb || 'https://placehold.co/300x160/8fc9e8/white?text=Нет+фото'}'); background-size: cover; background-position: center;"></div>
+                    <div class="card-info">
+                        <div class="subject-badge">${escapeHtml(proj.subject || 'Проект')}</div>
+                        <h3>${escapeHtml(proj.title)}</h3>
+                        <p>${escapeHtml(proj.description?.substring(0, 70) || '')}${proj.description?.length > 70 ? '...' : ''}</p>
+                        ${hasFiles ? `<button class="download-btn" onclick="downloadProject('${proj.id}')">📥 Скачать</button>` : '<span style="color:#e94560;">⚠️ Файлы не загружены</span>'}
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `);
+        }
+        grid.innerHTML = cards.join('');
     }
 
     async function downloadProject(projectId) {
@@ -105,8 +112,19 @@
         if (files.length === 1) {
             ProjectStorage.downloadRecord(files[0]);
         } else if (files.length > 1) {
-            alert(`В проекте несколько файлов. Скачивается первый.`);
-            ProjectStorage.downloadRecord(files[0]);
+            // Показываем список файлов
+            let fileListHtml = '<div style="padding:1rem;">';
+            for (const f of files) {
+                fileListHtml += `<div style="margin:0.5rem 0;">
+                    <strong>${escapeHtml(f.name)}</strong> (${ProjectStorage.formatSize(f.size)})
+                    <button onclick="ProjectStorage.downloadRecord(${JSON.stringify(f).replace(/"/g, '&quot;')})">📥</button>
+                </div>`;
+            }
+            fileListHtml += '</div>';
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:1000;';
+            modal.innerHTML = `<div style="background:rgba(30,40,50,0.95); backdrop-filter:blur(20px); border-radius:32px; padding:1.5rem; max-width:400px; width:90%;">${fileListHtml}<button onclick="this.parentElement.parentElement.remove()" style="margin-top:1rem; padding:0.5rem 1rem; border-radius:40px; background:#0a3f6f; color:white; border:none;">Закрыть</button></div>`;
+            document.body.appendChild(modal);
         } else {
             alert('Файлы не найдены');
         }
