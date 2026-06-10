@@ -2,10 +2,10 @@ const ProjectStorage = (function () {
     const DB_NAME = 'school15_projects_db';
     const STORE = 'files';
     const META_KEY = 'school15_projects';
-    const DB_VERSION = 11;
+    const DB_VERSION = 12;
     
-    // Яндекс.Диск настройки
-    const YANDEX_CLIENT_ID = '224e639cdba34c81bc301917149a4f4c';
+    // НОВЫЙ Client ID
+    const YANDEX_CLIENT_ID = '82c008ddf65a4646bbe315911b276ada';
     const REDIRECT_URI = window.location.origin + window.location.pathname;
     
     let yandexToken = null;
@@ -40,21 +40,18 @@ const ProjectStorage = (function () {
         const fileName = `${Date.now()}_${file.name}`;
         const path = `${folder}/${fileName}`;
         
-        // Получаем ссылку для загрузки
         const uploadResponse = await fetch(`https://cloud-api.yandex.net/v1/disk/resources/upload?path=${encodeURIComponent(path)}&overwrite=true`, {
             method: 'GET',
             headers: { 'Authorization': `OAuth ${token}` }
         });
         const uploadData = await uploadResponse.json();
         
-        // Загружаем файл
         await fetch(uploadData.href, {
             method: 'PUT',
             body: file,
             headers: { 'Content-Type': file.type }
         });
         
-        // Получаем публичную ссылку
         const publishResponse = await fetch(`https://cloud-api.yandex.net/v1/disk/resources/publish?path=${encodeURIComponent(path)}`, {
             method: 'PUT',
             headers: { 'Authorization': `OAuth ${token}` }
@@ -110,7 +107,6 @@ const ProjectStorage = (function () {
         const localFiles = [];
         
         for (const file of files) {
-            // Файлы больше 1 МБ отправляем на Яндекс.Диск
             if (file.size > 1024 * 1024) {
                 try {
                     const yandexRef = await uploadToYandex(file);
@@ -124,7 +120,6 @@ const ProjectStorage = (function () {
             }
         }
         
-        // Сохраняем локальные файлы в IndexedDB
         for (const file of localFiles) {
             const data = await new Promise((resolve) => {
                 const reader = new FileReader();
@@ -151,7 +146,6 @@ const ProjectStorage = (function () {
             });
         }
         
-        // Сохраняем метаданные Яндекс.Диска
         for (const yf of yandexFiles) {
             const tx = db.transaction(STORE, 'readwrite');
             const store = tx.objectStore(STORE);
@@ -206,7 +200,6 @@ const ProjectStorage = (function () {
         }
         
         if (record.storage === 'yandex' && record.url) {
-            // Скачиваем с Яндекс.Диска
             window.open(record.url, '_blank');
             return;
         }
