@@ -5,7 +5,7 @@ const ProjectStorage = (function () {
     const DB_VERSION = 12;
     
     // НОВЫЙ Client ID
-    const YANDEX_CLIENT_ID = '82c008ddf65a4646bbe315911b276ada';
+    const YANDEX_CLIENT_ID = 'fdad13236d574a14b044237d9308aab3';
     const REDIRECT_URI = window.location.origin + window.location.pathname;
     
     let yandexToken = null;
